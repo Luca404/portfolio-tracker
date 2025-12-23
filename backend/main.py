@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 from datetime import date, datetime, timedelta
 from typing import List, Optional
@@ -99,6 +100,7 @@ class OrderModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     portfolio_id = Column(Integer, ForeignKey("portfolios.id"), nullable=False)
     symbol = Column(String, nullable=False)
+    isin = Column(String, default="")
     name = Column(String, default="")
     exchange = Column(String, default="")
     currency = Column(String, default="")
@@ -113,7 +115,110 @@ class OrderModel(Base):
     portfolio = relationship("PortfolioModel", back_populates="orders")
 
 
+class ETFPriceCacheModel(Base):
+    __tablename__ = "etf_price_cache"
+    isin = Column(String, primary_key=True, index=True)
+    last_price = Column(Float, default=0.0)
+    currency = Column(String, default="")
+    history_json = Column(String, default="")
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+
 Base.metadata.create_all(bind=engine)
+
+
+def ensure_orders_table_has_isin():
+    """
+    Minimal migration for existing SQLite DBs: add `isin` column if missing.
+    """
+    with engine.connect() as conn:
+        cols = [row[1] for row in conn.execute(text("PRAGMA table_info(orders)")).fetchall()]
+    if "isin" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN isin STRING"))
+
+
+ensure_orders_table_has_isin()
+
+
+ETF_CACHE_MAX_AGE_HOURS = 6
+
+
+def normalize_chart_history(df: pd.DataFrame):
+    """
+    Converte il DataFrame restituito da justetf_scraping.load_chart in una lista di dict {date, price}.
+    È tollerante ai nomi delle colonne (price/close ecc).
+    """
+    if df is None or df.empty:
+        return []
+
+    cols_lower = {str(c).lower(): c for c in df.columns}
+    date_col = cols_lower.get("date") or cols_lower.get("time") or list(df.columns)[0]
+    price_col = cols_lower.get("price") or cols_lower.get("close") or cols_lower.get("nav") or list(df.columns)[-1]
+
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=[date_col])
+
+    history = []
+    for _, row in df.iterrows():
+        try:
+            ts = row[date_col]
+            price_val = float(row[price_col])
+            history.append({"date": ts.strftime("%Y-%m-%d"), "price": price_val})
+        except Exception:
+            continue
+    history = sorted(history, key=lambda x: x["date"])
+    return history
+
+
+def get_etf_price_and_history(isin: str, db: Session):
+    """
+    Restituisce prezzo corrente e storico per ETF tramite justetf_scraping con cache su SQLite.
+    """
+    if not isin:
+        raise HTTPException(status_code=400, detail="Missing ISIN for ETF price lookup")
+
+    now = datetime.utcnow()
+    cache = db.execute(select(ETFPriceCacheModel).where(ETFPriceCacheModel.isin == isin)).scalar_one_or_none()
+    if cache and cache.updated_at and (now - cache.updated_at) < timedelta(hours=ETF_CACHE_MAX_AGE_HOURS):
+        history = json.loads(cache.history_json or "[]")
+        last_price = cache.last_price or (history[-1]["price"] if history else 0.0)
+        return {"last_price": last_price, "history": history, "currency": cache.currency}
+
+    try:
+        import justetf_scraping
+    except ImportError:
+        raise HTTPException(status_code=500, detail="justetf_scraping non installato (pip install git+https://github.com/druzsan/justetf-scraping.git)")
+
+    try:
+        df_chart = justetf_scraping.load_chart(isin)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Errore nel recupero prezzi justETF: {e}")
+
+    history = normalize_chart_history(df_chart)
+    if not history:
+        raise HTTPException(status_code=400, detail="Nessun dato storico disponibile per l'ISIN richiesto")
+
+    last_price = history[-1]["price"]
+    currency = ""
+
+    if cache:
+        cache.last_price = last_price
+        cache.currency = currency
+        cache.history_json = json.dumps(history)
+        cache.updated_at = now
+    else:
+        cache = ETFPriceCacheModel(
+            isin=isin,
+            last_price=last_price,
+            currency=currency,
+            history_json=json.dumps(history),
+            updated_at=now,
+        )
+        db.add(cache)
+    db.commit()
+    return {"last_price": last_price, "history": history, "currency": currency}
 
 
 # Pydantic models
@@ -146,6 +251,7 @@ class Order(BaseModel):
     name: Optional[str] = ""
     exchange: Optional[str] = ""
     currency: Optional[str] = ""
+    isin: Optional[str] = ""
     quantity: float
     price: float
     commission: float = 0.0
@@ -325,16 +431,39 @@ def ensure_symbol_exists(symbol: str, instrument_type: str):
     raise HTTPException(status_code=400, detail=f"Symbol {symbol} not found for type {instrument_type}")
 
 
-def compute_portfolio_value(positions_map: dict, orders_by_symbol: dict, symbol_type_map: dict):
+def compute_portfolio_value(
+    positions_map: dict,
+    orders_by_symbol: dict,
+    symbol_type_map: dict,
+    symbol_isin_map: dict,
+    db: Session,
+    include_history: bool = False,
+):
     positions = []
     total_value = 0.0
     total_cost = 0.0
+    position_histories = {}
 
     for symbol, data in positions_map.items():
+        instrument_type = symbol_type_map.get(symbol, "stock")
+        price_history = []
+        current_price = 0.0
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            current_price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
+            if instrument_type == "etf":
+                isin = symbol_isin_map.get(symbol, "")
+                etf_data = get_etf_price_and_history(isin, db)
+                current_price = etf_data["last_price"]
+                price_history = etf_data.get("history", [])
+            else:
+                ticker = yf.Ticker(symbol)
+                info = ticker.info
+                current_price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
+                if include_history:
+                    hist = ticker.history(period="6mo")
+                    price_history = [
+                        {"date": idx.strftime("%Y-%m-%d"), "price": float(row["Close"])}
+                        for idx, row in hist.iterrows()
+                    ]
 
             avg_price = data["total_cost"] / data["quantity"] if data["quantity"] else 0
             market_value = data["quantity"] * current_price
@@ -366,11 +495,13 @@ def compute_portfolio_value(positions_map: dict, orders_by_symbol: dict, symbol_
                     "cost_basis": round(data["total_cost"], 2),
                     "gain_loss": round(gain_loss, 2),
                     "gain_loss_pct": round(gain_loss_pct, 2),
-                    "instrument_type": symbol_type_map.get(symbol, "stock"),
+                    "instrument_type": instrument_type,
                     "currency": currency,
                     "xirr": round(xirr * 100, 2) if xirr else 0.0,
                 }
             )
+            if include_history and price_history:
+                position_histories[symbol] = price_history
 
             total_value += market_value
             total_cost += data["total_cost"]
@@ -380,7 +511,29 @@ def compute_portfolio_value(positions_map: dict, orders_by_symbol: dict, symbol_
     total_gain_loss = total_value - total_cost
     total_gain_loss_pct = (total_gain_loss / total_cost * 100) if total_cost > 0 else 0
 
-    return positions, total_value, total_cost, total_gain_loss, total_gain_loss_pct
+    return positions, total_value, total_cost, total_gain_loss, total_gain_loss_pct, position_histories
+
+
+def aggregate_portfolio_history(position_histories: dict, positions_map: dict):
+    """
+    Aggrega le serie storiche dei singoli strumenti usando le quantità correnti per costruire
+    una curva del valore di portafoglio.
+    """
+    if not position_histories:
+        return []
+
+    totals = {}
+    for symbol, history in position_histories.items():
+        qty = positions_map.get(symbol, {}).get("quantity", 0.0)
+        for point in history:
+            if qty <= 0:
+                continue
+            date_key = point["date"]
+            totals[date_key] = totals.get(date_key, 0.0) + qty * float(point["price"])
+
+    aggregated = [{"date": d, "value": round(v, 2)} for d, v in totals.items()]
+    aggregated.sort(key=lambda x: x["date"])
+    return aggregated
 
 
 def validate_order_input(order: Order):
@@ -464,11 +617,13 @@ def get_portfolios(user: UserModel = Depends(verify_token), db: Session = Depend
         positions_map = aggregate_positions(orders)
         orders_by_symbol = {}
         symbol_type_map = {}
+        symbol_isin_map = {}
         for o in orders:
             orders_by_symbol.setdefault(o.symbol.upper(), []).append(o)
             symbol_type_map[o.symbol.upper()] = (o.instrument_type or "stock").lower()
-        _, total_value, total_cost, total_gain_loss, total_gain_loss_pct = compute_portfolio_value(
-            positions_map, orders_by_symbol, symbol_type_map
+            symbol_isin_map[o.symbol.upper()] = (o.isin or "").upper()
+        _, total_value, total_cost, total_gain_loss, total_gain_loss_pct, _ = compute_portfolio_value(
+            positions_map, orders_by_symbol, symbol_type_map, symbol_isin_map, db
         )
         response.append(
             {
@@ -498,13 +653,17 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
     orders = db.execute(select(OrderModel).where(OrderModel.portfolio_id == portfolio.id)).scalars().all()
     orders_by_symbol = {}
     symbol_type_map = {}
+    symbol_isin_map = {}
     for o in orders:
         orders_by_symbol.setdefault(o.symbol.upper(), []).append(o)
         symbol_type_map[o.symbol.upper()] = (o.instrument_type or "stock").lower()
+        symbol_isin_map[o.symbol.upper()] = (o.isin or "").upper()
     positions_map = aggregate_positions(orders)
-    positions, total_value, total_cost, total_gain_loss, total_gain_loss_pct = compute_portfolio_value(
-        positions_map, orders_by_symbol, symbol_type_map
+    positions, total_value, total_cost, total_gain_loss, total_gain_loss_pct, position_histories = compute_portfolio_value(
+        positions_map, orders_by_symbol, symbol_type_map, symbol_isin_map, db, include_history=True
     )
+
+    portfolio_history = aggregate_portfolio_history(position_histories, positions_map)
 
     return {
         "portfolio": {
@@ -520,6 +679,10 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
             "total_cost": round(total_cost, 2),
             "total_gain_loss": round(total_gain_loss, 2),
             "total_gain_loss_pct": round(total_gain_loss_pct, 2),
+        },
+        "history": {
+            "portfolio": portfolio_history,
+            "positions": position_histories,
         },
         "last_updated": datetime.now().isoformat(),
     }
@@ -559,9 +722,12 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
     if order.order_type == "sell" and order.quantity > symbol_positions["quantity"]:
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
 
+    resolved_isin = order.isin or (match.get("isin") if match else "")
+
     db_order = OrderModel(
         portfolio_id=portfolio.id,
         symbol=order.symbol.upper(),
+        isin=resolved_isin,
         name=order.name or (match.get("name") if match else ""),
         exchange=order.exchange or (match.get("exchange") if match else ""),
         currency=order.currency or (match.get("currency") if match else ""),
@@ -582,6 +748,7 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
             "id": db_order.id,
             "portfolio_id": db_order.portfolio_id,
             "symbol": db_order.symbol,
+            "isin": db_order.isin,
             "name": db_order.name,
             "exchange": db_order.exchange,
             "currency": db_order.currency,
@@ -610,6 +777,7 @@ def get_orders(portfolio_id: int, user: UserModel = Depends(verify_token), db: S
                 "id": o.id,
                 "portfolio_id": o.portfolio_id,
                 "symbol": o.symbol,
+                "isin": o.isin,
                 "name": o.name,
                 "exchange": o.exchange,
                 "currency": o.currency,
@@ -661,7 +829,10 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
     if updated.order_type == "sell" and updated.quantity > symbol_positions["quantity"]:
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
 
+    resolved_isin = updated.isin or (match.get("isin") if match else "")
+
     order.symbol = updated.symbol.upper()
+    order.isin = resolved_isin
     order.name = updated.name or (match.get("name") if match else "")
     order.exchange = updated.exchange or (match.get("exchange") if match else "")
     order.currency = updated.currency or (match.get("currency") if match else "")
@@ -681,6 +852,7 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
             "id": order.id,
             "portfolio_id": order.portfolio_id,
             "symbol": order.symbol,
+            "isin": order.isin,
             "name": order.name,
             "exchange": order.exchange,
             "currency": order.currency,
