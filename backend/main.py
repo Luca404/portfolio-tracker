@@ -19,6 +19,7 @@ from sqlalchemy import (Column, Date, DateTime, Float, ForeignKey, Integer,
                         String, create_engine, select, text)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
+from etf_cache_ucits import ETF_UCITS_CACHE
 
 app = FastAPI(title="Portfolio Tracker API")
 
@@ -270,45 +271,48 @@ def fmp_get(path: str, params: dict, base: Optional[str] = None):
 
 def search_symbol(symbol: str, instrument_type: str):
     instrument_type = instrument_type.lower()
+    
     if instrument_type == "stock":
         path = "search-symbol"
         params = {"query": symbol.upper(), "limit": 20}
         return fmp_get(path, params, base=FMP_STABLE_BASE)
 
     if instrument_type == "etf":
-        if not ALPHAVANTAGE_API_KEY:
-            raise HTTPException(status_code=500, detail="ALPHAVANTAGE_API_KEY not configured")
-        try:
-            resp = requests.get(
-                AV_BASE,
-                params={
-                    "function": "SYMBOL_SEARCH",
-                    "keywords": symbol.upper(),
-                    "apikey": ALPHAVANTAGE_API_KEY,
-                },
-                timeout=10,
-            )
-            data = resp.json()
-            if resp.status_code >= 400:
-                raise HTTPException(status_code=resp.status_code, detail=data)
-            if "Note" in data:
-                raise HTTPException(status_code=429, detail="AlphaVantage rate limit: " + data["Note"])
-            matches = []
-            for item in data.get("bestMatches", []):
-                item_type = (item.get("3. type") or "").lower()
-                if "etf" in item_type:
-                    matches.append(
-                        {
-                            "symbol": item.get("1. symbol"),
-                            "name": item.get("2. name"),
-                            "type": item.get("3. type"),
-                            "exchange": item.get("4. region"),
-                            "currency": item.get("8. currency") or item.get("7. currency"),
-                        }
-                    )
-            return matches
-        except requests.RequestException as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        query = symbol.upper().strip()
+        if not query:
+            return []
+        matches = []
+        for item in ETF_UCITS_CACHE:
+            tickers = [item.get("ticker", ""), item.get("symbol", "")]
+            # match ticker prefix/exact
+            if any(query and t and t.upper().startswith(query) for t in tickers):
+                sym = (item.get("ticker") or item.get("symbol") or item.get("isin") or "").upper()
+                matches.append({
+                    "symbol": sym,
+                    "name": item.get("name", ""),
+                    "exchange": item.get("exchange", "") or item.get("domicile", ""),
+                    "currency": item.get("currency", ""),
+                    "type": "ETF",
+                    "isin": item.get("isin", ""),
+                    "ticker": item.get("ticker", ""),
+                })
+                if len(matches) >= 25:
+                    break
+            # match ISIN esatto (ISIN = 12 chars)
+            elif len(query) == 12 and query == str(item.get("isin", "")).upper():
+                sym = (item.get("ticker") or item.get("symbol") or item.get("isin") or "").upper()
+                matches.append({
+                    "symbol": sym,
+                    "name": item.get("name", ""),
+                    "exchange": item.get("exchange", "") or item.get("domicile", ""),
+                    "currency": item.get("currency", ""),
+                    "type": "ETF",
+                    "isin": item.get("isin", ""),
+                    "ticker": item.get("ticker", ""),
+                })
+                if len(matches) >= 25:
+                    break
+        return matches
 
     return []
 
@@ -346,6 +350,12 @@ def compute_portfolio_value(positions_map: dict, orders_by_symbol: dict, symbol_
             cashflows.sort(key=lambda x: x[0])
             xirr = calc_xirr(cashflows)
 
+            # pick currency from first order if available
+            currency = ""
+            orders_for_symbol = orders_by_symbol.get(symbol, [])
+            if orders_for_symbol:
+                currency = orders_for_symbol[0].currency or ""
+
             positions.append(
                 {
                     "symbol": symbol,
@@ -357,6 +367,7 @@ def compute_portfolio_value(positions_map: dict, orders_by_symbol: dict, symbol_
                     "gain_loss": round(gain_loss, 2),
                     "gain_loss_pct": round(gain_loss_pct, 2),
                     "instrument_type": symbol_type_map.get(symbol, "stock"),
+                    "currency": currency,
                     "xirr": round(xirr * 100, 2) if xirr else 0.0,
                 }
             )
@@ -405,7 +416,6 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
         "user": {"email": new_user.email, "username": new_user.username},
     }
 
-
 @app.post("/auth/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.execute(select(UserModel).where(UserModel.email == user.email.lower())).scalar_one_or_none()
@@ -418,7 +428,6 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user": {"email": db_user.email, "username": db_user.username},
     }
-
 
 @app.get("/auth/me")
 def get_current_user(user: UserModel = Depends(verify_token)):
@@ -445,7 +454,6 @@ def create_portfolio(portfolio: Portfolio, user: UserModel = Depends(verify_toke
         "initial_capital": db_portfolio.initial_capital,
         "created_at": db_portfolio.created_at.isoformat() if db_portfolio.created_at else None,
     }
-
 
 @app.get("/portfolios")
 def get_portfolios(user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
@@ -478,7 +486,6 @@ def get_portfolios(user: UserModel = Depends(verify_token), db: Session = Depend
     return {
         "portfolios": response
     }
-
 
 @app.get("/portfolios/{portfolio_id}")
 def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
@@ -516,7 +523,6 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
         },
         "last_updated": datetime.now().isoformat(),
     }
-
 
 @app.delete("/portfolios/{portfolio_id}")
 def delete_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
@@ -589,7 +595,6 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
         },
     }
 
-
 @app.get("/orders/{portfolio_id}")
 def get_orders(portfolio_id: int, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
     portfolio = db.execute(
@@ -620,7 +625,6 @@ def get_orders(portfolio_id: int, user: UserModel = Depends(verify_token), db: S
         ]
     }
 
-
 @app.delete("/orders/{order_id}")
 def delete_order(order_id: int, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
     order = db.execute(
@@ -631,7 +635,6 @@ def delete_order(order_id: int, user: UserModel = Depends(verify_token), db: Ses
     db.delete(order)
     db.commit()
     return {"message": "Order deleted"}
-
 
 @app.put("/orders/{order_id}")
 def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
@@ -804,6 +807,99 @@ def symbols_search(q: str, instrument_type: str = "stock"):
     ]
     return {"results": formatted}
 
+
+@app.get("/symbols/ucits")
+def symbols_ucits():
+    formatted = []
+    for item in ETF_UCITS_CACHE:
+        sym = (item.get("ticker") or item.get("symbol") or item.get("isin") or "").upper()
+        formatted.append({
+            "symbol": sym,
+            "name": item.get("name", ""),
+            "exchange": item.get("exchange", "") or item.get("domicile", ""),
+            "currency": item.get("currency", ""),
+            "type": "ETF",
+            "isin": item.get("isin"),
+            "ticker": item.get("ticker"),
+        })
+    return {"results": formatted}
+
+@app.get("/symbols/etf-list")
+def get_etf_list(etf_type: str = "all"):
+    """
+    Restituisce la lista completa degli ETF nella cache locale.
+    
+    Args:
+        etf_type: "us", "ucits", o "all" (default)
+    
+    Questo endpoint non richiede chiamate API esterne.
+    """
+    results = []
+    
+    if etf_type in ["us", "all"]:
+        from etf_cache import get_all_etfs
+        us_etfs = get_all_etfs()
+        # Aggiungi tag per identificare il tipo
+        for etf in us_etfs:
+            etf["region"] = "US"
+        results.extend(us_etfs)
+    
+    if etf_type in ["ucits", "all"]:
+        try:
+            from etf_cache_ucits import get_all_ucits_etfs
+            ucits_etfs = get_all_ucits_etfs()
+            # Aggiungi tag per identificare il tipo
+            for etf in ucits_etfs:
+                etf["region"] = "UCITS"
+            results.extend(ucits_etfs)
+        except ImportError:
+            pass
+    
+    return {
+        "etfs": results,
+        "count": len(results)
+    }
+
+@app.get("/symbols/etf-stats")
+def get_etf_stats():
+    """
+    Restituisce statistiche sulla cache degli ETF
+    """
+    stats = {
+        "us_etfs": 0,
+        "ucits_etfs": 0,
+        "currencies": {},
+        "domiciles": {}
+    }
+    
+    try:
+        from etf_cache import get_all_etfs
+        us_etfs = get_all_etfs()
+        stats["us_etfs"] = len(us_etfs)
+        
+        for etf in us_etfs:
+            curr = etf.get("currency", "Unknown")
+            stats["currencies"][curr] = stats["currencies"].get(curr, 0) + 1
+    except ImportError:
+        pass
+    
+    try:
+        from etf_cache_ucits import get_all_ucits_etfs
+        ucits_etfs = get_all_ucits_etfs()
+        stats["ucits_etfs"] = len(ucits_etfs)
+        
+        for etf in ucits_etfs:
+            curr = etf.get("currency", "Unknown")
+            stats["currencies"][curr] = stats["currencies"].get(curr, 0) + 1
+            
+            dom = etf.get("domicile", "Unknown")
+            stats["domiciles"][dom] = stats["domiciles"].get(dom, 0) + 1
+    except ImportError:
+        pass
+    
+    stats["total_etfs"] = stats["us_etfs"] + stats["ucits_etfs"]
+    
+    return stats
 
 if __name__ == "__main__":
     import uvicorn
