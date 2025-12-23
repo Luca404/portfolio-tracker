@@ -4,6 +4,12 @@ import { PieChart as PieIcon, Plus, LogOut, BarChart3 } from 'lucide-react';
 
 const API_URL = 'http://localhost:8000';
 
+const formatCurrencyValue = (val, currency) => {
+  const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency ? `${currency} ` : '';
+  const num = Number(val || 0);
+  return `${symbol}${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 // Main App Component
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -516,6 +522,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
     typeMap[key] = (typeMap[key] || 0) + p.market_value;
   });
   const typeData = Object.entries(typeMap).map(([name, value]) => ({ name, value }));
+  const summaryCurrency = data?.positions?.[0]?.currency || '';
 
   return (
     <div>
@@ -547,13 +554,13 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
           <p className="text-blue-100 text-sm mb-1">Total Value</p>
-          <p className="text-3xl font-bold">${data?.summary.total_value.toLocaleString()}</p>
+          <p className="text-3xl font-bold">{formatCurrencyValue(data?.summary.total_value, summaryCurrency)}</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow p-6">
           <p className="text-slate-600 text-sm mb-1">Total P&L</p>
           <p className={`text-3xl font-bold ${data?.summary.total_gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            ${data?.summary.total_gain_loss.toLocaleString()}
+            {formatCurrencyValue(data?.summary.total_gain_loss, summaryCurrency)}
           </p>
           <p className={`text-sm font-semibold ${data?.summary.total_gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {data?.summary.total_gain_loss_pct >= 0 ? '+' : ''}{data?.summary.total_gain_loss_pct.toFixed(2)}%
@@ -588,12 +595,12 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
                   <tr key={pos.symbol} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="py-2 px-1.5 text-center font-semibold text-slate-900 whitespace-nowrap">{pos.symbol}</td>
                     <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{pos.quantity}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">${pos.avg_price.toFixed(2)}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">${pos.current_price.toFixed(2)}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">${pos.cost_basis.toFixed(2)}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-900 font-semibold whitespace-nowrap">${pos.market_value.toFixed(2)}</td>
+                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.avg_price, pos.currency)}</td>
+                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.current_price, pos.currency)}</td>
+                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.cost_basis, pos.currency)}</td>
+                    <td className="py-2 px-1.5 text-center text-slate-900 font-semibold whitespace-nowrap">{formatCurrencyValue(pos.market_value, pos.currency)}</td>
                     <td className={`py-2 px-1.5 text-center font-semibold whitespace-nowrap ${pos.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {pos.gain_loss >= 0 ? '+' : ''}${pos.gain_loss.toFixed(2)}
+                      {pos.gain_loss >= 0 ? '+' : ''}{formatCurrencyValue(pos.gain_loss, pos.currency)}
                     </td>
                     <td className={`py-2 px-1.5 text-center font-semibold whitespace-nowrap ${pos.gain_loss_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {pos.gain_loss_pct.toFixed(2)}%
@@ -674,18 +681,21 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [symbolOptions, setSymbolOptions] = useState([]);
   const [symbolLoading, setSymbolLoading] = useState(false);
+  const [ucitsCache, setUcitsCache] = useState([]);
   const [selectedInfo, setSelectedInfo] = useState({ name: '', exchange: '', currency: '' });
   const [skipSearch, setSkipSearch] = useState(false);
   const [lastChosenSymbol, setLastChosenSymbol] = useState('');
+  const currencySymbol = selectedInfo.currency === 'EUR' ? '€' : selectedInfo.currency === 'USD' ? '$' : '';
   const [formData, setFormData] = useState({
     symbol: '',
     quantity: '',
     price: '',
     commission: '0',
-    instrument_type: 'stock',
+    instrument_type: 'etf',
     order_type: 'buy',
     date: new Date().toISOString().split('T')[0]
   });
+  const [touched, setTouched] = useState({});
 
   useEffect(() => {
     fetchOrders();
@@ -710,7 +720,32 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
     }
   };
 
+  useEffect(() => {
+    const loadUcits = async () => {
+      if (ucitsCache.length > 0) return;
+      try {
+        const res = await fetch(`${API_URL}/symbols/ucits`);
+        if (res.ok) {
+          const data = await res.json();
+          setUcitsCache(data.results || []);
+        }
+      } catch (e) {
+        console.error('UCITS cache load error', e);
+      }
+    };
+    loadUcits();
+  }, [ucitsCache.length]);
+
   const handleSubmit = async () => {
+    const errs = {};
+    const qtyVal = parseInt(formData.quantity, 10);
+    if (!formData.symbol || !selectedInfo.name) errs.symbol = true;
+    if (!formData.quantity || isNaN(qtyVal) || qtyVal <= 0) errs.quantity = true;
+    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) errs.price = true;
+    if (Object.keys(errs).length > 0) {
+      setTouched({...touched, ...errs});
+      return;
+    }
     try {
       const payload = {
         portfolio_id: portfolio.id,
@@ -718,7 +753,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
         name: selectedInfo.name,
         exchange: selectedInfo.exchange,
         currency: selectedInfo.currency,
-        quantity: parseFloat(formData.quantity),
+        quantity: qtyVal,
         price: parseFloat(formData.price),
         commission: parseFloat(formData.commission || 0),
         instrument_type: formData.instrument_type,
@@ -741,11 +776,12 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       if (res.ok) {
         setShowForm(false);
         setFormData({
-          symbol: '', quantity: '', price: '', commission: '0', instrument_type: 'stock', order_type: 'buy',
+          symbol: '', quantity: '', price: '', commission: '0', instrument_type: 'etf', order_type: 'buy',
           date: new Date().toISOString().split('T')[0]
         });
         setSelectedInfo({ name: '', exchange: '', currency: '' });
         setLastChosenSymbol('');
+        setTouched({});
         setEditingOrderId(null);
         fetchOrders();
         refreshPortfolios();
@@ -770,6 +806,22 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
         setSelectedInfo({ name: '', exchange: '', currency: '' });
         return;
       }
+      // local search for etf using ucits cache
+      if (formData.instrument_type === 'etf') {
+        const q = formData.symbol.toUpperCase();
+        const filtered = ucitsCache
+          .filter(item => {
+            const ticker = (item.symbol || '').toUpperCase();
+            const isin = (item.isin || '').toUpperCase();
+            const tickerMatch = ticker.startsWith(q);
+            const isinMatch = q.length === 12 && isin === q;
+            return tickerMatch || isinMatch;
+          })
+          .slice(0, 25);
+        setSymbolOptions(filtered);
+        return;
+      }
+
       setSymbolLoading(true);
       try {
         const res = await fetch(
@@ -778,7 +830,6 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
         );
         if (res.ok) {
           const data = await res.json();
-          console.log('FMP search results', data);
           setSymbolOptions(data.results || []);
         }
       } catch (err) {
@@ -794,7 +845,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       controller.abort();
       clearTimeout(timer);
     };
-  }, [formData.symbol, formData.instrument_type, skipSearch]);
+  }, [formData.symbol, formData.instrument_type, skipSearch, ucitsCache]);
 
   return (
     <div>
@@ -820,7 +871,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
             if (!showForm) {
               setEditingOrderId(null);
               setFormData({
-                symbol: '', quantity: '', price: '', commission: '0', instrument_type: 'stock', order_type: 'buy',
+                symbol: '', quantity: '', price: '', commission: '0', instrument_type: 'etf', order_type: 'buy',
                 date: new Date().toISOString().split('T')[0]
               });
               setSelectedInfo({ name: '', exchange: '', currency: '' });
@@ -839,7 +890,9 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
           <h2 className="text-xl font-bold mb-4">{editingOrderId ? 'Edit Order' : 'Create Order'}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Symbol</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                {formData.instrument_type === 'etf' ? 'Ticker or ISIN' : 'Ticker or Name'}
+              </label>
               <input
                 type="text"
                 value={formData.symbol}
@@ -847,7 +900,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                   setFormData({...formData, symbol: e.target.value.toUpperCase()});
                   setSelectedInfo({ name: '', exchange: '', currency: '' });
                 }}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-4 py-2 border ${touched.symbol && (!formData.symbol || !selectedInfo.name) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                 placeholder="AAPL"
               />
               {symbolLoading && <p className="text-xs text-slate-500 mt-1">Searching...</p>}
@@ -887,7 +940,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     type="text"
                     value={selectedInfo.name}
                     readOnly
-                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm"
+                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm cursor-default select-none pointer-events-none"
                     placeholder="—"
                   />
                 </div>
@@ -897,7 +950,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     type="text"
                     value={selectedInfo.exchange}
                     readOnly
-                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm"
+                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm cursor-default select-none pointer-events-none"
                     placeholder="—"
                   />
                 </div>
@@ -907,7 +960,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     type="text"
                     value={selectedInfo.currency}
                     readOnly
-                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm"
+                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm cursor-default select-none pointer-events-none"
                     placeholder="—"
                   />
                 </div>
@@ -943,31 +996,40 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
               <label className="block text-sm font-medium text-slate-700 mb-2">Quantity</label>
               <input
                 type="number"
-                step="0.01"
+                min="1"
+                step="1"
                 value={formData.quantity}
                 onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-4 py-2 border ${touched.quantity && (!formData.quantity || isNaN(parseInt(formData.quantity, 10)) || parseInt(formData.quantity, 10) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Price</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                {currencySymbol && <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">{currencySymbol}</span>}
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  className={`w-full ${currencySymbol ? 'pl-8 pr-3' : 'px-4'} py-2 border ${touched.price && (!formData.price || parseFloat(formData.price) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  placeholder=""
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Commission</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.commission}
-                onChange={(e) => setFormData({...formData, commission: e.target.value})}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                {currencySymbol && <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">{currencySymbol}</span>}
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.commission}
+                  onChange={(e) => setFormData({...formData, commission: e.target.value})}
+                  className={`w-full ${currencySymbol ? 'pl-8 pr-3' : 'px-4'} py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  placeholder="0"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
@@ -1023,14 +1085,14 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                   </span>
                 </td>
                 <td className="py-4 px-6 text-right text-slate-700">{order.quantity}</td>
-                <td className="py-4 px-6 text-right text-slate-700">${order.price.toFixed(2)}</td>
-                <td className="py-4 px-6 text-right text-slate-700">${(order.commission || 0).toFixed(2)}</td>
+                <td className="py-4 px-6 text-right text-slate-700">{formatCurrencyValue(order.price, order.currency)}</td>
+                <td className="py-4 px-6 text-right text-slate-700">{formatCurrencyValue(order.commission || 0, order.currency)}</td>
                 <td className="py-4 px-6 text-right font-semibold text-slate-900">
                   {(() => {
                     const net = order.order_type === 'buy'
                       ? order.quantity * order.price + (order.commission || 0)
                       : order.quantity * order.price - (order.commission || 0);
-                    return `$${net.toFixed(2)}`;
+                    return formatCurrencyValue(net, order.currency);
                   })()}
                 </td>
                 <td className="py-4 px-6 text-right">

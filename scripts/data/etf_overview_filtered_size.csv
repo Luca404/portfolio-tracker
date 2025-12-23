@@ -1,0 +1,500 @@
+symbol,isin,name,currency,size,domicile,exchange,instrument,ter,ticker,wkn
+IE00B5BMR087,IE00B5BMR087,iShares Core S&P 500 UCITS ETF USD (Acc),USD,113692.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,SXR8,A0YEDG
+IE00B4L5Y983,IE00B4L5Y983,iShares Core MSCI World UCITS ETF USD (Acc),USD,108234.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,EUNL,A0RPWH
+IE00B3XXRP09,IE00B3XXRP09,Vanguard S&P 500 UCITS ETF (USD) Distributing,USD,42311.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,VUSA,A1JX53
+IE00B3YCGJ38,IE00B3YCGJ38,Invesco S&P 500 UCITS ETF Acc,USD,30622.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.05,P500,A1CYW7
+IE00B4ND3602,IE00B4ND3602,iShares Physical Gold ETC,USD,28701.0,Ireland,"gettex, XETRA, London, Stuttgart",ETC,0.12,PPFB,A1KWPQ
+IE00BKM4GZ66,IE00BKM4GZ66,iShares Core MSCI Emerging Markets IMI UCITS ETF (Acc),USD,26571.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.18,IS3N,A111X9
+IE00BK5BQT80,IE00BK5BQT80,Vanguard FTSE All-World UCITS ETF (USD) Accumulating,USD,26303.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.19,VWCE,A2PKXG
+IE00BFMXXD54,IE00BFMXXD54,Vanguard S&P 500 UCITS ETF (USD) Accumulating,USD,25434.0,Ireland,"gettex, XETRA, London, Borsa Italiana",ETF,0.07,VUAA,A2PFN2
+IE00B579F325,IE00B579F325,Invesco Physical Gold A,USD,24301.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETC,0.12,8PSG,A1AA5X
+IE00B6R52259,IE00B6R52259,iShares MSCI ACWI UCITS ETF USD (Acc),USD,21059.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,IUSQ,A1JMDF
+DE000A0S9GB0,DE000A0S9GB0,Xetra-Gold,EUR,20612.0,Germany,"gettex, XETRA, Stuttgart",ETC,0.0,4GLD,A0S9GB
+IE00B53SZB19,IE00B53SZB19,iShares Nasdaq 100 UCITS ETF (Acc),USD,18687.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.3,SXRV,A0YEDL
+IE00B3RBWM25,IE00B3RBWM25,Vanguard FTSE All-World UCITS ETF (USD) Distributing,USD,18496.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.19,VGWL,A1JX52
+LU0290358497,LU0290358497,Xtrackers II EUR Overnight Rate Swap UCITS ETF 1C,EUR,18343.0,Luxembourg,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.1,XEON,DBX0AN
+IE0031442068,IE0031442068,iShares Core S&P 500 UCITS ETF USD (Dist),USD,17290.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,IUSA,622391
+IE00BJ0KDQ92,IE00BJ0KDQ92,Xtrackers MSCI World UCITS ETF 1C,USD,15945.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,XDWD,A1XB5U
+IE0005042456,IE0005042456,iShares Core FTSE 100 UCITS ETF GBP (Dist),GBP,15745.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,IUSZ,552752
+IE00BGSF1X88,IE00BGSF1X88,iShares USD Treasury Bond 0-1yr UCITS ETF (Acc),USD,15239.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.07,IBC1,A2PBNP
+IE00B6YX5C33,IE00B6YX5C33,SPDR S&P 500 UCITS ETF (Dist),USD,15146.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.03,SPY5,A1JULM
+LU0908500753,LU0908500753,Amundi Core Stoxx Europe 600 UCITS ETF Acc,EUR,14677.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.07,LYP6,LYX0Q0
+IE00BFNM3G45,IE00BFNM3G45,iShares MSCI USA Screened UCITS ETF USD (Acc),USD,13789.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.07,SGAS,A2N6TB
+IE00B4K48X80,IE00B4K48X80,iShares Core MSCI Europe UCITS ETF EUR (Acc),EUR,13777.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,EUNK,A0RPWG
+IE00BFY0GT14,IE00BFY0GT14,SPDR MSCI World UCITS ETF,USD,13297.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,SPPW,A2N6CW
+IE00BHZPJ890,IE00BHZPJ890,iShares MSCI USA ESG Enhanced CTB UCITS ETF USD (Dist),USD,13265.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.07,OM3L,A2PDNU
+IE00B3WJKG14,IE00B3WJKG14,iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc),USD,12557.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.15,QDVE,A142N1
+LU1135865084,LU1135865084,Amundi Core S&P 500 Swap UCITS ETF Acc,EUR,12391.0,Luxembourg,"gettex, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,LYP7,LYX0Q9
+IE00B4X9L533,IE00B4X9L533,HSBC MSCI World UCITS ETF USD,USD,12372.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,H4ZJ,A1C9KK
+IE000BI8OT95,IE000BI8OT95,Amundi Core MSCI World UCITS ETF Acc,USD,11849.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,MWRE,ETF146
+IE000XZSV718,IE000XZSV718,SPDR S&P 500 UCITS ETF (Acc),USD,11367.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.03,SPYL,A3EUC1
+IE00B3F81R35,IE00B3F81R35,iShares Core EUR Corporate Bond UCITS ETF (Dist),EUR,10255.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.09,EUN5,A0RGEP
+IE00B1YZSC51,IE00B1YZSC51,iShares Core MSCI Europe UCITS ETF EUR (Dist),EUR,10254.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,IQQY,A0MZWQ
+IE00BMTX1Y45,IE00BMTX1Y45,iShares S&P 500 Swap UCITS ETF USD (Acc),USD,10071.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.05,I500,A2QAJB
+FR0013416716,FR0013416716,Amundi Physical Gold ETC (C),USD,9737.0,Ireland,"gettex, XETRA, London, Euronext Paris, Borsa Italiana, Euronext Amsterdam",ETC,0.12,GLDA,A2UJK0
+IE0032077012,IE0032077012,Invesco EQQQ Nasdaq-100 UCITS ETF,USD,9511.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,EQQQ,801498
+IE00BJ0KDR00,IE00BJ0KDR00,Xtrackers MSCI USA UCITS ETF 1C,USD,9152.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,XD9U,A1XB5V
+IE00BF4G7076,IE00BF4G7076,JPMorgan US Research Enhanced Index Equity (ESG) UCITS ETF USD (acc),USD,8948.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,JREU,A2DWM7
+DE0002635307,DE0002635307,iShares STOXX Europe 600 UCITS ETF (DE),EUR,8575.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,EXSA,263530
+DE0005933931,DE0005933931,iShares Core DAX® UCITS ETF (DE) EUR (Acc),EUR,8545.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.16,EXS1,593393
+DE0005933956,DE0005933956,iShares EURO STOXX 50 UCITS ETF (DE),EUR,8406.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange",ETF,0.09,EXW1,593395
+IE00BFMNPS42,IE00BFMNPS42,Xtrackers MSCI USA ESG UCITS ETF 1C,USD,8137.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,XZMU,A2JHSH
+IE00BTJRMP35,IE00BTJRMP35,Xtrackers MSCI Emerging Markets UCITS ETF 1C,USD,8126.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,XMME,A12GVR
+IE00B3ZW0K18,IE00B3ZW0K18,iShares S&P 500 EUR Hedged UCITS ETF (Acc),EUR,7921.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,IBCF,A1C5E9
+FR0010315770,FR0010315770,Amundi MSCI World Swap II UCITS ETF Dist,EUR,7876.0,France,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,LYYA,LYX0AG
+IE00BYML9W36,IE00BYML9W36,Invesco S&P 500 UCITS ETF Dist,USD,7637.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,D500,A1405W
+IE00BLNMYC90,IE00BLNMYC90,Xtrackers S&P 500 Equal Weight UCITS ETF 1C,USD,7400.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,XDEW,A1106A
+IE00B0M62Q58,IE00B0M62Q58,iShares MSCI World UCITS ETF (Dist),USD,7334.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.5,IQQW,A0HGV0
+IE00BHZPJ908,IE00BHZPJ908,iShares MSCI USA ESG Enhanced CTB UCITS ETF USD (Acc),USD,7144.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,EDMU,A2PCB3
+IE00B44Z5B48,IE00B44Z5B48,SPDR MSCI All Country World UCITS ETF (Acc),USD,6982.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,SPYY,A1JJTC
+IE00B5KQNG97,IE00B5KQNG97,HSBC S&P 500 UCITS ETF USD,USD,6955.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,H4ZF,A1C19C
+LU0274209237,LU0274209237,Xtrackers MSCI Europe UCITS ETF 1C,USD,6860.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,XMEU,DBX1ME
+IE00B53L3W79,IE00B53L3W79,iShares Core EURO STOXX 50 UCITS ETF EUR (Acc),EUR,6805.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,SXRT,A0YEDJ
+LU0274211480,LU0274211480,Xtrackers DAX UCITS ETF 1C,EUR,6584.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,DBXD,DBX1DA
+JE00B1VS3770,JE00B1VS3770,WisdomTree Physical Gold,USD,6502.0,Jersey,"gettex, XETRA, London, Euronext Paris, Borsa Italiana, Euronext Amsterdam",ETC,0.39,VZLD,A0N6XK
+IE00BHZPJ239,IE00BHZPJ239,iShares MSCI EM ESG Enhanced CTB UCITS ETF USD (Acc),USD,6418.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,EDM2,A2PCB0
+IE00B8GKDB10,IE00B8GKDB10,Vanguard FTSE All-World High Dividend Yield UCITS ETF Distributing,USD,6363.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.29,VGWD,A1T8FV
+DE000A2T0VU5,DE000A2T0VU5,Xtrackers IE Physical Gold ETC Securities,USD,6338.0,Ireland,"gettex, XETRA, London, Borsa Italiana",ETC,0.11,XGDU,A2T0VU
+IE00B60SX170,IE00B60SX170,Invesco MSCI USA UCITS ETF,USD,6299.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,SC0H,A0RGCQ
+IE00BYX2JD69,IE00BYX2JD69,iShares MSCI World SRI UCITS ETF EUR (Acc),EUR,6188.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,2B7K,A2DVB9
+IE000YYE6WK5,IE000YYE6WK5,VanEck Defense UCITS ETF A,USD,6183.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.55,DFEN,A3D9M1
+IE00BF4RFH31,IE00BF4RFH31,iShares MSCI World Small Cap UCITS ETF,USD,6181.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.35,IUSN,A2DWBY
+IE00B3VWN393,IE00B3VWN393,iShares USD Treasury Bond 3-7yr UCITS ETF (Acc),USD,6169.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,SXRL,A0X8SH
+LU0380865021,LU0380865021,Xtrackers EURO STOXX 50 UCITS ETF 1C,EUR,6163.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,XESC,DBX1ET
+IE00B66F4759,IE00B66F4759,iShares EUR High Yield Corporate Bond UCITS ETF EUR (Dist),EUR,6104.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.5,EUNW,A1C3NE
+IE00B0M63177,IE00B0M63177,iShares MSCI EM UCITS ETF (Dist),USD,6067.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.18,IQQE,A0HGWC
+IE00B60SX394,IE00B60SX394,Invesco MSCI World UCITS ETF Acc,USD,5953.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.19,SC0J,A0RGCS
+IE00B4L5YX21,IE00B4L5YX21,iShares Core MSCI Japan IMI UCITS ETF,USD,5898.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,EUNN,A0RPWL
+IE00BYXPSP02,IE00BYXPSP02,iShares USD Treasury Bond 1-3yr UCITS ETF (Acc),USD,5845.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.07,IS0F,A2DN9Z
+IE00BZ02LR44,IE00BZ02LR44,Xtrackers MSCI World ESG UCITS ETF 1C,USD,5801.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,XZW0,A2AQST
+IE00BGV5VN51,IE00BGV5VN51,Xtrackers Artificial Intelligence & Big Data UCITS ETF 1C 1C,USD,5794.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,XAIX,A2N6LC
+LU2572257124,LU2572257124,Amundi Core MSCI World Swap UCITS ETF Dist,USD,5731.0,Luxembourg,"gettex, XETRA, London",ETF,0.2,AHYQ,ETF018
+IE00B53QG562,IE00B53QG562,iShares Core MSCI EMU UCITS ETF EUR (Acc),EUR,5713.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,SXR7,A0YEDX
+LU1681043599,LU1681043599,Amundi MSCI World Swap UCITS ETF EUR Acc,EUR,5359.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.38,AMEW,A2H59Q
+LU0274211217,LU0274211217,Xtrackers EURO STOXX 50 UCITS ETF 1D,EUR,5326.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,XESX,DBX1EU
+IE00B4L5YC18,IE00B4L5YC18,iShares MSCI EM UCITS ETF (Acc),USD,5266.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.18,EUNM,A0RPWJ
+IE00BF4G6Y48,IE00BF4G6Y48,JPMorgan Global Research Enhanced Index Equity (ESG) UCITS ETF USD (acc),USD,5107.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,JREG,A2DWM6
+IE0008471009,IE0008471009,iShares Core EURO STOXX 50 UCITS ETF EUR (Dist),EUR,5052.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,EUN2,935927
+LU2009147757,LU2009147757,Xtrackers S&P 500 Swap UCITS ETF 1D,USD,5033.0,Luxembourg,"gettex, XETRA, London, Borsa Italiana",ETF,0.07,XSXD,DBX00S
+IE00B4WXJJ64,IE00B4WXJJ64,iShares Core Euro Government Bond UCITS ETF (Dist),EUR,4961.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,EUNH,A0RL83
+IE00BD4TXV59,IE00BD4TXV59,UBS Core MSCI World UCITS ETF USD acc,USD,4940.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.06,UETW,A2PK5J
+IE00BM67HT60,IE00BM67HT60,Xtrackers MSCI World Information Technology UCITS ETF 1C,USD,4931.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XDWT,A113FM
+LU1437018168,LU1437018168,Amundi Index Euro Corporate SRI UCITS ETF DR (C),EUR,4912.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Borsa Italiana",ETF,0.14,A4H8,A2ATY6
+IE00BGHQ0G80,IE00BGHQ0G80,Xtrackers MSCI AC World Screened UCITS ETF 1C,EUR,4837.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XMAW,A1W8SB
+LU0274208692,LU0274208692,Xtrackers MSCI World Swap UCITS ETF 1C,USD,4788.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.45,DBXW,DBX1MW
+IE00BYXYYP94,IE00BYXYYP94,iShares USD Short Duration Corporate Bond UCITS ETF (Acc),USD,4743.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.2,IS09,A2DN9V
+DE000A0F5UF5,DE000A0F5UF5,iShares Nasdaq 100 UCITS ETF (DE),USD,4723.0,Germany,"gettex, XETRA, Stuttgart",ETF,0.3,EXXT,A0F5UF
+IE00BZCQB185,IE00BZCQB185,iShares MSCI India UCITS ETF USD (Acc),USD,4718.0,Ireland,"gettex, XETRA, London, Stuttgart, Borsa Italiana, Euronext Amsterdam",ETF,0.65,QDV5,A2AFCY
+IE00BK5BQV03,IE00BK5BQV03,Vanguard FTSE Developed World UCITS ETF Acc,USD,4708.0,Ireland,"gettex, XETRA, London, Borsa Italiana",ETF,0.12,VGVF,A2PLS9
+LU0478205379,LU0478205379,Xtrackers II EUR Corporate Bond UCITS ETF 1C,EUR,4702.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,D5BG,DBX0EY
+IE00B441G979,IE00B441G979,iShares MSCI World EUR Hedged UCITS ETF (Acc),EUR,4700.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.55,IBCH,A1C5E7
+IE00B810Q511,IE00B810Q511,Vanguard FTSE 100 UCITS ETF (GBP) Distributing,GBP,4679.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,VUKE,A1JX54
+IE00BFNM3P36,IE00BFNM3P36,iShares MSCI EM IMI Screened UCITS ETF USD (Acc),USD,4652.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.18,AYEM,A2N6TH
+LU1829221024,LU1829221024,Amundi Core Nasdaq-100 Swap UCITS ETF Acc,EUR,4572.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.22,LYMS,LYX00F
+NL0011683594,NL0011683594,VanEck Morningstar Developed Markets Dividend Leaders UCITS ETF,EUR,4538.0,Netherlands,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam, Euronext Brussels",ETF,0.38,VDIV,A2JAHJ
+IE00BFNM3D14,IE00BFNM3D14,iShares MSCI Europe Screened UCITS ETF EUR (Acc),EUR,4531.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.12,SLMC,A2N48D
+JE00B588CD74,JE00B588CD74,WisdomTree Physical Swiss Gold,USD,4495.0,Jersey,"gettex, XETRA, London, Borsa Italiana, Euronext Amsterdam",ETC,0.15,GZUR,A1DCTK
+IE00BFNM3J75,IE00BFNM3J75,iShares MSCI World Screened UCITS ETF USD (Acc),USD,4439.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,SNAW,A2N6TD
+IE00BHZPJ569,IE00BHZPJ569,iShares MSCI World ESG Enhanced CTB UCITS ETF USD (Acc),USD,4412.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,EDMW,A2PCB4
+IE00BK1PV551,IE00BK1PV551,Xtrackers MSCI World UCITS ETF 1D,USD,4398.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.12,XDWL,A1XEY2
+IE0002H3JQ66,IE0002H3JQ66,SPDR Bloomberg 1-5 Year U.S. Corporate Bond UCITS ETF USD (Acc),USD,4386.0,Ireland,"gettex, XETRA, London",ETF,0.08,SPP5,A41AT2
+IE00B5L8K969,IE00B5L8K969,iShares MSCI EM Asia UCITS ETF (Acc),USD,4380.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,CEBL,A1C1H5
+LU1190417599,LU1190417599,Amundi Smart Overnight Return UCITS ETF Acc,EUR,4350.0,Luxembourg,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.1,LYOR,LYX0WM
+IE00BH4GPZ28,IE00BH4GPZ28,SPDR S&P 500 Leaders UCITS ETF USD Unhedged (Acc),USD,4295.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.03,SPPY,A2PSPE
+IE00BYZTVT56,IE00BYZTVT56,iShares EUR Corporate Bond ESG SRI UCITS ETF (Dist),EUR,4246.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,OM3F,A142NT
+DE000ETFL508,DE000ETFL508,Deka MSCI World UCITS ETF Distribution,EUR,4233.0,Germany,"gettex, XETRA, Stuttgart",ETF,0.3,ELFW,ETFL50
+IE00B3VWN518,IE00B3VWN518,iShares USD Treasury Bond 7-10yr UCITS ETF (Acc),USD,4197.0,Ireland,"XETRA, London, SIX Swiss Exchange",ETF,0.07,SXRM,A0X8SJ
+IE00B945VV12,IE00B945VV12,Vanguard FTSE Developed Europe UCITS ETF Distributing,EUR,4155.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,VGEU,A1T8FS
+LU0274210672,LU0274210672,Xtrackers MSCI USA Swap UCITS ETF 1C,USD,4137.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,XMUS,DBX1MU
+IE00BHZPJ676,IE00BHZPJ676,iShares MSCI Europe ESG Enhanced CTB UCITS ETF EUR (Dist),EUR,4125.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.12,EMNU,A2PDNW
+LU1781541252,LU1781541252,Amundi Core MSCI Japan UCITS ETF Acc,JPY,4104.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana, Euronext Amsterdam",ETF,0.12,LCUJ,LYX0YC
+IE00BP3QZB59,IE00BP3QZB59,iShares Edge MSCI World Value Factor UCITS ETF,USD,4059.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,IS3S,A12ATG
+LU0490618542,LU0490618542,Xtrackers S&P 500 Swap UCITS ETF 1C,USD,4016.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,D5BM,DBX0F2
+IE00B6R52036,IE00B6R52036,iShares Gold Producers UCITS ETF,USD,4014.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.55,IS0E,A1JKQJ
+LU1437015735,LU1437015735,Amundi Core MSCI Europe UCITS ETF Acc,EUR,3959.0,Luxembourg,"gettex, London, Euronext Paris, Borsa Italiana, Euronext Amsterdam",ETF,0.12,A4HZ,A2ATYJ
+LU0629459743,LU0629459743,UBS MSCI World Socially Responsible UCITS ETF USD dis,USD,3921.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.22,UIMM,A1JA1R
+LU0950674175,LU0950674175,UBS Core MSCI EM UCITS ETF USD acc,USD,3906.0,Luxembourg,"SIX Swiss Exchange, Borsa Italiana",ETF,0.15,EMMUSC,A1W3CN
+IE00BJ38QD84,IE00BJ38QD84,SPDR Russell 2000 US Small Cap UCITS ETF,USD,3902.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,ZPRR,A1XFN1
+IE00B3YLTY66,IE00B3YLTY66,SPDR MSCI All Country World Investable Market UCITS ETF (Acc),USD,3893.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.17,SPYI,A1JJTD
+IE00B4L60045,IE00B4L60045,iShares EUR Corporate Bond 1-5yr UCITS ETF EUR (Dist),EUR,3866.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,EUNT,A0RPWQ
+IE00B5M4WH52,IE00B5M4WH52,iShares J.P. Morgan EM Local Government Bond UCITS ETF,USD,3834.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.5,IUSP,A1JADV
+IE00B2NPKV68,IE00B2NPKV68,iShares J.P. Morgan USD Emerging Markets Bond UCITS ETF (Dist),USD,3782.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.45,IUS7,A0NECU
+IE0006WW1TQ4,IE0006WW1TQ4,Xtrackers MSCI World ex USA UCITS ETF 1C,USD,3781.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,EXUS,DBX0VH
+GB00B00FHZ82,GB00B00FHZ82,Gold Bullion Securities,USD,3773.0,Jersey,"gettex, XETRA, London, Euronext Paris, Borsa Italiana",ETC,0.4,GG9B,A0CANA
+IE000KXCEXR3,IE000KXCEXR3,Amundi S&P 500 Screened UCITS ETF Acc,EUR,3765.0,Ireland,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,F500,ETF093
+IE00B4YBJ215,IE00B4YBJ215,SPDR S&P 400 U.S. Mid Cap UCITS ETF USD Unhedged (Acc),USD,3765.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,SPY4,A1JSHV
+LU1829219390,LU1829219390,Amundi Euro Stoxx Banks UCITS ETF Acc,EUR,3751.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.3,LYBK,LYX0Z5
+FR0007054358,FR0007054358,Amundi EURO STOXX 50 II UCITS ETF Acc,EUR,3726.0,France,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,LYSX,798328
+IE00BYXYYM63,IE00BYXYYM63,iShares US Aggregate Bond UCITS ETF (Acc),USD,3666.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.25,IS03,A2DN9W
+IE00BP3QZ601,IE00BP3QZ601,iShares Edge MSCI World Quality Factor UCITS ETF (Acc),USD,3650.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,IS3Q,A12ATE
+LU0274209740,LU0274209740,Xtrackers MSCI Japan UCITS ETF 1C,USD,3648.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,DBXJ,DBX1MJ
+IE00BYXYYJ35,IE00BYXYYJ35,iShares USD Corporate Bond UCITS ETF (Acc),USD,3646.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.2,IS01,A2DN9X
+LU0496786657,LU0496786657,Amundi Core S&P 500 Swap UCITS ETF USD Dist,USD,3605.0,Luxembourg,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.05,6TVM,LYX0FZ
+IE00BJ5JPG56,IE00BJ5JPG56,iShares MSCI China UCITS ETF USD (Acc),USD,3599.0,Ireland,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.28,ICGA,A2PGQN
+DE000EWG2LD7,DE000EWG2LD7,EUWAX Gold II,EUR,3580.0,Germany,"gettex, Stuttgart",ETC,0.0,EWG2,EWG2LD
+IE00BCRY6557,IE00BCRY6557,iShares EUR Ultrashort Bond UCITS ETF EUR (Dist),EUR,3578.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.09,IS3M,A1W375
+IE00B4NCWG09,IE00B4NCWG09,iShares Physical Silver ETC,USD,3541.0,Ireland,"gettex, London, Stuttgart",ETC,0.2,PPFD,A1KWPR
+DE000A0F5UH1,DE000A0F5UH1,iShares STOXX Global Select Dividend 100 UCITS ETF (DE),EUR,3500.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange",ETF,0.46,ISPA,A0F5UH
+IE00B1FZSB30,IE00B1FZSB30,iShares Core UK Gilts UCITS ETF,GBP,3481.0,Ireland,"gettex, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,2B7M,A0LGP9
+IE00BKX55T58,IE00BKX55T58,Vanguard FTSE Developed World UCITS ETF Distributing,USD,3471.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,VGVE,A12CX1
+FR0007052782,FR0007052782,Amundi CAC 40 UCITS ETF Dist,EUR,3399.0,France,"gettex, London, Euronext Paris",ETF,0.25,LYY,626678
+DE000A0F5UJ7,DE000A0F5UJ7,iShares STOXX Europe 600 Banks UCITS ETF (DE),EUR,3393.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange",ETF,0.47,EXV1,A0F5UJ
+LU0328475792,LU0328475792,Xtrackers STOXX Europe 600 UCITS ETF 1C,EUR,3383.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.2,XSX6,DBX1A7
+LU2573966905,LU2573966905,Amundi Core MSCI Emerging Markets Swap UCITS ETF Dist,USD,3357.0,Luxembourg,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,AE5A,ETF019
+LU0950668870,LU0950668870,UBS Core MSCI EMU UCITS ETF EUR acc,EUR,3357.0,Luxembourg,"SIX Swiss Exchange, Borsa Italiana",ETF,0.12,EMUAA,A1W3AA
+IE00BJK55C48,IE00BJK55C48,iShares EUR High Yield Corporate Bond ESG SRI UCITS ETF EUR (Acc),EUR,3329.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.25,AYE2,A2PNZM
+IE0032895942,IE0032895942,iShares USD Corporate Bond UCITS ETF (Dist),USD,3326.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,IBCD,911950
+LU0950671825,LU0950671825,UBS Core MSCI Japan UCITS ETF JPY acc,JPY,3310.0,Luxembourg,"SIX Swiss Exchange, Borsa Italiana",ETF,0.12,JPNA,A1W3BE
+FR0011550177,FR0011550177,BNP Paribas Easy S&P 500 UCITS ETF USD,USD,3303.0,France,"XETRA, London, Euronext Paris, SIX Swiss Exchange",ETF,0.14,ESAP,A1W4DQ
+IE00BF11F565,IE00BF11F565,iShares Core EUR Corporate Bond UCITS ETF (Acc),EUR,3299.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,IUSG,A2DUC3
+IE0002Y8CX98,IE0002Y8CX98,WisdomTree Europe Defence UCITS ETF EUR Unhedged Acc,EUR,3276.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.4,EUDF,A40Y9K
+LU2263803533,LU2263803533,Xtrackers MSCI World Swap UCITS ETF 1D,USD,3224.0,Luxembourg,"gettex, XETRA, London",ETF,0.19,XWD1,DBX0RG
+IE00BFZXGZ54,IE00BFZXGZ54,Invesco EQQQ Nasdaq-100 UCITS ETF Acc,USD,3219.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,EQQB,A2N6RV
+IE00BMG6Z448,IE00BMG6Z448,iShares MSCI EM ex-China UCITS ETF USD (Acc),USD,3213.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.18,84X0,A2QAFK
+IE00BKX55S42,IE00BKX55S42,Vanguard FTSE Developed Europe ex UK UCITS ETF (EUR) Distributing,EUR,3212.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, Euronext Amsterdam",ETF,0.1,VERX,A12CXZ
+IE000MLMNYS0,IE000MLMNYS0,iShares S&P 500 Equal Weight UCITS ETF USD (Acc),USD,3200.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,O4J0,A3DN3E
+IE00B67B7N93,IE00B67B7N93,PIMCO US Dollar Short Maturity UCITS ETF Dist,USD,3187.0,Ireland,"gettex, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,PJSB,A1JE9L
+LU1437017350,LU1437017350,Amundi Core MSCI Emerging Markets UCITS ETF Acc,EUR,3123.0,Luxembourg,"gettex, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.18,10AF,A2ATYY
+IE00B53HP851,IE00B53HP851,iShares Core FTSE 100 UCITS ETF GBP (Acc),GBP,3107.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.07,SXRW,A0YEDM
+IE00BZ043R46,IE00BZ043R46,iShares Core Global Aggregate Bond UCITS ETF USD Hedged (Acc),USD,3095.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.1,QDVJ,A2DWBL
+IE00BH04GL39,IE00BH04GL39,Vanguard EUR Eurozone Government Bond UCITS ETF Accumulating,EUR,3095.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,VGEA,A2PA8D
+LU1681047236,LU1681047236,Amundi Core EURO STOXX 50 UCITS ETF EUR Acc,EUR,3083.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,V50A,A2H59L
+LU1681049018,LU1681049018,Amundi S&P 500 Swap UCITS ETF USD Acc,USD,3059.0,Luxembourg,"gettex, London, Euronext Paris, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.15,10AP,A2H575
+IE00BM67HK77,IE00BM67HK77,Xtrackers MSCI World Health Care UCITS ETF 1C,USD,3046.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XDWH,A113FD
+IE000Y77LGG9,IE000Y77LGG9,Amundi MSCI World SRI Climate Paris Aligned UCITS ETF Acc,EUR,3039.0,Ireland,"gettex, XETRA, Euronext Paris, Borsa Italiana, Euronext Amsterdam",ETF,0.18,XAMB,ETF143
+LU2573967036,LU2573967036,Amundi Core MSCI Emerging Markets Swap UCITS ETF Acc,USD,3023.0,Luxembourg,"gettex, London, Borsa Italiana",ETF,0.14,AE51,ETF028
+LU1681045370,LU1681045370,Amundi MSCI Emerging Markets Swap UCITS ETF EUR Acc,EUR,3023.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,AMEM,A2H58J
+LU1971906802,LU1971906802,UBS EURO STOXX 50 ESG UCITS ETF EUR dis,EUR,3016.0,Luxembourg,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.1,UET5,A2PGD1
+IE00BQQP9F84,IE00BQQP9F84,VanEck Gold Miners UCITS ETF,USD,2996.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.53,G2X,A12CCL
+IE0006IP4XZ8,IE0006IP4XZ8,Amundi MSCI USA ESG Broad Transition UCITS ETF Acc,EUR,2996.0,Ireland,"XETRA, Euronext Paris, SIX Swiss Exchange",ETF,0.07,WEB2,ETF058
+IE00BMC38736,IE00BMC38736,VanEck Semiconductor UCITS ETF,USD,2990.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,VVSM,A2QC5J
+JE00B1VS3333,JE00B1VS3333,WisdomTree Physical Silver,USD,2980.0,Jersey,"gettex, XETRA, London, Euronext Paris, Borsa Italiana, Euronext Amsterdam",ETC,0.49,VZLC,A0N6XJ
+IE00BD6FTQ80,IE00BD6FTQ80,Invesco Bloomberg Commodity UCITS ETF Acc,USD,2974.0,Ireland,"London, Borsa Italiana",ETF,0.19,CMOD,A2AUD2
+FR0011550185,FR0011550185,BNP Paribas Easy S&P 500 UCITS ETF EUR,EUR,2965.0,France,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,ESEE,A1W4DP
+LU1291099718,LU1291099718,BNP Paribas Easy MSCI Europe Min TE UCITS ETF,EUR,2963.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,EEUX,A2AL1V
+IE00B52VJ196,IE00B52VJ196,iShares MSCI Europe SRI UCITS ETF (Acc),EUR,2958.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,IUSK,A1H7ZS
+IE00BP3QZ825,IE00BP3QZ825,iShares Edge MSCI World Momentum Factor UCITS ETF (Acc),USD,2955.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,IS3R,A12ATF
+IE00BYZK4552,IE00BYZK4552,iShares Automation & Robotics UCITS ETF,USD,2954.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.4,2B76,A2ANH0
+IE00B52MJY50,IE00B52MJY50,iShares Core MSCI Pacific ex Japan UCITS ETF (Acc),USD,2882.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,SXR1,A0YEDR
+LU1681046261,LU1681046261,Amundi Euro Government tilted Green Bond UCITS ETF Acc,EUR,2864.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,CB3G,A2H57U
+IE00BYVJRP78,IE00BYVJRP78,iShares MSCI EM SRI UCITS ETF,USD,2842.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.25,QDVS,A2AFCZ
+IE00BDFGJ627,IE00BDFGJ627,iShares USD Floating Rate Bond UCITS ETF USD (Acc),USD,2836.0,Ireland,"gettex, London",ETF,0.1,QDV4,A2JE3Z
+IE00BL25JM42,IE00BL25JM42,Xtrackers MSCI World Value UCITS ETF 1C,USD,2835.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XDEV,A1103E
+IE00B6YX5D40,IE00B6YX5D40,SPDR S&P US Dividend Aristocrats UCITS ETF,USD,2835.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,SPYD,A1JKS0
+IE00B1FZS798,IE00B1FZS798,iShares USD Treasury Bond 7-10yr UCITS ETF (Dist),USD,2833.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,IUSM,A0LGP4
+IE00BJQRDM08,IE00BJQRDM08,Invesco MSCI USA Universal Screened UCITS ETF Acc,USD,2803.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,ESGU,A2PHLP
+LU0496786574,LU0496786574,Amundi Core S&P 500 Swap UCITS ETF EUR Dist,EUR,2798.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.05,LYPS,LYX0FS
+IE00BG36TC12,IE00BG36TC12,Xtrackers MSCI Japan ESG UCITS ETF 1C,USD,2785.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,XZMJ,A2JHSE
+DE000A0Q4R85,DE000A0Q4R85,iShares MSCI Brazil UCITS ETF (DE) USD (Acc),USD,2774.0,Germany,"XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.31,4BRZ,A0Q4R8
+IE00BLRPN388,IE00BLRPN388,Fidelity Emerging Markets Equity Research Enhanced UCITS ETF ACC-USD,USD,2770.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,FYER,A2P2QA
+IE00BZ163G84,IE00BZ163G84,Vanguard EUR Corporate Bond UCITS ETF (EUR) Distributing,EUR,2769.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,VECP,A143JK
+IE00BKS7L097,IE00BKS7L097,Invesco S&P 500 Scored & Screened UCITS ETF Acc,USD,2753.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,5ESG,A2PX8A
+IE000OULL4R4,IE000OULL4R4,UBS MSCI USA NSL UCITS ETF USD acc,USD,2738.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,CSY1,A40EWW
+DE000A0D8Q07,DE000A0D8Q07,iShares EURO STOXX UCITS ETF (DE),EUR,2731.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,EXSI,A0D8Q0
+LU2009202107,LU2009202107,Amundi MSCI Emerging Ex China UCITS ETF Acc,USD,2730.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,EMXC,LYX99G
+IE00B5SSQT16,IE00B5SSQT16,HSBC MSCI Emerging Markets UCITS ETF USD,USD,2729.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,H410,A1JCMZ
+IE00B52SFT06,IE00B52SFT06,iShares MSCI USA UCITS ETF (Acc),USD,2716.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,SXR4,A0YEDU
+FR0010510800,FR0010510800,Amundi EUR Overnight Return UCITS ETF Acc,EUR,2711.0,France,"gettex, XETRA, London, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.1,L8I3,LYX0B6
+LU2037748774,LU2037748774,Amundi Index Euro Corporate SRI 0-3 Y UCITS ETF DR (C),EUR,2705.0,Luxembourg,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.12,ECR3,A2PQEM
+IE00BF4G7183,IE00BF4G7183,JPMorgan Europe Research Enhanced Index Equity (ESG) UCITS ETF EUR (acc),EUR,2697.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.23,JREE,A2DWM4
+IE00BRKWGL70,IE00BRKWGL70,Invesco S&P 500 EUR Hedged UCITS ETF,EUR,2668.0,Ireland,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,E500,A12DYR
+LU2581375073,LU2581375073,Xtrackers MSCI USA Swap UCITS ETF 1D,USD,2635.0,Luxembourg,"gettex, XETRA, London",ETF,0.07,XUSW,DBX0TQ
+IE0009HF1MK9,IE0009HF1MK9,Amundi Prime All Country World UCITS ETF Dist,USD,2634.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.07,WEBG,ETF150
+LU0322253906,LU0322253906,Xtrackers MSCI Europe Small Cap UCITS ETF 1C 1C,USD,2624.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.3,XXSC,DBX1AU
+IE00B3VVMM84,IE00B3VVMM84,Vanguard FTSE Emerging Markets UCITS ETF (USD) Distributing,USD,2618.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.17,VFEM,A1JX51
+IE00BGYWFK87,IE00BGYWFK87,Vanguard USD Corporate Bond UCITS ETF Accumulating,USD,2606.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,VUCE,A2PCCH
+IE00BYVJRR92,IE00BYVJRR92,iShares MSCI USA SRI UCITS ETF USD (Acc),USD,2568.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,QDVR,A2AFC0
+IE00BHZPJ015,IE00BHZPJ015,iShares MSCI EMU ESG Enhanced CTB UCITS ETF EUR (Acc),EUR,2557.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,EDM4,A2PCB1
+IE000FSN19U2,IE000FSN19U2,Amundi Core MSCI USA UCITS ETF Acc,USD,2554.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.03,WEBH,ETF154
+LU2195226068,LU2195226068,Amundi S&P Eurozone Climate Paris Aligned UCITS ETF Acc,EUR,2549.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,ZPAB,LYX05H
+DE0006289382,DE0006289382,iShares Dow Jones Global Titans 50 UCITS ETF (DE) EUR (Dist),EUR,2544.0,Germany,"gettex, XETRA, Stuttgart",ETF,0.51,EXI2,628938
+IE00BM67HL84,IE00BM67HL84,Xtrackers MSCI World Financials UCITS ETF 1C,USD,2509.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XDWF,A113FE
+IE0002W8NB38,IE0002W8NB38,iShares MSCI USA Swap UCITS ETF USD (Acc),USD,2485.0,Ireland,"gettex, Euronext Paris, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.05,N810,A3DRMM
+JE00B7VG2M16,JE00B7VG2M16,WisdomTree Physical Gold - GBP Daily Hedged,GBP,2485.0,Jersey,London,ETC,0.12,GBSP,A2BGRJ
+LU0290356871,LU0290356871,Xtrackers Eurozone Government Bond 1-3 UCITS ETF 1C,EUR,2480.0,Luxembourg,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.15,DBXP,DBX0AD
+IE00BKX55R35,IE00BKX55R35,Vanguard FTSE North America UCITS ETF (USD) Distributing,USD,2461.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.08,VNRT,A12CXY
+IE00BFMXYP42,IE00BFMXYP42,Vanguard FTSE 100 UCITS ETF (GBP) Accumulating,GBP,2461.0,Ireland,"gettex, XETRA, London",ETF,0.09,VUKG,A2PFN4
+IE000OJ5TQP4,IE000OJ5TQP4,HANetf Future of Defence UCITS ETF,USD,2448.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.49,ASWC,A3EB9T
+IE000QQ8Z0D8,IE000QQ8Z0D8,Amundi MSCI USA ESG Broad Transition UCITS ETF Dist,EUR,2427.0,Ireland,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.07,LYYB,ETF059
+LU1681048804,LU1681048804,Amundi S&P 500 Swap UCITS ETF EUR Acc,EUR,2427.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,AUM5,A2H573
+IE00BYXYYL56,IE00BYXYYL56,iShares USD High Yield Corporate Bond UCITS ETF USD (Acc),USD,2401.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.5,IS00,A2DN9Y
+IE00BYYW2V44,IE00BYYW2V44,SPDR S&P 500 EUR Hedged UCITS ETF,EUR,2400.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,SPPE,A2AGXP
+IE00BGYWT403,IE00BGYWT403,Vanguard EUR Corporate Bond UCITS ETF Accumulating,EUR,2374.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,VECA,A2PA8G
+DE000A1E0HR8,DE000A1E0HR8,Xtrackers Physical Gold ETC (EUR),USD,2369.0,Jersey,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETC,0.25,XAD5,A1E0HR
+IE00BYPLS672,IE00BYPLS672,L&G Cyber Security UCITS ETF,USD,2357.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.69,USPY,A14WU5
+IE00BD1F4M44,IE00BD1F4M44,iShares Edge MSCI USA Value Factor UCITS ETF,USD,2357.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.2,QDVI,A2AP35
+IE000UZTA1X0,IE000UZTA1X0,Amundi S&P 500 Climate Paris Aligned UCITS ETF Dist,USD,2341.0,Ireland,"gettex, XETRA",ETF,0.07,WEBP,ETF136
+IE00B43HR379,IE00B43HR379,iShares S&P 500 Health Care Sector UCITS ETF (Acc),USD,2319.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.15,QDVG,A142NZ
+IE00B1FZS681,IE00B1FZS681,iShares Euro Government Bond 3-5yr UCITS ETF,EUR,2312.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,IBCN,A0LGP6
+IE00BYZTVV78,IE00BYZTVV78,iShares EUR Corporate Bond 0-3yr ESG SRI UCITS ETF EUR (Dist),EUR,2309.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,QDVL,A142NU
+LU1481202692,LU1481202692,BNP Paribas Easy JPM ESG EMU Government Bond IG UCITS ETF,EUR,2289.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,JBEM,A2DH5P
+LU0533033667,LU0533033667,Amundi MSCI World Information Technology UCITS ETF EUR Acc,EUR,2286.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.3,LYPG,LYX0GP
+LU1681042609,LU1681042609,Amundi MSCI Europe ESG Broad Transition UCITS ETF - EUR (C),EUR,2284.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,CEUG,A2H567
+DE0006289309,DE0006289309,iShares EURO STOXX Banks 30-15 UCITS ETF (DE),EUR,2267.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange",ETF,0.52,EXX1,628930
+IE00B95PGT31,IE00B95PGT31,Vanguard FTSE Japan UCITS ETF (USD) Distributing,USD,2262.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,VJPN,A1T8FU
+IE00B8FHGS14,IE00B8FHGS14,iShares Edge MSCI World Minimum Volatility UCITS ETF USD (Acc),USD,2250.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,IQQ0,A1J781
+IE00BDBRDM35,IE00BDBRDM35,iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc),EUR,2246.0,Ireland,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,EUNA,A2H6ZT
+LU0977261329,LU0977261329,UBS MSCI Switzerland 20/35 UCITS ETF CHF acc,CHF,2234.0,Luxembourg,"gettex, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,FRCF,A1W6DC
+IE00BLDGH553,IE00BLDGH553,iShares EUR Government Bond Climate UCITS ETF EUR (Acc),EUR,2232.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,SECA,A2P2A7
+LU1931974775,LU1931974775,Amundi Prime Japan UCITS ETF DR (D),JPY,2224.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.05,PR1J,A2PBLK
+IE00063GNWK1,IE00063GNWK1,UBS MSCI USA Selection UCITS ETF USD acc,USD,2200.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.1,CSY2,A40EWX
+IE00BYXYYN70,IE00BYXYYN70,iShares US Mortgage Backed Securities UCITS ETF (Acc),USD,2198.0,Ireland,"London, SIX Swiss Exchange",ETF,0.28,IMBA,A2DN9T
+IE00BL25JL35,IE00BL25JL35,Xtrackers MSCI World Quality UCITS ETF 1C 1C,USD,2198.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XDEQ,A1103D
+IE00B1XNHC34,IE00B1XNHC34,iShares Global Clean Energy Transition UCITS ETF USD (Dist),USD,2182.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.65,IQQH,A0MW0M
+IE00B1FZSC47,IE00B1FZSC47,iShares USD TIPS UCITS ETF USD (Acc),USD,2178.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,IUST,A0LGP8
+IE000RHYOR04,IE000RHYOR04,iShares EUR Ultrashort Bond UCITS ETF EUR (Acc),EUR,2170.0,Ireland,"gettex, XETRA",ETF,0.09,ERNX,A3DJQJ
+IE000COQKPO9,IE000COQKPO9,Invesco Nasdaq-100 ESG UCITS ETF Acc,USD,2152.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,N1ES,A3CZGT
+DE0005933923,DE0005933923,iShares MDAX UCITS ETF (DE),EUR,2128.0,Germany,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.51,EXS3,593392
+IE00BQN1K901,IE00BQN1K901,iShares Edge MSCI Europe Value Factor UCITS ETF,EUR,2124.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,CEMS,A12DPP
+IE00B9M6RS56,IE00B9M6RS56,iShares J.P. Morgan USD EM Bond EUR Hedged UCITS ETF (Dist),EUR,2119.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.5,IS3C,A1W0MQ
+LU0846194776,LU0846194776,Xtrackers MSCI EMU UCITS ETF 1D,EUR,2119.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,XD5E,DBX0GJ
+LU2008760592,LU2008760592,BNP Paribas Easy EUR Corporate Bond SRI PAB 1-3Y UCITS ETF,EUR,2117.0,Luxembourg,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,ASR3,A2PP8B
+LU1650487413,LU1650487413,Amundi Euro Government Bond 1-3Y UCITS ETF Acc,EUR,2111.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.15,LYQ2,LYX0XH
+IE000716YHJ7,IE000716YHJ7,Invesco FTSE All-World UCITS ETF Acc,USD,2108.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,FWIA,A3D7QX
+IE000U9J8HX9,IE000U9J8HX9,JPMorgan Nasdaq Equity Premium Income Active UCITS ETF USD (dist),USD,2107.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,JEQP,A40FFF
+IE00B4PY7Y77,IE00B4PY7Y77,iShares USD High Yield Corporate Bond UCITS ETF USD (Dist),USD,2107.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.5,IS0R,A1H5UN
+IE00B4JNQZ49,IE00B4JNQZ49,iShares S&P 500 Financials Sector UCITS ETF (Acc),USD,2096.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.15,QDVH,A142NY
+LU0950670850,LU0950670850,UBS MSCI United Kingdom UCITS ETF GBP acc,GBP,2086.0,Luxembourg,"London, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,UC64,A1W3AB
+IE00B3VTMJ91,IE00B3VTMJ91,iShares Euro Government Bond 1-3yr UCITS ETF (Acc),EUR,2072.0,Ireland,"gettex, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,SXRN,A0X8SK
+CH0226976816,CH0226976816,iShares Core CHF Corporate Bond ETF (CH) CHF (Dist),CHF,2070.0,Switzerland,SIX Swiss Exchange,ETF,0.15,CHCORP,A1W8RF
+IE00B14X4Q57,IE00B14X4Q57,iShares Euro Government Bond 1-3yr UCITS ETF (Dist),EUR,2057.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,IBCA,A0J205
+IE00BK5BQW10,IE00BK5BQW10,Vanguard FTSE North America UCITS ETF (USD) Accumulating,USD,2053.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.08,VNRA,A2PLBJ
+IE000O5FBC47,IE000O5FBC47,Amundi S&P 500 Climate Paris Aligned UCITS ETF Acc,USD,2040.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.07,ZPA5,ETF137
+IE000LAP5Z18,IE000LAP5Z18,Amundi S&P 500 Equal Weight ESG UCITS ETF Acc,USD,2027.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,WELE,A3DH0B
+LU0484968812,LU0484968812,Xtrackers II EUR Corporate Bond SRI PAB UCITS ETF 1D,EUR,2023.0,Luxembourg,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.16,XB4F,DBX0E8
+IE0032523478,IE0032523478,iShares Euro Corporate Bond Large Cap UCITS ETF,EUR,2023.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.09,IBCS,778928
+IE00BLRPPV00,IE00BLRPPV00,Vanguard U.S. Treasury 0-1 Year Bond UCITS ETF (USD) Accumulating,USD,2022.0,Ireland,"gettex, XETRA, London, Borsa Italiana",ETF,0.05,VUCF,A2P66X
+IE00BK5BQX27,IE00BK5BQX27,Vanguard FTSE Developed Europe UCITS ETF (EUR) Accumulating,EUR,2019.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.1,VWCG,A2PLBK
+IE00BD4TXS21,IE00BD4TXS21,UBS Core MSCI USA UCITS ETF USD acc,USD,2016.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.06,4UBB,A2ARF7
+IE00BD9MMF62,IE00BD9MMF62,JPMorgan EUR Ultra-Short Income UCITS ETF - EUR (Acc),EUR,2013.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,JEST,A2JG3C
+IE00BMW42306,IE00BMW42306,iShares MSCI Europe Financials Sector UCITS ETF EUR (Acc),EUR,2005.0,Ireland,"gettex, XETRA, London",ETF,0.18,ESIF,A2QBZ4
+IE00B3F81409,IE00B3F81409,iShares Core Global Aggregate Bond UCITS ETF USD (Dist),USD,1999.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.1,EUNU,A0RGEQ
+IE00B14X4S71,IE00B14X4S71,iShares USD Treasury Bond 1-3yr UCITS ETF (Dist),USD,1999.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,IUSU,A0J202
+IE00BGYWSV06,IE00BGYWSV06,Vanguard USD Corporate 1-3 Year Bond UCITS ETF Accumulating,USD,1978.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,VAGY,A2PCCG
+LU0290355717,LU0290355717,Xtrackers II Eurozone Government Bond UCITS ETF 1C,EUR,1977.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.07,XGLE,DBX0AC
+DE000A1EK0G3,DE000A1EK0G3,Xtrackers Physical Gold EUR Hedged ETC,EUR,1969.0,Jersey,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETC,0.59,XAD1,A1EK0G
+IE00B5L65R35,IE00B5L65R35,iShares GBP Corporate Bond 0-5yr UCITS ETF,GBP,1965.0,Ireland,"London, SIX Swiss Exchange",ETF,0.2,IS15,A1C3NF
+IE00B1TXK627,IE00B1TXK627,iShares Global Water UCITS ETF,USD,1960.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.65,IQQQ,A0MM0S
+IE00BFM6TC58,IE00BFM6TC58,iShares USD Treasury Bond 20+yr UCITS ETF USD (Acc),USD,1957.0,Ireland,"gettex, London",ETF,0.07,SXRC,A2JKTZ
+LU1079841513,LU1079841513,Ossiam Shiller Barclays CAPE® US Sector Value TR UCITS ETF 1C (USD),USD,1938.0,Luxembourg,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.65,EUPC,A116QW
+LU2244387457,LU2244387457,BNP Paribas Easy JPM ESG EMU Government Bond IG 3-5Y UCITS ETF (Acc),EUR,1937.0,Luxembourg,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,ASRE,A2QMK2
+IE00B00FV011,IE00B00FV011,iShares Core GBP Corporate Bond UCITS ETF,GBP,1932.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.2,2B7Q,A0DKL3
+IE000NFR7C63,IE000NFR7C63,iShares MSCI China Tech UCITS ETF USD (Acc),USD,1926.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.45,CBUK,A3CU00
+IE00BYM11J43,IE00BYM11J43,UBS MSCI ACWI SF UCITS ETF hUSD acc,USD,1923.0,Ireland,SIX Swiss Exchange,ETF,0.21,ACWIU,A14VJS
+IE000HFXP0D2,IE000HFXP0D2,JPMorgan Global Research Enhanced Index Equity (ESG) UCITS ETF USD (dist),USD,1890.0,Ireland,"gettex, XETRA, London",ETF,0.25,JRGD,A3CYEG
+LU0480132876,LU0480132876,UBS Core MSCI EM UCITS ETF USD dis,USD,1877.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,UIMI,UB42AA
+IE00BG47K971,IE00BG47K971,Vanguard Global Aggregate Bond UCITS ETF GBP Hedged Accumulating,GBP,1871.0,Ireland,London,ETF,0.08,VAGS,A2N9W5
+IE00BDQZMX67,IE00BDQZMX67,UBS MSCI ACWI Universal UCITS ETF USD dis,USD,1859.0,Ireland,"SIX Swiss Exchange, Borsa Italiana",ETF,0.23,AWESG,A2PL57
+LU1829220216,LU1829220216,Amundi MSCI All Country World UCITS ETF EUR Acc,EUR,1851.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.45,LYY0,LYX00C
+IE00BQT3WG13,IE00BQT3WG13,iShares MSCI China A UCITS ETF,USD,1850.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.4,36BZ,A12DPT
+IE00B3B8Q275,IE00B3B8Q275,iShares Euro Covered Bond UCITS ETF,EUR,1839.0,Ireland,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,IUS6,A0Q41Y
+IE00BYXYYK40,IE00BYXYYK40,iShares J.P. Morgan USD Emerging Markets Bond UCITS ETF (Acc),USD,1807.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.45,IS02,A2DN9U
+LU1048313891,LU1048313891,UBS MSCI EM Socially Responsible UCITS ETF USD dis,USD,1798.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.24,UEF5,A110QD
+IE00B3VWM098,IE00B3VWM098,iShares MSCI USA Small Cap ESG Enhanced CTB UCITS ETF USD (Acc),USD,1790.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.43,SXRG,A0X8SB
+IE000D3BWBR2,IE000D3BWBR2,iShares S&P 500 Swap UCITS ETF USD (Dist),USD,1774.0,Ireland,"London, Euronext Amsterdam",ETF,0.05,I50D,A3DA9Y
+LU1650488494,LU1650488494,Amundi Euro Government Bond 3-5Y UCITS ETF Acc,EUR,1772.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.15,LYQ3,LYX0XJ
+IE00BJZ2DD79,IE00BJZ2DD79,Xtrackers Russell 2000 UCITS ETF 1C,USD,1771.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,XRS2,A1XEJT
+IE00BHZRR147,IE00BHZRR147,Franklin FTSE China UCITS ETF,USD,1753.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.19,FLXC,A2PB5V
+IE00B7J7TB45,IE00B7J7TB45,iShares Global Corporate Bond UCITS ETF,USD,1736.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,IS0X,A1J0YD
+IE00BKX55Q28,IE00BKX55Q28,Vanguard FTSE 250 UCITS ETF Distributing,GBP,1736.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.1,VMID,A12CX0
+IE00B2QWCY14,IE00B2QWCY14,iShares S&P SmallCap 600 UCITS ETF,USD,1735.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.3,IUS3,A0Q1YY
+IE00016PSX47,IE00016PSX47,Amundi MSCI World ESG Selection UCITS ETF Acc,USD,1727.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,MWOP,ETF049
+DE000ETFL011,DE000ETFL011,Deka DAX UCITS ETF,EUR,1716.0,Germany,"gettex, XETRA, Stuttgart",ETF,0.15,EL4A,ETFL01
+IE00BYM11H29,IE00BYM11H29,UBS MSCI ACWI SF UCITS ETF USD acc,USD,1696.0,Ireland,"SIX Swiss Exchange, Borsa Italiana",ETF,0.21,ACWIA,A14VJR
+IE00BHZPJ783,IE00BHZPJ783,iShares MSCI Europe ESG Enhanced CTB UCITS ETF EUR (Acc),EUR,1691.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,EDM6,A2PCB5
+JE00BN2CJ301,JE00BN2CJ301,WisdomTree Core Physical Gold,USD,1690.0,Jersey,"gettex, XETRA, London, Euronext Paris, Borsa Italiana",ETC,0.12,WGLD,A3GNFN
+IE00BG47KH54,IE00BG47KH54,Vanguard Global Aggregate Bond UCITS ETF EUR Hedged Accumulating,EUR,1673.0,Ireland,"gettex, XETRA, Borsa Italiana",ETF,0.08,VAGF,A2PJZJ
+IE00BYVQ9F29,IE00BYVQ9F29,iShares Nasdaq 100 UCITS ETF EUR Hedged Acc,EUR,1668.0,Ireland,"gettex, XETRA, Stuttgart",ETF,0.33,NQSE,A2N34W
+LU2178481649,LU2178481649,Xtrackers II EUR Corporate Bond Short Duration SRI PAB UCITS ETF 1C 1C,EUR,1659.0,Luxembourg,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.16,XZE5,A2P4XG
+IE00BHXMHL11,IE00BHXMHL11,UBS S&P 500 Scored & Screened UCITS ETF USD acc,USD,1656.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.1,4UBQ,A2PEVA
+LU0274221281,LU0274221281,Xtrackers Swiss Large Cap UCITS ETF 1D,CHF,1649.0,Luxembourg,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,XSMI,DBX1SM
+LU1834983477,LU1834983477,Amundi STOXX Europe 600 Banks UCITS ETF Acc,EUR,1649.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,LBNK,LYX01W
+IE00BGQYRS42,IE00BGQYRS42,Xtrackers MSCI USA Information Technology UCITS ETF 1D,USD,1644.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,XUTC,A1W9KD
+IE000U7L59A3,IE000U7L59A3,iShares MSCI USA ESG Enhanced CTB UCITS ETF EUR Hedged (Acc),EUR,1634.0,Ireland,"gettex, XETRA",ETF,0.1,CBUC,A3CR2Z
+DE000A0Q4RZ9,DE000A0Q4RZ9,iShares eb.rexx Government Germany 0-1yr UCITS ETF (DE),EUR,1623.0,Germany,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.13,EXVM,A0Q4RZ
+IE00B3DKXQ41,IE00B3DKXQ41,iShares EUR Aggregate Bond ESG SRI UCITS ETF EUR (Dist),EUR,1619.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.16,EUN4,A0RGEN
+IE00BG0J4957,IE00BG0J4957,iShares Broad USD High Yield Corporate Bond UCITS ETF USD (Dist),USD,1613.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.2,UDHY,A2JMGF
+IE00B3VSSL01,IE00B3VSSL01,Invesco US Technology Sector UCITS ETF,USD,1608.0,Ireland,"gettex, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,SML3,A0YHMJ
+IE00BNRQM384,IE00BNRQM384,Invesco Nasdaq-100 Swap UCITS ETF Acc,USD,1603.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.2,EQQX,A2QMHS
+IE00BYM11K57,IE00BYM11K57,UBS MSCI ACWI SF UCITS ETF hEUR acc,EUR,1603.0,Ireland,"SIX Swiss Exchange, Borsa Italiana",ETF,0.21,ACWIE,A14VJT
+LU1109943388,LU1109943388,Xtrackers EUR High Yield Corporate Bond UCITS ETF 1C,EUR,1575.0,Luxembourg,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.2,XHYA,DBX0PS
+IE00BGCSB447,IE00BGCSB447,iShares USD Ultrashort Bond UCITS ETF USD (Acc),USD,1574.0,Ireland,"gettex, London",ETF,0.09,OM3G,A2JNLJ
+LU1829218749,LU1829218749,Amundi Bloomberg Equal-weight Commodity ex-Agriculture UCITS ETF Acc,EUR,1570.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,LYTR,LYX0Z2
+IE000APK27S2,IE000APK27S2,iShares Global Aggregate Bond ESG ​SRI UCITS ETF EUR Hedged (Acc),EUR,1568.0,Ireland,"gettex, XETRA, Borsa Italiana",ETF,0.1,AEGE,A3CWP2
+LU1407892592,LU1407892592,Amundi Core UK Government Bond UCITS ETF Dist,GBP,1567.0,Luxembourg,"gettex, London, Euronext Paris",ETF,0.05,LYTG,LYX0VW
+IE00BMFKG444,IE00BMFKG444,Xtrackers Nasdaq 100 UCITS ETF 1C,USD,1567.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,XNAS,A2QJU3
+IE00B57X3V84,IE00B57X3V84,iShares Dow Jones Global Leaders Screened UCITS ETF USD (Acc),USD,1561.0,Ireland,"gettex, XETRA, London, Stuttgart, Euronext Amsterdam",ETF,0.6,IUSL,A1H7ZT
+IE000QDFFK00,IE000QDFFK00,AXA IM NASDAQ 100 UCITS ETF USD Acc,USD,1551.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,ANAV,A3DXEB
+LU0950674332,LU0950674332,UBS MSCI World Socially Responsible UCITS ETF USD acc,USD,1549.0,Luxembourg,"gettex, XETRA, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.22,SEAC,A1W3CQ
+FR0010527275,FR0010527275,Amundi MSCI Water UCITS ETF Dist,EUR,1544.0,France,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.6,LYM8,LYX0CA
+IE00B02KXH56,IE00B02KXH56,iShares MSCI Japan UCITS ETF (Dist),USD,1537.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,IQQJ,A0DK60
+IE00BL25JP72,IE00BL25JP72,Xtrackers MSCI World Momentum UCITS ETF 1C,USD,1535.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XDEM,A1103G
+LU0147308422,LU0147308422,UBS Core MSCI EMU UCITS ETF EUR dis,EUR,1534.0,Luxembourg,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,UIM4,633611
+IE00BF4G6Z54,IE00BF4G6Z54,JPMorgan Global Emerging Markets Research Enhanced Index Equity (ESG) UCITS ETF USD (acc),USD,1525.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,JREM,A2DWM5
+LU1287023185,LU1287023185,Amundi Euro Government Bond 7-10Y UCITS ETF Acc,EUR,1525.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.15,LYXD,LYX0VH
+IE00BYM11L64,IE00BYM11L64,UBS MSCI ACWI SF UCITS ETF hCHF acc,CHF,1524.0,Ireland,SIX Swiss Exchange,ETF,0.21,ACWIS,A14VJU
+IE00BFNM3L97,IE00BFNM3L97,iShares MSCI Japan Screened UCITS ETF USD (Acc),USD,1522.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.15,SGAJ,A2N6TF
+IE00BHZRQZ17,IE00BHZRQZ17,Franklin FTSE India UCITS ETF ,USD,1508.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.19,FLXI,A2PB5W
+IE00BKBF6H24,IE00BKBF6H24,iShares Core MSCI World UCITS ETF EUR Hedged (Dist),EUR,1507.0,Ireland,"gettex, XETRA, Stuttgart",ETF,0.3,IWLE,A2PKSQ
+LU2611732046,LU2611732046,Amundi Core DAX UCITS ETF Dist,EUR,1496.0,Luxembourg,"gettex, XETRA, SIX Swiss Exchange",ETF,0.08,C001,ETF200
+FR0010655712,FR0010655712,Amundi ETF DAX UCITS ETF DR,EUR,1496.0,France,"gettex, XETRA, London, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.1,CG1G,A0REJQ
+IE00BMWXKN31,IE00BMWXKN31,HSBC Hang Seng TECH UCITS ETF HKD,HKD,1492.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.5,H4ZX,A2QHV0
+IE000Z8F16G5,IE000Z8F16G5,iShares Global Aggregate Bond ESG ​SRI UCITS ETF CHF Hedged (Acc),CHF,1482.0,Ireland,SIX Swiss Exchange,ETF,0.1,SHIR,A3C5HN
+LU1291102447,LU1291102447,BNP Paribas Easy MSCI Japan Min TE UCITS ETF,EUR,1480.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange",ETF,0.15,EJAP,A2ADB6
+IE00BF3N7094,IE00BF3N7094,iShares EUR High Yield Corporate Bond UCITS ETF EUR (Acc),EUR,1479.0,Ireland,"gettex, London, SIX Swiss Exchange",ETF,0.5,SXRI,A2DUCZ
+LU0839027447,LU0839027447,Xtrackers Nikkei 225 UCITS ETF 1D,JPY,1477.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.09,XDJP,DBX0NJ
+IE00B1FZS467,IE00B1FZS467,iShares Global Infrastructure UCITS ETF USD (Dist),USD,1468.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.65,IQQI,A0LEW9
+DE000ETFL581,DE000ETFL581,Deka MSCI World Climate Change ESG UCITS ETF,EUR,1455.0,Germany,"gettex, XETRA",ETF,0.26,D6RP,ETFL58
+IE00B5L01S80,IE00B5L01S80,HSBC FTSE EPRA NAREIT Developed UCITS ETF USD,USD,1454.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.24,H4ZL,A1JCM0
+LU1861138961,LU1861138961,Amundi MSCI Emerging Markets SRI Climate Paris Aligned UCITS ETF DR (C),USD,1447.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,AMEI,A2JSDD
+IE00BDZZTM54,IE00BDZZTM54,iShares MSCI World SRI UCITS ETF USD (Dist),USD,1438.0,Ireland,"gettex, XETRA, London",ETF,0.2,2B7J,A2DX7X
+IE000CL68Z69,IE000CL68Z69,Amundi MSCI World Climate Paris Aligned UCITS ETF Acc,USD,1436.0,Ireland,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,PABW,ETF141
+LU1681040223,LU1681040223,Amundi STOXX Europe 600 ESG UCITS ETF DR EUR (C),EUR,1431.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange",ETF,0.18,AME6,A2H57X
+IE00BMW42181,IE00BMW42181,iShares MSCI Europe Health Care Sector UCITS ETF EUR (Acc),EUR,1416.0,Ireland,"gettex, XETRA, London",ETF,0.18,ESIH,A2QBZ0
+XS2115336336,XS2115336336,HANetf The Royal Mint Responsibly Sourced Physical Gold ETC,USD,1415.0,Ireland,"gettex, XETRA, London, Euronext Paris, Borsa Italiana",ETC,0.22,RM8U,A279KU
+IE00BG0J4C88,IE00BG0J4C88,iShares Digital Security UCITS ETF USD (Acc),USD,1414.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.4,L0CK,A2JMGE
+IE00B0M62X26,IE00B0M62X26,iShares Euro Inflation Linked Government Bond UCITS ETF,EUR,1413.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.09,IBCI,A0HGV1
+IE00BG370F43,IE00BG370F43,Xtrackers MSCI Emerging Markets ESG UCITS ETF 1C,USD,1412.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,XZEM,A2JHSF
+IE000UQND7H4,IE000UQND7H4,HSBC MSCI World UCITS ETF USD (Acc),USD,1402.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,H4ZY,A3DN5J
+IE00B53L4350,IE00B53L4350,iShares Dow Jones Industrial Average UCITS ETF (Acc),USD,1397.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.33,SXRU,A0YEDK
+IE00BFNM3B99,IE00BFNM3B99,iShares MSCI EMU Screened UCITS ETF EUR (Acc),EUR,1386.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.12,SLMA,A2N48B
+IE00BK5BR626,IE00BK5BR626,Vanguard FTSE All-World High Dividend Yield UCITS ETF Acc,USD,1386.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.29,VGWE,A2PLTB
+LU1681038243,LU1681038243,Amundi Nasdaq-100 Swap UCITS ETF EUR Acc,EUR,1386.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.23,6AQQ,A2H577
+IE00B5M1WJ87,IE00B5M1WJ87,SPDR S&P Euro Dividend Aristocrats UCITS ETF (Dist),EUR,1382.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,SPYW,A1JT1B
+LU2008761053,LU2008761053,BNP Paribas Easy EUR Corporate Bond SRI PAB 3-5Y UCITS ETF,EUR,1379.0,Luxembourg,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,ASR5,A2PP8C
+IE00BCBJG560,IE00BCBJG560,SPDR MSCI World Small Cap UCITS ETF,USD,1375.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.45,ZPRS,A1W56P
+IE00B52SF786,IE00B52SF786,iShares MSCI Canada UCITS ETF (Acc),USD,1375.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.48,SXR2,A0YEDS
+LU0959211326,LU0959211326,Amundi Core S&P 500 Swap UCITS ETF EUR Hedged Acc,EUR,1373.0,Luxembourg,"Euronext Paris, Borsa Italiana",ETF,0.07,SPHC,LYX0RX
+IE000M7V94E1,IE000M7V94E1,VanEck Uranium and Nuclear Technologies UCITS ETF A,USD,1372.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.55,NUKL,A3D47K
+IE00BKX8G916,IE00BKX8G916,Invesco S&P 500 UCITS ETF GBP Hedged Acc,GBP,1371.0,Ireland,"gettex, London",ETF,0.05,SML2,A2P42Y
+IE00BF1QPK61,IE00BF1QPK61,SPDR Bloomberg Global Aggregate Bond UCITS ETF CHF Hedged,CHF,1370.0,Ireland,SIX Swiss Exchange,ETF,0.1,GLAC,A2H8NP
+IE00BFM6TD65,IE00BFM6TD65,iShares J.P. Morgan USD Emerging Markets Corp Bond UCITS ETF USD (Acc),USD,1370.0,Ireland,"gettex, London",ETF,0.5,QDV8,A2JKT0
+IE00BD1F4L37,IE00BD1F4L37,iShares Edge MSCI USA Quality Factor UCITS ETF,USD,1365.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.2,QDVB,A2AP34
+IE00BDFL4P12,IE00BDFL4P12,iShares Diversified Commodity Swap UCITS ETF,USD,1356.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.19,SXRS,A2DK6R
+IE00BDQZN774,IE00BDQZN774,UBS MSCI ACWI Universal UCITS ETF hCHF acc,CHF,1355.0,Ireland,SIX Swiss Exchange,ETF,0.26,AWESGS,A2H5B5
+LU1602144575,LU1602144575,Amundi MSCI EMU ESG Selection UCITS ETF DR - EUR (C),EUR,1352.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,AMED,A2DR4R
+IE00BQWJFQ70,IE00BQWJFQ70,SPDR Morningstar Multi-Asset Global Infrastructure UCITS ETF,USD,1347.0,Ireland,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.4,ZPRI,A12EAR
+LU0779800910,LU0779800910,Xtrackers CSI 300 Swap UCITS ETF 1C,USD,1344.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.5,XCHA,DBX0M2
+IE000I8KRLL9,IE000I8KRLL9,iShares MSCI Global Semiconductors UCITS ETF USD (Acc),USD,1341.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.35,SEC0,A3CVRA
+IE00BFNM3H51,IE00BFNM3H51,iShares MSCI USA Screened UCITS ETF USD (Dist),USD,1341.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.07,SLUS,A2N6TC
+IE00BCRY5Y77,IE00BCRY5Y77,iShares USD Short Duration Corporate Bond UCITS ETF (Dist),USD,1337.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.2,IS3J,A1W372
+IE000AK4O3W6,IE000AK4O3W6,iShares EUR Corporate Bond 0-3yr ESG SRI UCITS ETF EUR (Acc),EUR,1336.0,Ireland,"gettex, XETRA, Borsa Italiana",ETF,0.12,IE3E,A3DLEG
+LU1681041114,LU1681041114,Amundi Floating Rate Euro Corporate ESG UCITS ETF EUR (C),EUR,1328.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,FRNE,A2H585
+IE000MAO75G5,IE000MAO75G5,iShares Core MSCI Europe UCITS ETF EUR (Acc),EUR,1325.0,Ireland,"gettex, XETRA",ETF,0.12,CEBZ,A406QE
+LU1861137484,LU1861137484,Amundi MSCI Europe SRI Climate Paris Aligned UCITS ETF DR (C),EUR,1324.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,MIVB,A2JSDC
+IE00BGYWFS63,IE00BGYWFS63,Vanguard USD Treasury Bond UCITS ETF Accumulating,USD,1323.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,VAGT,A2PCCK
+DE000ETFL284,DE000ETFL284,Deka MSCI Europe UCITS ETF,EUR,1322.0,Germany,"gettex, XETRA, Stuttgart",ETF,0.3,EL42,ETFL28
+LU0340285161,LU0340285161,UBS MSCI World UCITS ETF USD dis,USD,1320.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,UIM7,A0NCFR
+LU1230136894,LU1230136894,Amundi Smart Overnight Return UCITS ETF GBP Hedged Acc,GBP,1310.0,Luxembourg,"gettex, London, SIX Swiss Exchange",ETF,0.1,B8TM,LYX0UU
+IE000CNSFAR2,IE000CNSFAR2,Amundi Core MSCI World UCITS ETF USD Dist,USD,1309.0,Ireland,"gettex, XETRA",ETF,0.12,MWOE,A3DH0A
+IE00B4K6B022,IE00B4K6B022,HSBC EURO STOXX 50 UCITS ETF EUR,EUR,1308.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,H4ZA,A0YF4H
+LU1291104575,LU1291104575,BNP Paribas Easy MSCI USA Min TE UCITS ETF,EUR,1302.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.16,ENOA,A2ADB1
+LU0959211243,LU0959211243,Amundi Core S&P 500 Swap UCITS ETF EUR Hedged Dist,EUR,1300.0,Luxembourg,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.07,LYP2,LYX0RE
+FR0013041530,FR0013041530,BNP Paribas Easy S&P 500 UCITS ETF EUR Hedged,EUR,1299.0,France,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,ESEH,A14Z68
+IE00BK5BR733,IE00BK5BR733,Vanguard FTSE Emerging Markets UCITS ETF (USD) Accumulating,USD,1291.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.17,VFEA,A2PLTC
+LU1525418643,LU1525418643,Amundi EUR Corporate Bond 1-5Y ESG UCITS ETF DR,EUR,1280.0,Luxembourg,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.2,A4H7,A2DJET
+IE000R4ZNTN3,IE000R4ZNTN3,iShares MSCI World ex-USA UCITS ETF USD (Acc),USD,1274.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,IXUA,A40X3Z
+LU1859444769,LU1859444769,BNP Paribas Easy EUR Corporate Bond SRI PAB UCITS ETF Acc,EUR,1274.0,Luxembourg,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,ASRI,A2N8AD
+IE00B7KQ7B66,IE00B7KQ7B66,UBS Core MSCI World UCITS ETF USD dis,USD,1269.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.06,UBU7,A1JVCA
+IE000L2TO2T2,IE000L2TO2T2,iShares EUR Corporate Bond ESG SRI UCITS ETF EUR (Acc),EUR,1264.0,Ireland,"gettex, XETRA, Borsa Italiana",ETF,0.14,SUA0,A3DJQK
+IE000264WWY0,IE000264WWY0,iShares iBonds Dec 2028 Term EUR Corporate UCITS ETF EUR (Dist),EUR,1259.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.12,IB28,A3D8E7
+IE00BF540Y54,IE00BF540Y54,iShares Core Global Aggregate Bond UCITS ETF GBP Hedged (Dist),GBP,1257.0,Ireland,"gettex, London",ETF,0.1,IS0G,A2H6ZS
+LU1437018598,LU1437018598,Amundi Core Euro Government Bond UCITS ETF Acc,EUR,1253.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Borsa Italiana",ETF,0.09,A4HC,A2AUDE
+JE00B8DFY052,JE00B8DFY052,WisdomTree Physical Gold - EUR Daily Hedged,EUR,1250.0,Jersey,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETC,0.12,GBSE,A1RX98
+IE00B9F5YL18,IE00B9F5YL18,Vanguard FTSE Developed Asia Pacific ex Japan UCITS ETF Distributing,USD,1248.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,VGEJ,A1T8FT
+IE00058MW3M8,IE00058MW3M8,Amundi S&P 500 Screened UCITS ETF Acc EUR Hedged,EUR,1247.0,Ireland,"Euronext Paris, Borsa Italiana",ETF,0.28,S500H,ETF094
+IE00BHZRR030,IE00BHZRR030,Franklin FTSE Korea UCITS ETF,USD,1245.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.09,FLXK,A2PB5X
+LU1484799843,LU1484799843,UBS BBG MSCI Euro Area Liquid Corp Sustainable UCITS ETF EUR acc,EUR,1245.0,Luxembourg,"gettex, XETRA, SIX Swiss Exchange",ETF,0.13,4UBF,A2AQ6E
+IE00B0M63060,IE00B0M63060,iShares UK Dividend UCITS ETF,GBP,1240.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.4,IQQD,A0HGV6
+IE00B14X4N27,IE00B14X4N27,iShares MSCI Europe ex-UK UCITS ETF,EUR,1232.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.4,IQQU,A0J204
+LU1681046774,LU1681046774,Amundi Euro Lowest Rated IG Government Bond UCITS ETF EUR Acc,EUR,1224.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,KX1G,A2H58E
+IE00BDZVH859,IE00BDZVH859,iShares USD TIPS UCITS ETF GBP Hedged (Dist),GBP,1223.0,Ireland,London,ETF,0.12,ITPG,A2JDYG
+IE00B3VTML14,IE00B3VTML14,iShares Euro Government Bond 3-7yr UCITS ETF (Acc),EUR,1223.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,SXRP,A0X8SL
+GB00B15KXQ89,GB00B15KXQ89,WisdomTree Copper,USD,1222.0,Jersey,"gettex, XETRA, London, Euronext Paris, Borsa Italiana",ETC,0.49,OD7C,A0KRKR
+IE00B9CQXS71,IE00B9CQXS71,SPDR S&P Global Dividend Aristocrats UCITS ETF,USD,1220.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.45,ZPRG,A1T8GD
+IE00BGPP6697,IE00BGPP6697,iShares $ Treasury Bond 7-10yr UCITS ETF EUR Hedged (Dist),EUR,1220.0,Ireland,"gettex, XETRA, Stuttgart",ETF,0.1,IBB1,A2PDTS
+LU0252633754,LU0252633754,Amundi DAX II UCITS ETF Acc,EUR,1214.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,LYY7,LYX0AC
+IE00BL6K8D99,IE00BL6K8D99,iShares MSCI EMU Paris-Aligned Climate UCITS ETF EUR (Acc),EUR,1213.0,Ireland,"gettex, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.15,CBUB,A3CPAC
+IE00B4613386,IE00B4613386,SPDR Bloomberg Emerging Markets Local Bond UCITS ETF,USD,1209.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.55,SYBM,A1JJTV
+LU0514695690,LU0514695690,Xtrackers MSCI China UCITS ETF 1C,USD,1208.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.65,XCS6,DBX0G2
+LU2109787551,LU2109787551,Amundi MSCI Emerging Markets ESG Selection UCITS ETF DR (C),USD,1208.0,Luxembourg,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,SADM,A2PZDB
+IE0001GSQ2O9,IE0001GSQ2O9,Amundi MSCI World ESG Broad Transition UCITS ETF Acc,EUR,1207.0,Ireland,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,LWCR,ETF142
+LU2924149862,LU2924149862,Amundi Global Treasury Bond UCITS ETF USD Hedged Acc,USD,1206.0,Luxembourg,XETRA,ETF,0.12,GTSB,ETF209
+IE00BZ163H91,IE00BZ163H91,Vanguard EUR Eurozone Government Bond UCITS ETF Distributing,EUR,1206.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.07,VGEB,A143JL
+IE00BYXVGX24,IE00BYXVGX24,Fidelity US Quality Income UCITS ETF INC-USD,USD,1201.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.25,FUSD,A2DL7C
+IE00B0M62S72,IE00B0M62S72,iShares Euro Dividend UCITS ETF,EUR,1193.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.4,IQQA,A0HGV4
+IE00BD45KH83,IE00BD45KH83,iShares Core MSCI Emerging Markets IMI UCITS ETF,USD,1191.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.18,IBC3,A2JDYF
+IE00B60SWX25,IE00B60SWX25,Invesco EURO STOXX 50 UCITS ETF,EUR,1191.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.05,SC0D,A0RGCL
+LU1681044480,LU1681044480,Amundi MSCI Emerging Markets Asia UCITS ETF EUR (C),EUR,1185.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,AMEA,A2H58R
+IE00BHZPJ452,IE00BHZPJ452,iShares MSCI Japan ESG Enhanced CTB UCITS ETF USD (Acc),USD,1185.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,EDMJ,A2PCB2
+IE00BWBXM948,IE00BWBXM948,SPDR S&P U.S. Technology Select Sector UCITS ETF USD,USD,1184.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.15,ZPDT,A14QB5
+IE00BF2FN646,IE00BF2FN646,Invesco US Treasury Bond 7-10 Year UCITS ETF Dist,USD,1183.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.06,TRDX,A2N7D2
+IE00BDQZN113,IE00BDQZN113,UBS MSCI ACWI Universal UCITS ETF hUSD acc,USD,1181.0,Ireland,SIX Swiss Exchange,ETF,0.26,AWESGW,A2H5B8
+IE00BH4G7D40,IE00BH4G7D40,iShares USD Corporate Bond ESG SRI UCITS ETF EUR Hedged (Dist),EUR,1180.0,Ireland,"gettex, XETRA",ETF,0.17,36BA,A2PSB1
+LU1829219127,LU1829219127,Amundi EUR Corporate Bond Climate Paris Aligned UCITS ETF Acc,EUR,1179.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.14,LYEB,LYX0Z4
+DE000ETFL029,DE000ETFL029,Deka EURO STOXX 50 UCITS ETF,EUR,1176.0,Germany,"gettex, XETRA, Stuttgart",ETF,0.15,EL4B,ETFL02
+IE00B6SPMN59,IE00B6SPMN59,iShares Edge S&P 500 Minimum Volatility UCITS ETF (Acc),USD,1172.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,IBCK,A1J784
+IE00BJQRDN15,IE00BJQRDN15,Invesco Quantitative Strategies ESG Global Equity Multi-Factor UCITS ETF Acc,USD,1171.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.3,IQSA,A2PHJT
+IE00B9M6SJ31,IE00B9M6SJ31,iShares Global Corporate Bond EUR Hedged UCITS ETF (Dist),EUR,1170.0,Ireland,"gettex, XETRA, Stuttgart, SIX Swiss Exchange",ETF,0.25,IBCQ,A1W02Q
+IE00BGPP6473,IE00BGPP6473,iShares USD Treasury Bond 3-7yr UCITS ETF EUR Hedged (Dist),EUR,1165.0,Ireland,"gettex, XETRA",ETF,0.1,CBUE,A2PDTT
+IE00B77D4428,IE00B77D4428,UBS Core MSCI USA UCITS ETF USD dis,USD,1164.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.06,UBU3,A1JVB6
+LU0429459356,LU0429459356,Xtrackers II US Treasuries UCITS ETF 1D,USD,1162.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.06,XUTD,DBX0CQ
+IE00BK72HJ67,IE00BK72HJ67,UBS MSCI World Socially Responsible UCITS ETF USD acc,USD,1156.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.19,4UBH,A2PZBJ
+IE00B469F816,IE00B469F816,SPDR MSCI Emerging Markets UCITS ETF,USD,1155.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,SPYM,A1JJTE
+DE000A2T5DZ1,DE000A2T5DZ1,Xtrackers IE Physical Gold EUR Hedged ETC Securities,EUR,1139.0,Ireland,"gettex, XETRA, Borsa Italiana",ETC,0.28,XGDE,A2T5DZ
+IE00BFMNHK08,IE00BFMNHK08,Xtrackers MSCI Europe ESG UCITS ETF 1C,EUR,1136.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,XZEU,A2JHSG
+LU0335044896,LU0335044896,Xtrackers II EUR Overnight Rate Swap UCITS ETF 1D,EUR,1134.0,Luxembourg,"gettex, XETRA, Stuttgart",ETF,0.1,XEOD,DBX0A2
+NL0010408704,NL0010408704,VanEck World Equal Weight Screened UCITS ETF A,EUR,1134.0,Netherlands,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam, Euronext Brussels",ETF,0.2,TSWE,A12HWR
+IE00BHJYDV33,IE00BHJYDV33,Invesco MDAX UCITS ETF A,EUR,1128.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.19,DEAM,A2N7NF
+IE0003UVYC20,IE0003UVYC20,JPMorgan Global Equity Premium Income Active UCITS ETF USD (dist),USD,1126.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,JGPI,A3EHRE
+LU1291097779,LU1291097779,BNP Paribas Easy MSCI Emerging Min TE UCITS ETF,EUR,1120.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.27,EMKX,A2AL1R
+IE00BYYHSQ67,IE00BYYHSQ67,iShares MSCI World Quality Dividend Advanced UCITS ETF USD (Dist),USD,1119.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.38,QDVW,A2DRG5
+LU2109787049,LU2109787049,Amundi MSCI Emerging Markets ESG Broad Transition UCITS ETF DR (C),USD,1117.0,Luxembourg,"gettex, XETRA, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.18,SBIM,A2PZC5
+IE00B1TXHL60,IE00B1TXHL60,iShares Listed Private Equity UCITS ETF USD (Dist),USD,1114.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Euronext Amsterdam",ETF,0.75,IQQL,A0MM0N
+IE00BK5BCD43,IE00BK5BCD43,L&G Artificial Intelligence UCITS ETF,USD,1110.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.49,XMLD,A2PM50
+IE00BFMXYX26,IE00BFMXYX26,Vanguard FTSE Japan UCITS ETF (USD) Accumulating,USD,1108.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.1,VJPA,A2PLS8
+IE00BQQP9G91,IE00BQQP9G91,VanEck Junior Gold Miners UCITS,USD,1105.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.55,G2XJ,A12CCM
+IE00BF16M727,IE00BF16M727,First Trust Nasdaq Cybersecurity UCITS ETF Acc,USD,1104.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.6,CBRS,A2P4HV
+LU1708330235,LU1708330235,Amundi Core Global Government Bond UCITS ETF EUR Hedged Acc,EUR,1101.0,Luxembourg,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.22,A4HD,A2H56U
+FR0010361683,FR0010361683,Amundi MSCI India Swap UCITS ETF EUR Acc,EUR,1094.0,France,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.85,LYMD,LYX0BA
+LU1681045453,LU1681045453,Amundi MSCI Emerging Markets Swap UCITS ETF USD Acc,USD,1090.0,Luxembourg,"gettex, London, Euronext Paris, SIX Swiss Exchange",ETF,0.2,X9I1,A2H58K
+IE00B14X4M10,IE00B14X4M10,iShares MSCI North America UCITS ETF,USD,1085.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.4,IQQN,A0J201
+LU1650491282,LU1650491282,Amundi Euro Government Inflation-Linked Bond UCITS ETF Acc,EUR,1084.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.09,LYQ7,LYX0XL
+IE00B44T3H88,IE00B44T3H88,HSBC MSCI China UCITS ETF USD,USD,1079.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.28,H4ZP,A1JHYT
+IE00B4L5ZY03,IE00B4L5ZY03,iShares EUR Corporate Bond ex-Financials 1-5yr ESG SRI UCITS ETF EUR (Dist),EUR,1077.0,Ireland,"gettex, XETRA, Stuttgart, SIX Swiss Exchange",ETF,0.2,EUNS,A0RPWP
+IE000UL6CLP7,IE000UL6CLP7,Global X Silver Miners UCITS ETF USD Accumulating,USD,1076.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.65,SLVR,A3DC8R
+IE00B53QDK08,IE00B53QDK08,iShares MSCI Japan UCITS ETF USD (Acc),USD,1071.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,SXR5,A0YEDV
+IE00BZ1NCS44,IE00BZ1NCS44,iShares Bloomberg Roll Select Commodity Swap UCITS ETF USD,USD,1070.0,Ireland,"gettex, London",ETF,0.28,IS39,A2JQ2G
+LU0659579733,LU0659579733,Xtrackers MSCI World Swap UCITS ETF 4C EUR hedged,EUR,1069.0,Luxembourg,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.39,XWEH,DBX0KQ
+LU1399300455,LU1399300455,Xtrackers II US Treasuries UCITS ETF 2D - EUR Hedged,EUR,1066.0,Luxembourg,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.1,XUTE,DBX0QG
+IE00B3FH7618,IE00B3FH7618,iShares EUR Government Bond 0-1yr UCITS ETF,EUR,1061.0,Ireland,"gettex, XETRA, London, Stuttgart, Borsa Italiana, Euronext Amsterdam",ETF,0.07,EUN6,A0RGEL
+IE00B4L5ZG21,IE00B4L5ZG21,iShares EUR Corporate Bond ex-Financials UCITS ETF EUR (Dist),EUR,1060.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,EUNR,A0RPWN
+IE00BFNM3N12,IE00BFNM3N12,iShares MSCI EM IMI Screened UCITS ETF USD (Dist),USD,1055.0,Ireland,"gettex, XETRA, London, Stuttgart",ETF,0.18,OM3Y,A2N6TJ
+LU1931975152,LU1931975152,Amundi Prime Euro Government Bond UCITS ETF Dist,EUR,1053.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana, Euronext Amsterdam",ETF,0.05,PR1R,A2PBLP
+LU0476289540,LU0476289540,Xtrackers MSCI Canada Screened UCITS ETF 1C 1C,USD,1051.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.35,D5BH,DBX0ET
+IE00BKSBGS44,IE00BKSBGS44,Fidelity US Equity Research Enhanced UCITS ETF ACC-USD,USD,1049.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,FUSR,A2P0ZN
+IE00BK5BQY34,IE00BK5BQY34,Vanguard FTSE Developed Europe ex UK UCITS ETF (EUR) Accumulating,EUR,1048.0,Ireland,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.1,VERE,A2PLBL
+IE00BF553838,IE00BF553838,iShares J.P. Morgan Advanced USD EM Bond UCITS ETF USD (Acc),USD,1047.0,Ireland,"gettex, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.45,SLME,A2N5WA
+IE00B466KX20,IE00B466KX20,SPDR MSCI EM Asia UCITS ETF,USD,1045.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.55,SPYA,A1JJTG
+IE000CN8T855,IE000CN8T855,JPMorgan US Research Enhanced Index Equity (ESG) UCITS ETF EUR Hedged (acc),EUR,1045.0,Ireland,"gettex, XETRA, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,JUHE,A3C4Y6
+IE00B7K93397,IE00B7K93397,UBS Core S&P 500 UCITS ETF USD dis,USD,1035.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.03,UBU9,A1JVB5
+LU0136240974,LU0136240974,UBS Core MSCI Japan UCITS ETF JPY dis,JPY,1035.0,Luxembourg,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.12,UIM5,794361
+IE00BSKRJZ44,IE00BSKRJZ44,iShares USD Treasury Bond 20+yr UCITS ETF USD (Dist),USD,1031.0,Ireland,"gettex, XETRA, London, Stuttgart, SIX Swiss Exchange",ETF,0.07,IS04,A12HL9
+IE00B6YX5F63,IE00B6YX5F63,SPDR Bloomberg 1-3 Year Euro Government Bond UCITS ETF,EUR,1030.0,Ireland,"gettex, XETRA, London, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,SYB3,A1JKSV
+LU1931975079,LU1931975079,Amundi Core EUR Corporate Bond UCITS ETF EUR Dist,EUR,1028.0,Luxembourg,"gettex, XETRA, London, Stuttgart, Borsa Italiana",ETF,0.07,PR1C,A2PBLN
+IE00BD8PGZ49,IE00BD8PGZ49,iShares USD Treasury Bond 20+yr UCITS ETF EUR Hedged (Dist),EUR,1022.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange",ETF,0.1,IUSV,A2DXN8
+IE00B27YCK28,IE00B27YCK28,iShares MSCI EM Latin America UCITS ETF (Dist),USD,1020.0,Ireland,"gettex, XETRA, London, Stuttgart, Borsa Italiana, Euronext Amsterdam",ETF,0.2,IUSC,A0NA45
+IE0002EI5AG0,IE0002EI5AG0,Xtrackers S&P 500 Equal Weight UCITS ETF 2C EUR Hedged,EUR,1020.0,Ireland,"gettex, XETRA, Borsa Italiana",ETF,0.3,XDEE,DBX0P9
+LU1291098827,LU1291098827,BNP Paribas Easy MSCI EMU Min TE UCITS ETF,EUR,1019.0,Luxembourg,"gettex, XETRA, Euronext Paris, Stuttgart, SIX Swiss Exchange, Borsa Italiana",ETF,0.15,EMUX,A2AL1W
+IE0009DRDY20,IE0009DRDY20,Amundi Prime Global UCITS ETF Acc,USD,1018.0,Ireland,"gettex, XETRA",ETF,0.05,F50A,ETF210
+LU0290357259,LU0290357259,Xtrackers II Eurozone Government Bond 7-10 UCITS ETF 1C,EUR,1016.0,Luxembourg,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.15,X710,DBX0AG
+IE0004MFRED4,IE0004MFRED4,Xtrackers S&P 500 Equal Weight Scored & Screened UCITS ETF 1C,USD,1014.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana",ETF,0.17,XZEW,DBX0S3
+IE0009VWHAE6,IE0009VWHAE6,iShares US Equity Enhanced Active UCITS ETF USD (Acc),USD,1010.0,Ireland,"gettex, XETRA, London, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.2,USEE,A40C72
+LU0524480265,LU0524480265,Xtrackers iBoxx Sovereigns Eurozone Yield Plus UCITS ETF 1C,EUR,1009.0,Luxembourg,"gettex, XETRA, Stuttgart, Borsa Italiana",ETF,0.15,XY4P,DBX0HM
+IE00BDFK1573,IE00BDFK1573,iShares USD Treasury Bond 1-3yr UCITS ETF EUR Hedged (Acc),EUR,1004.0,Ireland,"gettex, XETRA, London",ETF,0.1,2B7S,A2JE39
+IE000U9ODG19,IE000U9ODG19,iShares Global Aerospace & Defence UCITS ETF USD (Acc),USD,1003.0,Ireland,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana, Euronext Amsterdam",ETF,0.35,5J50,A3E1JS
+LU2197908721,LU2197908721,Amundi Core Nasdaq-100 Swap UCITS ETF Dist,USD,1002.0,Luxembourg,"gettex, XETRA, SIX Swiss Exchange",ETF,0.22,NADQ,LYX05V
+IE000QIF5N15,IE000QIF5N15,Amundi Prime Global UCITS ETF Dist,USD,1002.0,Ireland,"gettex, XETRA, London, Borsa Italiana",ETF,0.05,MWOL,ETF211
+LU1940199711,LU1940199711,Amundi MSCI Europe ESG Selection UCITS ETF Acc,EUR,1001.0,Luxembourg,"gettex, XETRA, London, Euronext Paris, SIX Swiss Exchange, Borsa Italiana",ETF,0.2,LEAD,LYX99A
+FR0010342592,FR0010342592,Amundi Nasdaq-100 Daily (2x) Leveraged UCITS ETF Acc,EUR,1037.0,France,"gettex, XETRA, Euronext Paris, Borsa Italiana",ETF,0.6,L8I7,A0LC12
+FR0010755611,FR0010755611,Amundi MSCI USA Daily (2x) Leveraged UCITS ETF Acc,EUR,1020.0,France,"gettex, XETRA, Euronext Paris, Stuttgart, Borsa Italiana",ETF,0.5,18MF,A0X8ZS
