@@ -1,8 +1,8 @@
 import os
 import json
 from pathlib import Path
-from datetime import date, datetime, timedelta
-from typing import List, Optional
+from datetime import date, datetime, timedelta, timezone
+from typing import List, Optional, Union
 
 import jwt
 import numpy as np
@@ -12,7 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pypfopt import EfficientFrontier, expected_returns, risk_models
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 import requests
@@ -60,6 +60,7 @@ FMP_BASE = "https://financialmodelingprep.com/api/v3"
 FMP_STABLE_BASE = "https://financialmodelingprep.com/stable"
 AV_BASE = "https://www.alphavantage.co/query"
 SYMBOL_CACHE = {}
+DATE_FMT = "%d-%m-%Y"
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +69,40 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def format_date(d: Optional[date]):
+    return d.strftime(DATE_FMT) if d else None
+
+
+def format_datetime(dt: Optional[datetime]):
+    return dt.strftime(f"{DATE_FMT} %H:%M:%S") if dt else None
+
+
+def parse_date_input(val) -> Optional[date]:
+    """
+    Converte una data in date (day-first) cercando vari formati comuni.
+    """
+    if val is None:
+        return None
+    if isinstance(val, date) and not isinstance(val, datetime):
+        return val
+    if isinstance(val, datetime):
+        return val.date()
+    if isinstance(val, str):
+        for fmt in [DATE_FMT, "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y"]:
+            try:
+                return datetime.strptime(val, fmt).date()
+            except Exception:
+                continue
+        try:
+            return pd.to_datetime(val, dayfirst=True).date()
+        except Exception:
+            return None
+    try:
+        return pd.to_datetime(val, dayfirst=True).date()
+    except Exception:
+        return None
 
 
 # Database models
@@ -101,6 +136,7 @@ class OrderModel(Base):
     portfolio_id = Column(Integer, ForeignKey("portfolios.id"), nullable=False)
     symbol = Column(String, nullable=False)
     isin = Column(String, default="")
+    ter = Column(String, default="")
     name = Column(String, default="")
     exchange = Column(String, default="")
     currency = Column(String, default="")
@@ -124,6 +160,14 @@ class ETFPriceCacheModel(Base):
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
 
+class StockPriceCacheModel(Base):
+    __tablename__ = "stock_price_cache"
+    symbol = Column(String, primary_key=True, index=True)
+    last_price = Column(Float, default=0.0)
+    history_json = Column(String, default="")
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -136,39 +180,96 @@ def ensure_orders_table_has_isin():
     if "isin" not in cols:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE orders ADD COLUMN isin STRING"))
+    if "ter" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE orders ADD COLUMN ter STRING"))
 
 
 ensure_orders_table_has_isin()
 
 
 ETF_CACHE_MAX_AGE_HOURS = 6
+STOCK_CACHE_MAX_AGE_HOURS = 6
 
 
-def normalize_chart_history(df: pd.DataFrame):
+def normalize_chart_history(df):
     """
     Converte il DataFrame restituito da justetf_scraping.load_chart in una lista di dict {date, price}.
     È tollerante ai nomi delle colonne (price/close ecc).
     """
-    if df is None or df.empty:
+    if df is None:
         return []
 
-    cols_lower = {str(c).lower(): c for c in df.columns}
-    date_col = cols_lower.get("date") or cols_lower.get("time") or list(df.columns)[0]
-    price_col = cols_lower.get("price") or cols_lower.get("close") or cols_lower.get("nav") or list(df.columns)[-1]
+    if isinstance(df, pd.Series):
+        df = df.to_frame(name="price").reset_index()
+    elif not isinstance(df, pd.DataFrame):
+        df = pd.DataFrame(df)
 
     df = df.copy()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df.dropna(subset=[date_col])
+    df.columns = [str(c) for c in df.columns]
 
+    # se non c'è una colonna data esplicita, usa l'indice se non è RangeIndex
+    if not any("date" in c.lower() or "time" in c.lower() or "timestamp" in c.lower() for c in df.columns):
+        if not isinstance(df.index, pd.RangeIndex):
+            df = df.reset_index().rename(columns={"index": "date"})
+
+    cols_lower = {str(c).lower(): c for c in df.columns}
+    date_col = None
+    for key in ["date", "time", "timestamp"]:
+        if key in cols_lower:
+            date_col = cols_lower[key]
+            break
+    if date_col is None:
+        # fallback alla prima colonna
+        date_col = df.columns[0]
+
+    # price column: priorità a price/close/nav, altrimenti prima numerica non data
+    price_col = None
+    for key in ["price", "close", "nav", "adjclose", "value", "quote"]:
+        if key in cols_lower:
+            price_col = cols_lower[key]
+            break
+    if price_col is None:
+        numeric_cols = [c for c in df.columns if c != date_col and pd.api.types.is_numeric_dtype(df[c])]
+        if numeric_cols:
+            price_col = numeric_cols[0]
+        else:
+            # se index numerico e single column, usa quella
+            if df.shape[1] == 1:
+                price_col = df.columns[0]
+            else:
+                print(f"[justetf normalize] impossibile trovare price column in {df.columns}")
+                return []
+
+    ser = df[date_col]
+    if pd.api.types.is_numeric_dtype(ser):
+        max_val = pd.to_numeric(ser, errors="coerce").max()
+        unit = None
+        if pd.notnull(max_val):
+            if max_val > 1e12:
+                unit = "ms"
+            elif max_val > 1e9:
+                unit = "s"
+        df[date_col] = pd.to_datetime(ser, unit=unit, errors="coerce")
+    else:
+        df[date_col] = df[date_col].apply(parse_date_input)
+
+    df = df.dropna(subset=[date_col])
+    current_year = datetime.now(timezone.utc).year
+    df = df[df[date_col].apply(lambda x: x.year if isinstance(x, date) else None).between(2000, current_year + 1)]
+
+    df = df.sort_values(date_col)
     history = []
     for _, row in df.iterrows():
         try:
             ts = row[date_col]
+            if isinstance(ts, datetime):
+                ts = ts.date()
             price_val = float(row[price_col])
-            history.append({"date": ts.strftime("%Y-%m-%d"), "price": price_val})
+            history.append({"date": ts.strftime(DATE_FMT), "price": price_val})
         except Exception:
             continue
-    history = sorted(history, key=lambda x: x["date"])
+
     return history
 
 
@@ -179,46 +280,202 @@ def get_etf_price_and_history(isin: str, db: Session):
     if not isin:
         raise HTTPException(status_code=400, detail="Missing ISIN for ETF price lookup")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     cache = db.execute(select(ETFPriceCacheModel).where(ETFPriceCacheModel.isin == isin)).scalar_one_or_none()
-    if cache and cache.updated_at and (now - cache.updated_at) < timedelta(hours=ETF_CACHE_MAX_AGE_HOURS):
+    cached_ts = None
+    if cache and cache.updated_at:
+        cached_ts = cache.updated_at
+        if getattr(cached_ts, "tzinfo", None):
+            cached_ts = cached_ts.astimezone(timezone.utc).replace(tzinfo=None)
+    history = []
+    cached_price = 0.0
+    cache_is_fresh = False
+    if cache:
         history = json.loads(cache.history_json or "[]")
-        last_price = cache.last_price or (history[-1]["price"] if history else 0.0)
-        return {"last_price": last_price, "history": history, "currency": cache.currency}
+        if history:
+            fixed = []
+            for h in history:
+                d = parse_date_input(h.get("date"))
+                if d:
+                    fixed.append({"date": d.strftime(DATE_FMT), "price": h.get("price")})
+            history = sorted(fixed, key=lambda x: x.get("date", ""))
+            if any(h.get("date", "") < "2000-01-01" for h in history):
+                history = []
+        cached_price = cache.last_price or (history[-1]["price"] if history else 0.0)
+        cache_is_fresh = bool(history) and cached_ts and (now - cached_ts) < timedelta(hours=ETF_CACHE_MAX_AGE_HOURS)
+        if cache_is_fresh and cached_price:
+            print(f"[justetf cache] {isin}: len={len(history)}, last={cached_price}")
+            return {"last_price": cached_price, "history": history, "currency": cache.currency}
 
     try:
         import justetf_scraping
     except ImportError:
         raise HTTPException(status_code=500, detail="justetf_scraping non installato (pip install git+https://github.com/druzsan/justetf-scraping.git)")
 
-    try:
-        df_chart = justetf_scraping.load_chart(isin)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Errore nel recupero prezzi justETF: {e}")
+    def fetch_chart(identifier: str, label: str):
+        try:
+            df_chart_inner = justetf_scraping.load_chart(identifier)
+            if df_chart_inner is None:
+                print(f"[justetf] {label} -> None")
+            else:
+                print(f"[justetf] {label} shape={getattr(df_chart_inner, 'shape', None)} cols={getattr(df_chart_inner, 'columns', None)}")
+            return df_chart_inner
+        except Exception as e:
+            print(f"[justetf] fetch failed for {label}: {e}")
+            return None
 
-    history = normalize_chart_history(df_chart)
+    df_chart = fetch_chart(isin, f"isin {isin}")
+    if df_chart is None:
+        # prova anche con il ticker se diverso dall'ISIN
+        df_chart = fetch_chart(isin.replace(" ", ""), f"fallback {isin.replace(' ', '')}")
+
+    try:
+        history = normalize_chart_history(df_chart)
+        if not history:
+            print(f"[justetf] {isin}: history vuota")
+            raise HTTPException(status_code=400, detail="Nessun dato storico disponibile per l'ISIN richiesto")
+
+        latest_point = history[-1]
+        last_price = latest_point["price"]
+        currency = ""
+
+        print(f"[justetf live] {isin}: len={len(history)}, last_date={latest_point['date']}, last_price={last_price}")
+
+        if cache:
+            cache.last_price = last_price
+            cache.currency = currency
+            cache.history_json = json.dumps(history)
+            cache.updated_at = now
+        else:
+            cache = ETFPriceCacheModel(
+                isin=isin,
+                last_price=last_price,
+                currency=currency,
+                history_json=json.dumps(history),
+                updated_at=now,
+            )
+            db.add(cache)
+        db.commit()
+        return {"last_price": last_price, "history": history, "currency": currency}
+    except HTTPException:
+        if cache_is_fresh and history and cached_price:
+            return {"last_price": cached_price, "history": history, "currency": cache.currency}
+        raise
+    except Exception as e:
+        if cache_is_fresh and history and cached_price:
+            return {"last_price": cached_price, "history": history, "currency": cache.currency}
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def get_stock_price_and_history(symbol: str, days: int = 180):
+    """
+    Usa FMP per ottenere prezzo corrente e storico di un titolo azionario.
+    """
+    symbol = symbol.upper()
+
+    def parse_history(raw):
+        history = []
+        for row in raw or []:
+            try:
+                dt_raw = row.get("date")
+                dt_date = parse_date_input(dt_raw)
+                dt = dt_date.strftime(DATE_FMT) if dt_date else None
+                price_val = row.get("close") or row.get("adjClose") or row.get("open") or row.get("price") or 0
+                if dt and price_val is not None:
+                    history.append({"date": dt, "price": float(price_val)})
+            except Exception:
+                continue
+        history = [h for h in history if h.get("price") is not None]
+        history.sort(key=lambda x: x["date"])
+        return history
+
+    errors = []
+    history = []
+
+    try:
+        data = fmp_get("historical-price-eod/full", {"symbol": symbol, "limit": days}, base=FMP_STABLE_BASE)
+        if isinstance(data, dict):
+            history = parse_history(data.get("historical") or data.get("data"))
+        elif isinstance(data, list):
+            history = parse_history(data)
+        if history:
+            print(f"[FMP historical-price-eod] {symbol}: len={len(history)}, first={history[0]['date']}, last={history[-1]['date']}, last_price={history[-1]['price']}")
+    except HTTPException as e:
+        errors.append(f"historical-price-eod/full: {e.detail}")
+    except Exception as e:
+        errors.append(str(e))
+
     if not history:
-        raise HTTPException(status_code=400, detail="Nessun dato storico disponibile per l'ISIN richiesto")
+        try:
+            alt = fmp_get(f"historical-chart/1day/{symbol}", {"limit": days}, base=FMP_STABLE_BASE)
+            history = parse_history(alt)
+            if history:
+                print(f"[FMP historical-chart 1day] {symbol}: len={len(history)}, first={history[0]['date']}, last={history[-1]['date']}, last_price={history[-1]['price']}")
+        except HTTPException as e:
+            errors.append(f"historical-chart: {e.detail}")
+        except Exception as e:
+            errors.append(str(e))
+
+    if not history:
+        msg = "Nessun dato storico disponibile per il simbolo richiesto"
+        if errors:
+            msg += f" ({'; '.join(errors)})"
+        raise HTTPException(status_code=400, detail=msg)
 
     last_price = history[-1]["price"]
-    currency = ""
+    return {"last_price": last_price, "history": history}
 
+
+def get_stock_price_and_history_cached(symbol: str, db: Session, days: int = 180):
+    """
+    Wrapper con cache locale su SQLite per i prezzi storici delle azioni.
+    """
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    cache = db.execute(select(StockPriceCacheModel).where(StockPriceCacheModel.symbol == symbol)).scalar_one_or_none()
+    cached_ts = None
+    if cache and cache.updated_at:
+        cached_ts = cache.updated_at
+        if getattr(cached_ts, "tzinfo", None):
+            cached_ts = cached_ts.astimezone(timezone.utc).replace(tzinfo=None)
+
+    history = []
+    cached_price = 0.0
+    cache_is_fresh = False
     if cache:
-        cache.last_price = last_price
-        cache.currency = currency
-        cache.history_json = json.dumps(history)
-        cache.updated_at = now
-    else:
-        cache = ETFPriceCacheModel(
-            isin=isin,
-            last_price=last_price,
-            currency=currency,
-            history_json=json.dumps(history),
-            updated_at=now,
-        )
-        db.add(cache)
-    db.commit()
-    return {"last_price": last_price, "history": history, "currency": currency}
+        history_raw = json.loads(cache.history_json or "[]")
+        if history_raw:
+            fixed = []
+            for h in history_raw:
+                d = parse_date_input(h.get("date"))
+                if d:
+                    fixed.append({"date": d.strftime(DATE_FMT), "price": h.get("price")})
+            history = sorted(fixed, key=lambda x: x.get("date", ""))
+        cached_price = cache.last_price or (history[-1]["price"] if history else 0.0)
+        cache_is_fresh = bool(history) and cached_ts and (now - cached_ts) < timedelta(hours=STOCK_CACHE_MAX_AGE_HOURS)
+        if cache_is_fresh and cached_price:
+            print(f"[stock cache] {symbol}: len={len(history)}, last={cached_price}")
+            return {"last_price": cached_price, "history": history}
+
+    data = get_stock_price_and_history(symbol, days=days)
+    history = data.get("history", [])
+    last_price = data.get("last_price", 0.0)
+
+    if history and last_price:
+        if cache:
+            cache.last_price = last_price
+            cache.history_json = json.dumps(history)
+            cache.updated_at = now
+        else:
+            cache = StockPriceCacheModel(
+                symbol=symbol,
+                last_price=last_price,
+                history_json=json.dumps(history),
+                updated_at=now,
+            )
+            db.add(cache)
+        db.commit()
+
+    return data
 
 
 # Pydantic models
@@ -252,12 +509,21 @@ class Order(BaseModel):
     exchange: Optional[str] = ""
     currency: Optional[str] = ""
     isin: Optional[str] = ""
+    ter: Optional[Union[str, float]] = ""
     quantity: float
     price: float
     commission: float = 0.0
     instrument_type: str = "stock"
     order_type: str
     date: date
+
+    @field_validator("date", mode="before")
+    @classmethod
+    def parse_date_field(cls, v):
+        parsed = parse_date_input(v)
+        if parsed:
+            return parsed
+        return v
 
 
 class OptimizationRequest(BaseModel):
@@ -286,7 +552,7 @@ def get_password_hash(password):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -329,32 +595,79 @@ def aggregate_positions(orders: List[OrderModel]):
 
 
 def xnpv(rate: float, cashflows: list):
+    def _as_date(d):
+        if isinstance(d, datetime):
+            if d.tzinfo:
+                return d.astimezone(timezone.utc).date()
+            return d.date()
+        if isinstance(d, date):
+            return d
+        ts = pd.to_datetime(d, errors="coerce")
+        if pd.isna(ts):
+            raise ValueError("invalid date")
+        if getattr(ts, "tzinfo", None):
+            ts = ts.tz_convert("UTC")
+        return ts.date()
+
     if rate <= -1:
         return float("inf")
-    t0 = cashflows[0][0]
-    return sum(cf / ((1 + rate) ** ((d - t0).days / 365.0)) for d, cf in cashflows)
+    try:
+        cleaned = [(_as_date(d), cf) for d, cf in cashflows]
+    except Exception:
+        return float("inf")
+
+    t0 = cleaned[0][0]
+    return sum(cf / ((1 + rate) ** ((d - t0).days / 365.0)) for d, cf in cleaned)
 
 
 def calc_xirr(cashflows: list):
     # cashflows: list of (date, amount)
     if not cashflows:
         return 0.0
-    positive = any(cf > 0 for _, cf in cashflows)
-    negative = any(cf < 0 for _, cf in cashflows)
+
+    cleaned = []
+    for dt, cf in cashflows:
+        try:
+            if isinstance(dt, datetime):
+                if dt.tzinfo:
+                    dt = dt.astimezone(timezone.utc).date()
+                else:
+                    dt = dt.date()
+            elif isinstance(dt, date):
+                dt = dt
+            else:
+                ts = pd.to_datetime(dt, errors="coerce")
+                if pd.isna(ts):
+                    continue
+                if hasattr(ts, "tzinfo") and ts.tzinfo:
+                    ts = ts.tz_convert("UTC")
+                dt = ts.date()
+            cleaned.append((dt, cf))
+        except Exception:
+            continue
+
+    if not cleaned:
+        return 0.0
+
+    positive = any(cf > 0 for _, cf in cleaned)
+    negative = any(cf < 0 for _, cf in cleaned)
     if not (positive and negative):
         return 0.0
 
-    low, high = -0.9999, 10.0
-    for _ in range(100):
-        mid = (low + high) / 2
-        npv = xnpv(mid, cashflows)
-        if abs(npv) < 1e-6:
-            return mid
-        if npv > 0:
-            low = mid
-        else:
-            high = mid
-    return mid
+    try:
+        low, high = -0.9999, 10.0
+        for _ in range(100):
+            mid = (low + high) / 2
+            npv = xnpv(mid, cleaned)
+            if abs(npv) < 1e-6:
+                return mid
+            if npv > 0:
+                low = mid
+            else:
+                high = mid
+        return mid
+    except Exception:
+        return 0.0
 
 
 def fmp_get(path: str, params: dict, base: Optional[str] = None):
@@ -401,6 +714,7 @@ def search_symbol(symbol: str, instrument_type: str):
                     "type": "ETF",
                     "isin": item.get("isin", ""),
                     "ticker": item.get("ticker", ""),
+                    "ter": item.get("ter", ""),
                 })
                 if len(matches) >= 25:
                     break
@@ -415,6 +729,7 @@ def search_symbol(symbol: str, instrument_type: str):
                     "type": "ETF",
                     "isin": item.get("isin", ""),
                     "ticker": item.get("ticker", ""),
+                    "ter": item.get("ter", ""),
                 })
                 if len(matches) >= 25:
                     break
@@ -448,6 +763,7 @@ def compute_portfolio_value(
         instrument_type = symbol_type_map.get(symbol, "stock")
         price_history = []
         current_price = 0.0
+        fetch_error = None
         try:
             if instrument_type == "etf":
                 isin = symbol_isin_map.get(symbol, "")
@@ -455,16 +771,26 @@ def compute_portfolio_value(
                 current_price = etf_data["last_price"]
                 price_history = etf_data.get("history", [])
             else:
-                ticker = yf.Ticker(symbol)
-                info = ticker.info
-                current_price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
-                if include_history:
-                    hist = ticker.history(period="6mo")
-                    price_history = [
-                        {"date": idx.strftime("%Y-%m-%d"), "price": float(row["Close"])}
-                        for idx, row in hist.iterrows()
-                    ]
+                stock_data = get_stock_price_and_history_cached(symbol, db, days=180 if include_history else 7)
+                current_price = stock_data["last_price"]
+                price_history = stock_data.get("history", [])
+        except HTTPException as e:
+            fetch_error = e.detail
+            print(f"Error fetching {symbol}: {e.detail}")
+        except Exception as e:
+            fetch_error = str(e)
+            print(f"Error fetching {symbol}: {e}")
 
+        price_history = price_history or []
+        current_price = current_price or 0.0
+
+        if include_history:
+            if instrument_type == "etf":
+                print(f"[compute] ETF {symbol}: price={current_price}, history_len={len(price_history)}")
+            else:
+                print(f"[compute] Stock {symbol}: price={current_price}, history_len={len(price_history)}")
+
+        try:
             avg_price = data["total_cost"] / data["quantity"] if data["quantity"] else 0
             market_value = data["quantity"] * current_price
             gain_loss = market_value - data["total_cost"]
@@ -477,9 +803,12 @@ def compute_portfolio_value(
             if data["quantity"] > 0:
                 cashflows.append((date.today(), market_value))
             cashflows.sort(key=lambda x: x[0])
-            xirr = calc_xirr(cashflows)
+            try:
+                xirr = calc_xirr(cashflows)
+            except Exception as e:
+                print(f"XIRR calc failed for {symbol}: {e}")
+                xirr = 0.0
 
-            # pick currency from first order if available
             currency = ""
             orders_for_symbol = orders_by_symbol.get(symbol, [])
             if orders_for_symbol:
@@ -498,6 +827,7 @@ def compute_portfolio_value(
                     "instrument_type": instrument_type,
                     "currency": currency,
                     "xirr": round(xirr * 100, 2) if xirr else 0.0,
+                    "fetch_error": fetch_error,
                 }
             )
             if include_history and price_history:
@@ -514,26 +844,122 @@ def compute_portfolio_value(
     return positions, total_value, total_cost, total_gain_loss, total_gain_loss_pct, position_histories
 
 
-def aggregate_portfolio_history(position_histories: dict, positions_map: dict):
+def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict):
     """
-    Aggrega le serie storiche dei singoli strumenti usando le quantità correnti per costruire
-    una curva del valore di portafoglio.
+    Aggrega il valore del portafoglio nel tempo usando solo le date in cui
+    tutti gli strumenti con posizione > 0 hanno un prezzo disponibile.
     """
     if not position_histories:
-        return []
+        return [], {}, []
 
-    totals = {}
+    price_map = {}
+    all_dates = set()
     for symbol, history in position_histories.items():
-        qty = positions_map.get(symbol, {}).get("quantity", 0.0)
+        m = {}
         for point in history:
+            d = parse_date_input(point.get("date"))
+            if not d:
+                continue
+            try:
+                m[d] = float(point.get("price"))
+                all_dates.add(d)
+            except Exception:
+                continue
+        price_map[symbol] = m
+
+    if not all_dates:
+        return [], price_map, []
+
+    orders_sorted = {sym: sorted(orders_by_symbol.get(sym, []), key=lambda o: o.date) for sym in price_map.keys()}
+    order_idx = {sym: 0 for sym in price_map.keys()}
+    qty_map = {sym: 0.0 for sym in price_map.keys()}
+
+    aggregated = []
+    valid_dates = []
+    for current_date in sorted(all_dates):
+        total_value = 0.0
+        any_position = False
+        valid = True
+
+        # applica ordini fino a questa data (inclusa)
+        for sym, ords in orders_sorted.items():
+            idx = order_idx[sym]
+            while idx < len(ords) and ords[idx].date <= current_date:
+                delta = ords[idx].quantity if ords[idx].order_type == "buy" else -ords[idx].quantity
+                qty_map[sym] += delta
+                idx += 1
+            order_idx[sym] = idx
+
+        for sym, prices in price_map.items():
+            qty = qty_map.get(sym, 0.0)
             if qty <= 0:
                 continue
-            date_key = point["date"]
-            totals[date_key] = totals.get(date_key, 0.0) + qty * float(point["price"])
+            any_position = True
+            price = prices.get(current_date)
+            if price is None:
+                valid = False
+                break
+            total_value += qty * price
 
-    aggregated = [{"date": d, "value": round(v, 2)} for d, v in totals.items()]
-    aggregated.sort(key=lambda x: x["date"])
-    return aggregated
+        if valid and any_position:
+            aggregated.append({"date": current_date.strftime(DATE_FMT), "value": round(total_value, 2)})
+            valid_dates.append(current_date)
+
+    return aggregated, price_map, valid_dates
+
+
+def compute_portfolio_performance(price_map: dict, orders_by_symbol: dict, common_dates: list):
+    """
+    Calcola una curva di performance (TWR-like) basata sui rendimenti dei singoli asset
+    pesati per il valore del giorno precedente, escludendo l'effetto dei flussi (ordini).
+    """
+    if not price_map or not common_dates:
+        return []
+
+    # ordini per simbolo ordinati per data
+    orders_sorted = {sym: sorted(orders_by_symbol.get(sym, []), key=lambda o: o.date) for sym in price_map.keys()}
+    order_idx = {sym: 0 for sym in price_map.keys()}
+    qty_map = {sym: 0.0 for sym in price_map.keys()}
+
+    perf = []
+    nav = 100.0
+    prev_date = None
+
+    for current_date in common_dates:
+        if prev_date is not None:
+            total_prev_value = 0.0
+            for sym, prices in price_map.items():
+                prev_price = prices.get(prev_date)
+                if prev_price and qty_map.get(sym, 0.0) > 0:
+                    total_prev_value += qty_map[sym] * prev_price
+
+            if total_prev_value > 0:
+                daily_return = 0.0
+                for sym, prices in price_map.items():
+                    prev_price = prices.get(prev_date)
+                    curr_price = prices.get(current_date)
+                    qty = qty_map.get(sym, 0.0)
+                    if qty > 0 and prev_price and curr_price:
+                        weight = (qty * prev_price) / total_prev_value
+                        asset_ret = (curr_price / prev_price) - 1
+                        daily_return += weight * asset_ret
+                nav *= (1 + daily_return)
+                perf.append({"date": current_date.strftime(DATE_FMT), "value": round(nav, 4)})
+        else:
+            perf.append({"date": current_date.strftime(DATE_FMT), "value": round(nav, 4)})
+
+        # applica ordini alla fine del giorno per la giornata successiva
+        for sym, ords in orders_sorted.items():
+            idx = order_idx[sym]
+            while idx < len(ords) and ords[idx].date == current_date:
+                delta = ords[idx].quantity if ords[idx].order_type == "buy" else -ords[idx].quantity
+                qty_map[sym] = qty_map.get(sym, 0.0) + delta
+                idx += 1
+            order_idx[sym] = idx
+
+        prev_date = current_date
+
+    return perf
 
 
 def validate_order_input(order: Order):
@@ -605,7 +1031,7 @@ def create_portfolio(portfolio: Portfolio, user: UserModel = Depends(verify_toke
         "name": db_portfolio.name,
         "description": db_portfolio.description,
         "initial_capital": db_portfolio.initial_capital,
-        "created_at": db_portfolio.created_at.isoformat() if db_portfolio.created_at else None,
+        "created_at": format_datetime(db_portfolio.created_at),
     }
 
 @app.get("/portfolios")
@@ -631,7 +1057,7 @@ def get_portfolios(user: UserModel = Depends(verify_token), db: Session = Depend
                 "user_email": user.email,
                 "name": p.name,
                 "description": p.description,
-                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "created_at": format_datetime(p.created_at),
                 "total_value": round(total_value, 2),
                 "total_cost": round(total_cost, 2),
                 "total_gain_loss": round(total_gain_loss, 2),
@@ -663,7 +1089,8 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
         positions_map, orders_by_symbol, symbol_type_map, symbol_isin_map, db, include_history=True
     )
 
-    portfolio_history = aggregate_portfolio_history(position_histories, positions_map)
+    portfolio_history, price_map, common_dates = aggregate_portfolio_history(position_histories, orders_by_symbol)
+    performance_history = compute_portfolio_performance(price_map, orders_by_symbol, common_dates)
 
     return {
         "portfolio": {
@@ -671,7 +1098,7 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
             "user_email": user.email,
             "name": portfolio.name,
             "description": portfolio.description,
-            "created_at": portfolio.created_at.isoformat() if portfolio.created_at else None,
+            "created_at": format_datetime(portfolio.created_at),
         },
         "positions": positions,
         "summary": {
@@ -682,9 +1109,10 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
         },
         "history": {
             "portfolio": portfolio_history,
+            "performance": performance_history,
             "positions": position_histories,
         },
-        "last_updated": datetime.now().isoformat(),
+        "last_updated": format_datetime(datetime.now(timezone.utc)),
     }
 
 @app.delete("/portfolios/{portfolio_id}")
@@ -723,11 +1151,13 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
 
     resolved_isin = order.isin or (match.get("isin") if match else "")
+    resolved_ter = order.ter or (match.get("ter") if match else "")
 
     db_order = OrderModel(
         portfolio_id=portfolio.id,
         symbol=order.symbol.upper(),
         isin=resolved_isin,
+        ter=resolved_ter,
         name=order.name or (match.get("name") if match else ""),
         exchange=order.exchange or (match.get("exchange") if match else ""),
         currency=order.currency or (match.get("currency") if match else ""),
@@ -749,6 +1179,7 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
             "portfolio_id": db_order.portfolio_id,
             "symbol": db_order.symbol,
             "isin": db_order.isin,
+            "ter": db_order.ter,
             "name": db_order.name,
             "exchange": db_order.exchange,
             "currency": db_order.currency,
@@ -757,8 +1188,8 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
             "commission": db_order.commission,
             "instrument_type": db_order.instrument_type,
             "order_type": db_order.order_type,
-            "date": db_order.date.isoformat(),
-            "created_at": db_order.created_at.isoformat() if db_order.created_at else None,
+            "date": format_date(db_order.date),
+            "created_at": format_datetime(db_order.created_at),
         },
     }
 
@@ -778,6 +1209,7 @@ def get_orders(portfolio_id: int, user: UserModel = Depends(verify_token), db: S
                 "portfolio_id": o.portfolio_id,
                 "symbol": o.symbol,
                 "isin": o.isin,
+                "ter": o.ter,
                 "name": o.name,
                 "exchange": o.exchange,
                 "currency": o.currency,
@@ -786,8 +1218,8 @@ def get_orders(portfolio_id: int, user: UserModel = Depends(verify_token), db: S
                 "commission": o.commission,
                 "instrument_type": o.instrument_type,
                 "order_type": o.order_type,
-                "date": o.date.isoformat(),
-                "created_at": o.created_at.isoformat() if o.created_at else None,
+                "date": format_date(o.date),
+                "created_at": format_datetime(o.created_at),
             }
             for o in orders
         ]
@@ -830,9 +1262,11 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
 
     resolved_isin = updated.isin or (match.get("isin") if match else "")
+    resolved_ter = updated.ter or (match.get("ter") if match else "")
 
     order.symbol = updated.symbol.upper()
     order.isin = resolved_isin
+    order.ter = resolved_ter
     order.name = updated.name or (match.get("name") if match else "")
     order.exchange = updated.exchange or (match.get("exchange") if match else "")
     order.currency = updated.currency or (match.get("currency") if match else "")
@@ -853,6 +1287,7 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
             "portfolio_id": order.portfolio_id,
             "symbol": order.symbol,
             "isin": order.isin,
+            "ter": order.ter,
             "name": order.name,
             "exchange": order.exchange,
             "currency": order.currency,
@@ -860,8 +1295,8 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
             "price": order.price,
             "commission": order.commission,
             "order_type": order.order_type,
-            "date": order.date.isoformat(),
-            "created_at": order.created_at.isoformat() if order.created_at else None,
+            "date": format_date(order.date),
+            "created_at": format_datetime(order.created_at),
         },
     }
 
@@ -957,7 +1392,7 @@ def get_position_history(
 
         history = []
         for idx, row in hist.iterrows():
-            history.append({"date": idx.strftime("%Y-%m-%d"), "close": round(row["Close"], 2), "volume": int(row["Volume"])})
+            history.append({"date": idx.strftime(DATE_FMT), "close": round(row["Close"], 2), "volume": int(row["Volume"])})
 
         return {"symbol": symbol, "history": history}
     except Exception as e:
@@ -974,6 +1409,7 @@ def symbols_search(q: str, instrument_type: str = "stock"):
             "exchange": item.get("exchangeShortName") or item.get("exchange"),
             "currency": item.get("currency"),
             "type": item.get("type"),
+            "ter": item.get("ter", ""),
         }
         for item in matches
     ]
@@ -993,6 +1429,7 @@ def symbols_ucits():
             "type": "ETF",
             "isin": item.get("isin"),
             "ticker": item.get("ticker"),
+            "ter": item.get("ter", ""),
         })
     return {"results": formatted}
 
