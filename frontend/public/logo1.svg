@@ -1,0 +1,45 @@
+<svg
+    width="512"
+    height="512"
+    viewBox="0 0 512 512"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+>
+    <defs>
+        <marker
+            id="arrowhead"
+            markerWidth="4"
+            markerHeight="4"
+            refX="2.6"
+            refY="2"
+            orient="auto"
+            markerUnits="strokeWidth"
+        >
+            <path d="M0 0 L4 2 L0 4 Z" fill="#1E88E5"/>
+        </marker>
+    </defs>
+
+    <!-- Assi cartesiani (primo quadrante) -->
+    <!-- Asse X leggermente più lungo -->
+    <path
+        d="M80 440 V80 M80 440 H460"
+        stroke="#0B2A4A"
+        stroke-width="24"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+
+    <!-- Linea discendente con freccia -->
+    <path
+        d="M120 120
+           L260 300
+           L340 220
+           L450 350"
+        stroke="#1E88E5"
+        stroke-width="24"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+        marker-end="url(#arrowhead)"
+    />
+</svg>
