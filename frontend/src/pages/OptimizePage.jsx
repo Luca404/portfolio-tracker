@@ -13,7 +13,7 @@ function OptimizePage({ token, portfolio }) {
     setLoading(true);
     try {
       const symbols = formData.symbols.split(',').map(s => s.trim());
-      const res = await fetch(`${API_URL}/portfolio/optimize`, {
+      const res = await fetch(`${API_URL}/orders/optimize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

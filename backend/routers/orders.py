@@ -1,23 +1,35 @@
+from typing import List
+
+import yfinance as yf
 from fastapi import APIRouter, Depends, HTTPException
+from pypfopt import EfficientFrontier, expected_returns, risk_models
+from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from models import UserModel, PortfolioModel, OrderModel
 from schemas import Order
-from utils import get_db, verify_token, commit_with_retry, format_date, format_datetime
-
-# Import functions from main.py (they will be moved to services later)
-# These imports will work because main.py is loaded before the routers are included
-import main as main_module
+from schemas.order import OptimizationRequest
+from utils import (
+    get_db,
+    verify_token,
+    commit_with_retry,
+    format_date,
+    format_datetime,
+    validate_order_input,
+    ensure_symbol_exists,
+    aggregate_positions,
+    get_risk_free_rate,
+)
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 @router.post("")
 def create_order(order: Order, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
-    main_module.validate_order_input(order)
+    validate_order_input(order)
     try:
-        match = main_module.ensure_symbol_exists(order.symbol, order.instrument_type)
+        match = ensure_symbol_exists(order.symbol, order.instrument_type)
     except HTTPException:
         # bubble up validation errors, but allow missing key error through HTTPException
         raise
@@ -28,7 +40,7 @@ def create_order(order: Order, user: UserModel = Depends(verify_token), db: Sess
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     existing_orders = db.execute(select(OrderModel).where(OrderModel.portfolio_id == portfolio.id)).scalars().all()
-    current_positions = main_module.aggregate_positions(existing_orders)
+    current_positions = aggregate_positions(existing_orders)
     symbol_positions = current_positions.get(order.symbol.upper(), {"quantity": 0, "total_cost": 0})
 
     if order.order_type == "sell" and order.quantity > symbol_positions["quantity"]:
@@ -122,9 +134,9 @@ def delete_order(order_id: int, user: UserModel = Depends(verify_token), db: Ses
 
 @router.put("/{order_id}")
 def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
-    main_module.validate_order_input(updated)
+    validate_order_input(updated)
     try:
-        match = main_module.ensure_symbol_exists(updated.symbol, updated.instrument_type)
+        match = ensure_symbol_exists(updated.symbol, updated.instrument_type)
     except HTTPException:
         raise
 
@@ -140,7 +152,7 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
             select(OrderModel).where(OrderModel.portfolio_id == order.portfolio_id, OrderModel.id != order.id)
         ).scalars().all()
     )
-    positions_before = main_module.aggregate_positions(existing_orders)
+    positions_before = aggregate_positions(existing_orders)
     symbol_positions = positions_before.get(updated.symbol.upper(), {"quantity": 0, "total_cost": 0})
     if updated.order_type == "sell" and updated.quantity > symbol_positions["quantity"]:
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
@@ -181,3 +193,62 @@ def update_order(order_id: int, updated: Order, user: UserModel = Depends(verify
         "date": format_date(order.date),
         "created_at": format_datetime(order.created_at),
     }
+
+
+@router.post("/optimize")
+def optimize_portfolio(request: OptimizationRequest, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
+    """Portfolio optimization using PyPortfolioOpt."""
+    portfolio = db.execute(
+        select(PortfolioModel).where(PortfolioModel.id == request.portfolio_id, PortfolioModel.user_id == user.id)
+    ).scalar_one_or_none()
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    try:
+        symbols = [s.upper() for s in request.symbols]
+        data = yf.download(symbols, period="1y", progress=False)["Adj Close"]
+
+        if data.empty:
+            raise HTTPException(status_code=400, detail="No data available")
+
+        # Get dynamic risk-free rate based on portfolio settings
+        reference_currency = portfolio.reference_currency or "EUR"
+        risk_free_rate_pct = get_risk_free_rate(reference_currency, db, portfolio.risk_free_source)
+        risk_free_rate = risk_free_rate_pct / 100.0  # Convert from percentage to decimal
+
+        mu = expected_returns.mean_historical_return(data)
+        S = risk_models.sample_cov(data)
+        ef = EfficientFrontier(mu, S)
+
+        if request.optimization_type == "max_sharpe":
+            ef.max_sharpe(risk_free_rate=risk_free_rate)
+        elif request.optimization_type == "min_volatility":
+            ef.min_volatility()
+        else:
+            ef.efficient_risk(target_volatility=0.15)
+
+        cleaned_weights = ef.clean_weights()
+        perf = ef.portfolio_performance(verbose=False, risk_free_rate=risk_free_rate)
+
+        latest_prices = get_latest_prices(data)
+        orders = db.execute(select(OrderModel).where(OrderModel.portfolio_id == portfolio.id)).scalars().all()
+        positions_map = aggregate_positions(orders)
+        total_value = sum(
+            pos["quantity"] * latest_prices.get(symbol, 0)
+            for symbol, pos in positions_map.items()
+            if pos["quantity"] > 0 and symbol in latest_prices
+        )
+
+        da = DiscreteAllocation(cleaned_weights, latest_prices, total_portfolio_value=total_value)
+        allocation, leftover = da.greedy_portfolio()
+
+        return {
+            "weights": {k: round(v, 4) for k, v in cleaned_weights.items() if v > 0.001},
+            "allocation": allocation,
+            "leftover": round(leftover, 2),
+            "expected_return": round(perf[0] * 100, 2),
+            "volatility": round(perf[1] * 100, 2),
+            "sharpe_ratio": round(perf[2], 2),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

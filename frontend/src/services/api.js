@@ -245,7 +245,7 @@ export const marketDataAPI = {
    * Get position history
    */
   getPositionHistory: async (token, portfolioId, symbol) => {
-    const res = await fetch(`${API_URL}/portfolio/history/${portfolioId}/${symbol}`, {
+    const res = await fetch(`${API_URL}/portfolios/history/${portfolioId}/${symbol}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to fetch position history');
@@ -333,7 +333,7 @@ export const optimizationAPI = {
    * Optimize portfolio
    */
   optimize: async (token, request) => {
-    const res = await fetch(`${API_URL}/portfolio/optimize`, {
+    const res = await fetch(`${API_URL}/orders/optimize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

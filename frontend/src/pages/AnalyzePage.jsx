@@ -41,7 +41,7 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
     // Fetch from server
     setLoadingTab(prev => ({ ...prev, [tab]: true }));
     try {
-      const res = await fetch(`${API_URL}/analysis/${portfolio.id}`, {
+      const res = await fetch(`${API_URL}/portfolios/analysis/${portfolio.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -52,7 +52,8 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
         montecarlo: data.montecarlo,
         risk_metrics: data.risk_metrics,
         drawdown: data.drawdown,
-        performance_attribution: data.performance_attribution
+        performance_attribution: data.performance_attribution,
+        historical_prices: data.historical_prices
       };
 
       for (const [key, value] of Object.entries(tabData)) {
@@ -69,7 +70,8 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
         montecarlo: data.montecarlo,
         risk: data.risk_metrics,
         drawdown: data.drawdown,
-        attribution: data.performance_attribution
+        attribution: data.performance_attribution,
+        historical_prices: data.historical_prices
       };
 
       setAnalysisData(frontendTabData);
@@ -419,11 +421,11 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
                     <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4">
                       <p className="text-sm text-red-700 mb-1">Bottom Contributor</p>
                       <p className="text-lg font-bold text-red-900">
-                        {analysisData.attribution.bottom_contributors?.[0]?.symbol || 'N/A'}
+                        {analysisData.attribution.worst_contributors?.[0]?.symbol || 'N/A'}
                       </p>
                       <p className="text-sm text-red-600">
-                        {analysisData.attribution.bottom_contributors?.[0]?.contribution_to_portfolio >= 0 ? '+' : ''}
-                        {analysisData.attribution.bottom_contributors?.[0]?.contribution_to_portfolio?.toFixed(2)}%
+                        {analysisData.attribution.worst_contributors?.[0]?.contribution_to_portfolio >= 0 ? '+' : ''}
+                        {analysisData.attribution.worst_contributors?.[0]?.contribution_to_portfolio?.toFixed(2)}%
                       </p>
                     </div>
                   </div>
@@ -446,10 +448,20 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
                   </div>
 
                   {/* Asset Performance Over Time */}
-                  {analysisData.attribution.time_series && analysisData.attribution.time_series.length > 0 && (
+                  {analysisData.historical_prices && analysisData.historical_prices.dates && (
                     <AssetPerformanceChart
-                      data={analysisData.attribution.time_series}
-                      symbols={analysisData.attribution.symbols || []}
+                      data={(() => {
+                        // Transform historical_prices to chart format
+                        const { dates, assets } = analysisData.historical_prices;
+                        return dates.map((date, idx) => {
+                          const dataPoint = { date };
+                          Object.keys(assets).forEach(symbol => {
+                            dataPoint[symbol] = assets[symbol][idx];
+                          });
+                          return dataPoint;
+                        });
+                      })()}
+                      symbols={Object.keys(analysisData.historical_prices.assets || {})}
                     />
                   )}
 
@@ -573,7 +585,7 @@ function CorrelationHeatmap({ data }) {
 
 // Helper component for Monte Carlo Chart
 function MonteCarloChart({ data }) {
-  if (!data || !data.percentiles) return null;
+  if (!data || !data.percentiles || !data.dates) return null;
 
   const currentValue = data.current_value;
 
@@ -646,12 +658,21 @@ function MonteCarloChart({ data }) {
 
 // Helper component for Drawdown Chart
 function DrawdownChart({ data }) {
-  if (!data || !data.dates || !data.drawdown) return null;
+  if (!data) return null;
 
-  const chartData = data.dates.map((date, i) => ({
-    date,
-    drawdown: data.drawdown[i]
-  }));
+  // Handle both array of objects [{date, drawdown}] and separate arrays {dates: [], drawdown: []}
+  // Backend returns decimal values (e.g., -0.1234 for -12.34%), multiply by 100 for percentage display
+  const chartData = Array.isArray(data)
+    ? data.map(item => ({
+        date: item.date,
+        drawdown: (item.drawdown || 0) * 100  // Convert decimal to percentage
+      }))
+    : data.dates?.map((date, i) => ({
+        date,
+        drawdown: (data.drawdown[i] || 0) * 100
+      }));
+
+  if (!chartData || chartData.length === 0) return null;
 
   return (
     <ResponsiveContainer width="100%" height={350}>

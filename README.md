@@ -7,17 +7,19 @@ Un'applicazione web full-stack per tracciare e analizzare portafogli di investim
 ```
 portfolio-tracker/
 ├── backend/               # Backend FastAPI (Python)
-│   ├── main.py           # Core application & remaining endpoints
+│   ├── main.py           # App setup only (71 righe)
 │   ├── models/           # SQLAlchemy models
 │   │   ├── user.py      # User model
 │   │   ├── portfolio.py # Portfolio model
 │   │   ├── order.py     # Order model
 │   │   └── cache.py     # Cache models (ETF, Stock, Exchange, etc.)
 │   │
-│   ├── routers/          # API route handlers
-│   │   ├── auth.py      # Authentication endpoints (/auth/*)
-│   │   ├── portfolios.py # Portfolio CRUD (/portfolios/*)
-│   │   └── orders.py    # Orders & optimization (/orders/*)
+│   ├── routers/          # API route handlers (24 endpoints)
+│   │   ├── auth.py          # 3 endpoints: /auth/* (register, login, me)
+│   │   ├── portfolios.py    # 8 endpoints: /portfolios/* (CRUD, analytics, history)
+│   │   ├── orders.py        # 5 endpoints: /orders/* (CRUD, optimize)
+│   │   ├── symbols.py       # 4 endpoints: /symbols/* (search, ucits, etf-list, stats)
+│   │   └── market_data.py   # 4 endpoints: /market-data/* (prices, rates, benchmarks)
 │   │
 │   ├── schemas/          # Pydantic schemas (validation)
 │   │   ├── user.py      # UserRegister, UserLogin, Token
@@ -27,8 +29,12 @@ portfolio-tracker/
 │   ├── utils/            # Utility modules
 │   │   ├── database.py  # DB connection, migrations
 │   │   ├── auth.py      # JWT, password hashing
-│   │   ├── dates.py     # Date formatting
-│   │   └── cache.py     # Cache utilities
+│   │   ├── dates.py     # Date formatting, parsing
+│   │   ├── cache.py     # Cache invalidation
+│   │   ├── pricing.py   # ETF/Stock pricing, conversions (1,151 righe)
+│   │   ├── portfolio.py # Portfolio calculations, XIRR (452 righe)
+│   │   ├── symbols.py   # Symbol search/validation (86 righe)
+│   │   └── helpers.py   # Data validation (25 righe)
 │   │
 │   └── etf_cache_ucits.py # UCITS ETF cache (local data)
 │
@@ -90,10 +96,12 @@ Database models per persistenza dati:
 - **Cache Models**: ETFPriceCache, StockPriceCache, ExchangeRateCache, RiskFreeRateCache, MarketBenchmarkCache
 
 ### Routers (API Endpoints)
-Endpoints organizzati per dominio:
-- **auth.py**: `/auth/register`, `/auth/login`, `/auth/me`
-- **portfolios.py**: `/portfolios/*` (CRUD completo + analytics)
-- **orders.py**: `/orders/*` (CRUD + `/portfolio/optimize`)
+24 endpoints organizzati per dominio:
+- **auth.py** (3 endpoints): `/auth/register`, `/auth/login`, `/auth/me`
+- **portfolios.py** (8 endpoints): CRUD portfolio + analytics avanzate + storico
+- **orders.py** (5 endpoints): CRUD ordini + ottimizzazione portfolio (MPT)
+- **symbols.py** (4 endpoints): Ricerca simboli, lista UCITS ETF, statistiche
+- **market_data.py** (4 endpoints): Prezzi, tassi risk-free, benchmark
 
 ### Schemas (Pydantic)
 Validazione e serializzazione request/response:
@@ -105,8 +113,12 @@ Validazione e serializzazione request/response:
 Funzioni utility condivise:
 - **database.py**: Connection pooling, migrations, retry logic
 - **auth.py**: JWT tokens, password hashing (bcrypt)
-- **dates.py**: Formatting ISO/DMY
+- **dates.py**: Formatting ISO/DMY, date parsing
 - **cache.py**: Cache invalidation helpers
+- **pricing.py**: ETF/Stock pricing, conversions, risk-free rates, benchmarks (1,151 righe)
+- **portfolio.py**: Portfolio calculations, XIRR, aggregations (452 righe)
+- **symbols.py**: Symbol search and validation (86 righe)
+- **helpers.py**: Data validation and normalization (25 righe)
 
 ## 📦 Frontend - Struttura Dettagliata
 
