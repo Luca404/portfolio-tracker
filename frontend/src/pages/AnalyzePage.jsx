@@ -10,19 +10,25 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
   const [analysisData, setAnalysisData] = useState({});
   const [loadingTab, setLoadingTab] = useState({});
   const [activeTab, setActiveTab] = useState('correlation');
+  const [monteCarloYears, setMonteCarloYears] = useState(1);
 
   // Load data for a specific tab with localStorage cache
-  const fetchTabData = async (tab) => {
+  const fetchTabData = async (tab, mcYears = monteCarloYears, forceRefresh = false) => {
     // Map frontend tab names to backend keys
     const tabKeyMap = {
       'attribution': 'performance_attribution',
       'risk': 'risk_metrics'
     };
     const backendKey = tabKeyMap[tab] || tab;
-    const cacheKey = `analysis_${portfolio.id}_${backendKey}`;
+
+    // Include Monte Carlo years in cache key for montecarlo tab
+    const cacheKey = tab === 'montecarlo'
+      ? `analysis_${portfolio.id}_${backendKey}_${mcYears}y`
+      : `analysis_${portfolio.id}_${backendKey}`;
+
     const cached = localStorage.getItem(cacheKey);
 
-    if (cached) {
+    if (cached && !forceRefresh) {
       try {
         const cachedData = JSON.parse(cached);
         const cacheTime = cachedData._cacheTime || 0;
@@ -31,6 +37,23 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
         if (now - cacheTime < 24 * 60 * 60 * 1000) {
           console.log(`[CACHE] Analysis ${tab}: using cache`);
           setAnalysisData(prev => ({ ...prev, [tab]: cachedData.data }));
+
+          // If loading attribution tab, also load historical_prices if cached
+          if (tab === 'attribution') {
+            const historicalPricesCacheKey = `analysis_${portfolio.id}_historical_prices`;
+            const historicalPricesCached = localStorage.getItem(historicalPricesCacheKey);
+            if (historicalPricesCached) {
+              try {
+                const historicalPricesData = JSON.parse(historicalPricesCached);
+                if (now - (historicalPricesData._cacheTime || 0) < 24 * 60 * 60 * 1000) {
+                  setAnalysisData(prev => ({ ...prev, historical_prices: historicalPricesData.data }));
+                }
+              } catch (e) {
+                console.warn('[CACHE] Error parsing historical_prices cache:', e);
+              }
+            }
+          }
+
           return;
         }
       } catch (e) {
@@ -41,7 +64,7 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
     // Fetch from server
     setLoadingTab(prev => ({ ...prev, [tab]: true }));
     try {
-      const res = await fetch(`${API_URL}/portfolios/analysis/${portfolio.id}`, {
+      const res = await fetch(`${API_URL}/portfolios/analysis/${portfolio.id}?monte_carlo_years=${mcYears}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -57,7 +80,10 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
       };
 
       for (const [key, value] of Object.entries(tabData)) {
-        const tabCacheKey = `analysis_${portfolio.id}_${key}`;
+        // Include years in cache key for montecarlo
+        const tabCacheKey = key === 'montecarlo'
+          ? `analysis_${portfolio.id}_${key}_${mcYears}y`
+          : `analysis_${portfolio.id}_${key}`;
         localStorage.setItem(tabCacheKey, JSON.stringify({
           data: value,
           _cacheTime: Date.now()
@@ -239,16 +265,38 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
           <AnalysisTabSkeleton />
         ) : (
           <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="w-6 h-6 text-green-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Monte Carlo Simulation</h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+              <h2 className="text-2xl font-bold text-slate-900">Monte Carlo Simulation</h2>
+            </div>
+            {/* Years Selector */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-slate-700">Projection Period:</label>
+              <select
+                value={monteCarloYears}
+                onChange={(e) => {
+                  const newYears = parseInt(e.target.value);
+                  setMonteCarloYears(newYears);
+                  fetchTabData('montecarlo', newYears);
+                }}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={1}>1 Year</option>
+                <option value={3}>3 Years</option>
+                <option value={5}>5 Years</option>
+                <option value={10}>10 Years</option>
+              </select>
+            </div>
           </div>
           <p className="text-slate-600 mb-6">
-            10,000 simulated portfolio trajectories over the next year based on historical returns and volatility.
+            10,000 simulated portfolio trajectories based on historical returns and volatility.
           </p>
 
           {analysisData.montecarlo ? (
-            <MonteCarloChart data={analysisData.montecarlo} />
+            <MonteCarloChart
+              data={analysisData.montecarlo}
+            />
           ) : (
             <div className="text-center py-16 text-slate-500">
               Simulation data not available. Portfolio needs sufficient historical data.

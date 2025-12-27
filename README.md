@@ -1,328 +1,435 @@
 # Portfolio Tracker
 
-Un'applicazione web full-stack per tracciare e analizzare portafogli di investimento con funzionalità avanzate di analisi del rischio e ottimizzazione.
+A full-stack web application for tracking and analyzing investment portfolios with advanced risk analytics and portfolio optimization capabilities.
 
-## 🏗️ Architettura del Progetto
+## Architecture Overview
+
+Portfolio Tracker is a modern web application built with a clear separation between backend and frontend layers. The backend provides a RESTful API powered by FastAPI, while the frontend delivers a responsive React-based user interface.
+
+### Technology Stack
+
+**Backend:**
+- FastAPI (Python web framework)
+- SQLAlchemy 2.0 (ORM with SQLite)
+- Pydantic (data validation and serialization)
+- yfinance (market data)
+- NumPy/Pandas (numerical analysis)
+- PyPortfolioOpt (Modern Portfolio Theory implementation)
+- JWT + bcrypt (authentication and security)
+
+**Frontend:**
+- React 18 (UI library)
+- Vite (build tool and development server)
+- Tailwind CSS (styling framework)
+- Recharts (data visualization)
+- Lucide React (icon library)
+
+## Project Structure
 
 ```
 portfolio-tracker/
-├── backend/               # Backend FastAPI (Python)
-│   ├── main.py           # App setup only (71 righe)
-│   ├── models/           # SQLAlchemy models
-│   │   ├── user.py      # User model
+├── backend/               # FastAPI backend
+│   ├── main.py           # Application setup and configuration
+│   ├── models/           # SQLAlchemy ORM models
+│   │   ├── user.py      # User authentication model
 │   │   ├── portfolio.py # Portfolio model
 │   │   ├── order.py     # Order model
-│   │   └── cache.py     # Cache models (ETF, Stock, Exchange, etc.)
+│   │   └── cache.py     # Cache models (price, exchange rates, benchmarks)
 │   │
-│   ├── routers/          # API route handlers (24 endpoints)
-│   │   ├── auth.py          # 3 endpoints: /auth/* (register, login, me)
-│   │   ├── portfolios.py    # 8 endpoints: /portfolios/* (CRUD, analytics, history)
-│   │   ├── orders.py        # 5 endpoints: /orders/* (CRUD, optimize)
-│   │   ├── symbols.py       # 4 endpoints: /symbols/* (search, ucits, etf-list, stats)
-│   │   └── market_data.py   # 4 endpoints: /market-data/* (prices, rates, benchmarks)
+│   ├── routers/          # API endpoint handlers (24 endpoints total)
+│   │   ├── auth.py          # Authentication (register, login, user info)
+│   │   ├── portfolios.py    # Portfolio CRUD and analytics
+│   │   ├── orders.py        # Order management and optimization
+│   │   ├── symbols.py       # Symbol search and ETF listings
+│   │   └── market_data.py   # Market data, rates, and benchmarks
 │   │
-│   ├── schemas/          # Pydantic schemas (validation)
-│   │   ├── user.py      # UserRegister, UserLogin, Token
+│   ├── schemas/          # Pydantic validation schemas
+│   │   ├── user.py      # User registration, login, token
 │   │   ├── portfolio.py # Portfolio schema
-│   │   └── order.py     # Order, OptimizationRequest
+│   │   └── order.py     # Order and optimization schemas
 │   │
-│   ├── utils/            # Utility modules
-│   │   ├── database.py  # DB connection, migrations
-│   │   ├── auth.py      # JWT, password hashing
-│   │   ├── dates.py     # Date formatting, parsing
-│   │   ├── cache.py     # Cache invalidation
-│   │   ├── pricing.py   # ETF/Stock pricing, conversions (1,151 righe)
-│   │   ├── portfolio.py # Portfolio calculations, XIRR (452 righe)
-│   │   ├── symbols.py   # Symbol search/validation (86 righe)
-│   │   └── helpers.py   # Data validation (25 righe)
+│   ├── utils/            # Business logic and utilities
+│   │   ├── database.py  # Database connection and migrations
+│   │   ├── auth.py      # JWT and password hashing
+│   │   ├── pricing.py   # Pricing engine (ETF, stocks, currencies)
+│   │   ├── portfolio.py # Portfolio calculations and metrics
+│   │   ├── symbols.py   # Symbol search and validation
+│   │   ├── dates.py     # Date formatting and parsing
+│   │   ├── cache.py     # Cache invalidation helpers
+│   │   └── helpers.py   # Data validation utilities
 │   │
-│   └── etf_cache_ucits.py # UCITS ETF cache (local data)
+│   └── etf_cache_ucits.py # UCITS ETF data cache
 │
-├── scripts/              # Utility scripts
-│   ├── etf_cache.py     # ETF data cache builder
-│   └── import_orders_from_csv.py # CSV import utility
-│
-├── frontend/             # Frontend React
-│   ├── public/          # Assets statici
+├── frontend/             # React frontend
+│   ├── public/          # Static assets
 │   └── src/
-│       ├── App.jsx                    # Componente principale (170 righe)
-│       ├── main.jsx                   # Entry point
-│       ├── config.js                  # Configurazione (API_URL)
+│       ├── App.jsx                    # Root component with state management
+│       ├── main.jsx                   # Application entry point
+│       ├── config.js                  # Configuration (API URL)
 │       │
-│       ├── pages/                     # Componenti pagina (routing)
-│       │   ├── index.js              # Export centralizzato
-│       │   ├── AuthPage.jsx          # Login/Registrazione
-│       │   ├── DashboardPage.jsx     # Dashboard portfolio
-│       │   ├── OrdersPage.jsx        # Gestione ordini
-│       │   ├── AnalyzePage.jsx       # Analisi avanzate
-│       │   ├── ComparePage.jsx       # Confronto (placeholder)
-│       │   └── OptimizePage.jsx      # Ottimizzazione MPT
+│       ├── pages/                     # Page components
+│       │   ├── index.js              # Centralized exports
+│       │   ├── AuthPage.jsx          # Login and registration
+│       │   ├── DashboardPage.jsx     # Portfolio dashboard
+│       │   ├── OrdersPage.jsx        # Order management
+│       │   ├── AnalyzePage.jsx       # Advanced analytics
+│       │   ├── ComparePage.jsx       # Benchmark comparison
+│       │   └── OptimizePage.jsx      # Portfolio optimization
 │       │
-│       ├── components/                # Componenti riutilizzabili
-│       │   ├── Navbar.jsx            # Barra di navigazione
-│       │   ├── PortfoliosList.jsx    # Lista portfolio
-│       │   ├── MetricCard.jsx        # Card per metriche
+│       ├── components/                # Reusable components
+│       │   ├── Navbar.jsx            # Navigation bar
+│       │   ├── PortfoliosList.jsx    # Portfolio list and CRUD
+│       │   ├── MetricCard.jsx        # Metric display cards
 │       │   │
-│       │   ├── charts/               # Componenti grafici
+│       │   ├── charts/               # Chart components
 │       │   │   ├── CorrelationHeatmap.jsx
 │       │   │   ├── MonteCarloChart.jsx
 │       │   │   ├── DrawdownChart.jsx
 │       │   │   └── AssetPerformanceChart.jsx
 │       │   │
-│       │   └── skeletons/            # Loading skeletons
+│       │   └── skeletons/            # Loading state components
 │       │       ├── PortfolioCardSkeleton.jsx
 │       │       ├── DashboardSkeleton.jsx
 │       │       └── AnalysisTabSkeleton.jsx
 │       │
-│       └── utils/                     # Funzioni utility
-│           ├── currency.js           # Gestione valute
-│           ├── dates.js              # Parsing/formattazione date
-│           ├── cache.js              # Cache helpers
-│           └── helpers.js            # Utility varie
+│       ├── services/                  # API client layer
+│       │   └── api.js                # Centralized API calls
+│       │
+│       └── utils/                     # Frontend utilities
+│           ├── currency.js           # Currency formatting
+│           ├── dates.js              # Date parsing
+│           ├── cache.js              # Cache management
+│           └── helpers.js            # General utilities
 │
-├── scripts/              # Script utility
-└── data/                 # Dati locali (ETF cache)
+└── scripts/              # Utility scripts
+    ├── etf_cache.py     # ETF data cache builder
+    └── import_orders_from_csv.py # CSV import tool
 ```
 
-## 📦 Backend - Struttura Modulare
+## Backend Architecture
 
-Il backend è stato refactorizzato da un singolo file monolitico (3,244 righe) a una struttura modulare organizzata:
+### Database Schema
 
-### Models (SQLAlchemy ORM)
-Database models per persistenza dati:
-- **UserModel**: Autenticazione utenti
-- **PortfolioModel**: Portfolio investimenti
-- **OrderModel**: Ordini buy/sell
-- **Cache Models**: ETFPriceCache, StockPriceCache, ExchangeRateCache, RiskFreeRateCache, MarketBenchmarkCache
+The application uses SQLAlchemy ORM with SQLite for data persistence:
 
-### Routers (API Endpoints)
-24 endpoints organizzati per dominio:
-- **auth.py** (3 endpoints): `/auth/register`, `/auth/login`, `/auth/me`
-- **portfolios.py** (8 endpoints): CRUD portfolio + analytics avanzate + storico
-- **orders.py** (5 endpoints): CRUD ordini + ottimizzazione portfolio (MPT)
-- **symbols.py** (4 endpoints): Ricerca simboli, lista UCITS ETF, statistiche
-- **market_data.py** (4 endpoints): Prezzi, tassi risk-free, benchmark
+- **UserModel**: User authentication (email, username, hashed password)
+- **PortfolioModel**: Investment portfolios with multi-currency support
+- **OrderModel**: Buy/sell orders for ETFs and stocks
+- **Cache Models**: Performance optimization caches
+  - ETFPriceCache
+  - StockPriceCache
+  - ExchangeRateCache
+  - RiskFreeRateCache
+  - MarketBenchmarkCache
 
-### Schemas (Pydantic)
-Validazione e serializzazione request/response:
-- **UserRegister**, **UserLogin**, **Token**
-- **Portfolio** (con validazione campi)
-- **Order**, **OptimizationRequest**
+### API Endpoints
 
-### Utils
-Funzioni utility condivise:
-- **database.py**: Connection pooling, migrations, retry logic
-- **auth.py**: JWT tokens, password hashing (bcrypt)
-- **dates.py**: Formatting ISO/DMY, date parsing
-- **cache.py**: Cache invalidation helpers
-- **pricing.py**: ETF/Stock pricing, conversions, risk-free rates, benchmarks (1,151 righe)
-- **portfolio.py**: Portfolio calculations, XIRR, aggregations (452 righe)
-- **symbols.py**: Symbol search and validation (86 righe)
-- **helpers.py**: Data validation and normalization (25 righe)
+The API provides 24 RESTful endpoints organized by domain:
 
-## 📦 Frontend - Struttura Dettagliata
+**Authentication** (`/auth/*` - 3 endpoints):
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User authentication
+- `GET /auth/me` - Current user information
 
-### Pages (Routing)
+**Portfolios** (`/portfolios/*` - 8 endpoints):
+- `GET /portfolios` - List all user portfolios
+- `GET /portfolios/count` - Portfolio count
+- `GET /portfolios/{id}` - Portfolio details with positions and performance
+- `POST /portfolios` - Create portfolio
+- `PUT /portfolios/{id}` - Update portfolio
+- `DELETE /portfolios/{id}` - Delete portfolio
+- `GET /portfolios/history/{id}/{symbol}` - Position history
+- `GET /portfolios/analysis/{id}` - Advanced analytics
 
-Ogni page rappresenta una "schermata" dell'applicazione:
+**Orders** (`/orders/*` - 5 endpoints):
+- `GET /orders/{portfolio_id}` - List orders
+- `POST /orders` - Create order
+- `PUT /orders/{id}` - Update order
+- `DELETE /orders/{id}` - Delete order
+- `POST /orders/optimize` - Portfolio optimization
 
-- **AuthPage**: Gestione autenticazione (login/registrazione)
-- **DashboardPage**: Vista principale con metriche, grafici performance, holdings
-- **OrdersPage**: Creazione e gestione ordini di acquisto/vendita
-- **AnalyzePage**: Analisi avanzate (correlazione, Monte Carlo, drawdown, risk metrics)
-- **ComparePage**: Confronto con benchmark (coming soon)
-- **OptimizePage**: Ottimizzazione portfolio con Modern Portfolio Theory
+**Symbols** (`/symbols/*` - 4 endpoints):
+- `GET /symbols/search` - Search stocks and ETFs
+- `GET /symbols/ucits` - UCITS ETF list
+- `GET /symbols/etf-list` - Complete ETF list
+- `GET /symbols/etf-stats` - ETF cache statistics
 
-### Components
+**Market Data** (`/market-data/*` - 4 endpoints):
+- `GET /market-data/{symbol}` - Symbol market data
+- `GET /market-data/risk-free-rate/{currency}` - Risk-free rates
+- `GET /market-data/benchmark/{currency}` - Market benchmarks
+- `GET /market-data/portfolio-context/{id}` - Portfolio-specific context
 
-#### Componenti Comuni
-- **Navbar**: Navigazione principale con logo e menu
-- **PortfoliosList**: Gestione CRUD portfolio con settings avanzati
-- **MetricCard**: Card informativa con tooltip per metriche di rischio
+### Business Logic
 
-#### Charts (Grafici)
-- **CorrelationHeatmap**: Matrice di correlazione asset
-- **MonteCarloChart**: Simulazione Monte Carlo (95°, 50°, 5° percentile)
-- **DrawdownChart**: Grafico drawdown massimo
-- **AssetPerformanceChart**: Performance normalizzata per asset
+Core business logic is implemented in utility modules:
 
-#### Skeletons (Loading States)
-- **PortfolioCardSkeleton**: Loading card portfolio
-- **DashboardSkeleton**: Loading dashboard
-- **AnalysisTabSkeleton**: Loading tab analisi
+- **pricing.py**: Pricing engine for ETFs, stocks, currency conversion, and market data fetching
+- **portfolio.py**: Portfolio calculations including XIRR, returns, risk metrics, and performance attribution
+- **symbols.py**: Symbol search and validation logic
+- **auth.py**: JWT token management and password hashing
+- **database.py**: Connection pooling, retry logic, and schema migrations
 
-### Utils (Utility Functions)
+### Caching Strategy
 
-- **currency.js**:
-  - `getCurrencySymbol(currency)` - Simboli valute
-  - `formatCurrencyValue(val, currency)` - Formattazione valori
-  - `formatTerValue(val)` - Formattazione TER
+The application implements multi-level caching for optimal performance:
 
-- **dates.js**:
-  - `parseDateDMY(value)` - Parse DD/MM/YYYY
-  - `toISODateFromDMY(value)` - Conversione ISO format
+- Database-level caching for API responses
+- Session storage caching in the frontend
+- Intelligent cache invalidation on data changes
+- Configurable cache freshness checks
 
-- **cache.js**:
-  - `invalidatePortfolioCache(portfolioId)` - Invalidazione cache
-
-- **helpers.js**: Tutte le utility sopra re-esportate
-
-## 🔄 Flusso Dati
-
-```
-App.jsx (State Management)
-    ↓
-    ├─→ AuthPage → Login/Register
-    │
-    ├─→ Navbar (navigation)
-    │
-    └─→ Pages (views)
-         ├─→ DashboardPage → API → Charts + MetricCard
-         ├─→ OrdersPage → API → Form + Table
-         ├─→ AnalyzePage → API → Charts + MetricCard
-         ├─→ ComparePage (placeholder)
-         └─→ OptimizePage → API → Results
-```
+## Frontend Architecture
 
 ### State Management
 
-Lo state globale è gestito in `App.jsx`:
-- `token`: JWT token (localStorage)
-- `user`: Dati utente corrente
-- `currentView`: Vista attiva (portfolios|dashboard|orders|analyze|compare|optimize)
-- `selectedPortfolio`: Portfolio selezionato
-- `portfolios`: Lista tutti i portfolio
-- `portfoliosLoading`: Loading state
+Global state is managed in `App.jsx`:
 
-## 🚀 Come Iniziare
+- `token`: JWT authentication token (persisted in localStorage)
+- `user`: Current user data
+- `currentView`: Active page view
+- `selectedPortfolio`: Currently selected portfolio
+- `portfolios`: List of all portfolios
+- `portfoliosLoading`: Loading state indicator
 
-### Backend
+### Page Components
 
+- **AuthPage**: User authentication and registration
+- **DashboardPage**: Portfolio overview with metrics, charts, and holdings
+- **OrdersPage**: Order creation and management interface
+- **AnalyzePage**: Advanced analytics including correlation, Monte Carlo simulations, and risk metrics
+- **ComparePage**: Benchmark comparison (in development)
+- **OptimizePage**: Portfolio optimization using Modern Portfolio Theory
+
+### Reusable Components
+
+- **Navbar**: Application navigation
+- **PortfoliosList**: Portfolio CRUD operations
+- **MetricCard**: Metric display with tooltips
+- **Charts**: Correlation heatmaps, Monte Carlo simulations, drawdown analysis, performance charts
+- **Skeletons**: Loading state placeholders for improved UX
+
+### Service Layer
+
+The `services/api.js` module provides a centralized API client with consistent error handling and authentication header management.
+
+## Features
+
+### Portfolio Management
+
+- Multiple portfolio support with custom names and descriptions
+- Configurable reference currency (EUR, USD, GBP, etc.)
+- Custom risk-free rate sources
+- Custom market benchmarks
+- CSV import for bulk order creation
+
+### Order Tracking
+
+- Buy/sell order management
+- Support for both ETFs and stocks
+- Automatic symbol validation and enrichment
+- Autocomplete search across 1000+ ETFs
+- Commission tracking
+- Position validation
+
+### Performance Analytics
+
+- Portfolio value tracking with historical data
+- Gain/loss calculation (absolute and percentage)
+- XIRR (money-weighted return)
+- Time-weighted return
+- Asset composition analysis
+
+### Risk Analytics
+
+- Sharpe Ratio (risk-adjusted return)
+- Sortino Ratio (downside risk-adjusted return)
+- Maximum Drawdown
+- Volatility (standard deviation)
+- Correlation matrix
+- Monte Carlo simulation with confidence intervals
+- Drawdown analysis
+- Performance attribution by asset
+
+### Portfolio Optimization
+
+- Modern Portfolio Theory (Markowitz) implementation
+- Efficient Frontier calculation
+- Maximum Sharpe Ratio optimization
+- Discrete allocation (whole shares)
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.8 or higher
+- Node.js 16 or higher
+- npm or yarn
+
+### Backend Setup
+
+1. Navigate to the backend directory:
 ```bash
 cd backend
+```
+
+2. Create and activate a virtual environment:
+```bash
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
 pip install -r requirements.txt
+```
+
+4. Create a `.env` file with required configuration:
+```bash
+SECRET_KEY=your-secret-key-here
+FMP_API_KEY=your-fmp-api-key  # Optional: For enhanced symbol search
+```
+
+5. Start the development server:
+```bash
 uvicorn main:app --reload
 ```
 
-Il backend sarà disponibile su `http://localhost:8000`
+The backend API will be available at `http://localhost:8000`
 
-### Frontend
+API documentation is automatically generated and accessible at:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
+### Frontend Setup
+
+1. Navigate to the frontend directory:
 ```bash
 cd frontend
+```
+
+2. Install dependencies:
+```bash
 npm install
+```
+
+3. Configure the API URL in `src/config.js`:
+```javascript
+export const API_URL = 'http://localhost:8000';
+```
+
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-Il frontend sarà disponibile su `http://localhost:5173`
+The frontend will be available at `http://localhost:5173`
 
-## 🛠️ Tecnologie Utilizzate
+### Production Build
 
-### Backend
-- **FastAPI**: Framework web moderno per Python
-- **SQLAlchemy**: ORM per database
-- **Pydantic**: Validazione dati
-- **NumPy/Pandas**: Analisi dati
-- **yfinance**: Dati finanziari
+**Backend:**
+```bash
+# Install production dependencies
+pip install -r requirements.txt
 
-### Frontend
-- **React**: Library UI
-- **Recharts**: Grafici e visualizzazioni
-- **Tailwind CSS**: Styling
-- **Lucide React**: Icons
-- **Vite**: Build tool
+# Run with production ASGI server
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
+```
 
-## 📊 Funzionalità Principali
+**Frontend:**
+```bash
+# Build for production
+npm run build
 
-### Portfolio Management
-- ✅ Creazione e gestione multipli portfolio
-- ✅ Impostazione valuta di riferimento
-- ✅ Configurazione risk-free rate e benchmark personalizzati
-- ✅ Import ordini da CSV
+# Preview production build
+npm run preview
+```
 
-### Orders Management
-- ✅ Tracciamento ordini BUY/SELL
-- ✅ Supporto ETF e Stock
-- ✅ Autocomplete simboli con ricerca
-- ✅ Calcolo automatico P&L
+## Configuration
 
-### Analytics
-- ✅ **Risk Metrics**: Sharpe, Sortino, Max Drawdown, Volatilità
-- ✅ **Correlation Analysis**: Matrice correlazione asset
-- ✅ **Monte Carlo Simulation**: Proiezioni future con percentili
-- ✅ **Performance Attribution**: Contributo per asset
-- ✅ **Drawdown Analysis**: Analisi drawdown storici
+### Environment Variables
 
-### Portfolio Optimization
-- ✅ Modern Portfolio Theory (Markowitz)
-- ✅ Efficient Frontier
-- ✅ Ottimizzazione Sharpe Ratio massimo
+**Backend** (`.env` file):
+- `SECRET_KEY`: JWT secret key (required)
+- `FMP_API_KEY`: Financial Modeling Prep API key (optional)
 
-## 🎨 Best Practices Implementate
+**Frontend** (`src/config.js`):
+- `API_URL`: Backend API URL
 
-### Frontend
-- ✅ **Separazione responsabilità**: Pages, Components, Utils
-- ✅ **Component reusability**: Componenti riutilizzabili ben definiti
-- ✅ **Loading states**: Skeleton screens per UX migliore
-- ✅ **Cache management**: SessionStorage per performance
-- ✅ **Error handling**: Gestione errori API consistente
+### Database
 
-### Organizzazione Codice
-- ✅ File piccoli e focalizzati (50-200 righe vs 3000+)
-- ✅ Import/Export centralizzati (pages/index.js)
-- ✅ Naming conventions consistenti
-- ✅ Commenti e documentazione
+The application uses SQLite by default. The database file is created automatically at `backend/portfolio.db`.
 
-## 📝 Convenzioni di Codice
+For production deployments, consider migrating to PostgreSQL or MySQL for better concurrency support.
 
-### Naming
-- **Components**: PascalCase (es. `DashboardPage.jsx`)
-- **Utils**: camelCase (es. `formatCurrency.js`)
-- **Constants**: UPPER_SNAKE_CASE (es. `API_URL`)
+## Security
 
-### File Organization
-- Un componente principale per file
-- Export default per components principali
-- Named exports per utils
+- JWT-based authentication
+- bcrypt password hashing
+- SQL injection protection via SQLAlchemy ORM
+- Input validation using Pydantic schemas
+- CORS configuration
+- Secure token storage
 
-### Imports Order
-1. React e hooks
-2. Librerie esterne (recharts, lucide-react)
-3. Components locali
-4. Utils e config
-5. Styles (se presenti)
+## API Documentation
 
-## 🔐 Sicurezza
+FastAPI automatically generates interactive API documentation:
 
-- JWT authentication
-- Token storage in localStorage
-- API authorization headers
-- Input validation (frontend + backend)
+- **Swagger UI**: `http://localhost:8000/docs` - Interactive API testing interface
+- **ReDoc**: `http://localhost:8000/redoc` - API reference documentation
 
-## 📈 Prossimi Sviluppi
+## Development Notes
 
-- [ ] Completare ComparePage con confronto benchmark
-- [ ] Aggiungere test unitari (Jest, React Testing Library)
-- [ ] Implementare React Router per URL routing
-- [ ] Aggiungere TypeScript
-- [ ] Dark mode
-- [ ] Export reports (PDF)
-- [ ] Notifiche real-time
+### Code Organization
 
-## 🤝 Contribuire
+The codebase follows modern software engineering practices:
 
-1. Fork del progetto
-2. Crea un branch per la feature (`git checkout -b feature/AmazingFeature`)
-3. Commit delle modifiche (`git commit -m 'Add some AmazingFeature'`)
-4. Push al branch (`git push origin feature/AmazingFeature`)
-5. Apri una Pull Request
+- Modular architecture with clear separation of concerns
+- Small, focused files (most under 200 lines)
+- Consistent naming conventions (PascalCase for components, camelCase for utilities)
+- Centralized imports and exports
+- Type validation using Pydantic schemas
 
-## 📄 Licenza
+### Refactoring History
 
-Questo progetto è privato e non ha una licenza pubblica.
+The backend was refactored from a monolithic 3,244-line file into a modular architecture with dedicated modules for models, routers, schemas, and utilities. This improves maintainability, testability, and scalability.
 
----
+### Performance Optimizations
 
-**Sviluppato con ❤️ per il tracking efficiente dei portfolio di investimento**
+- Connection pooling for database operations
+- Multi-level caching strategy
+- Lazy loading of analytics data
+- Retry logic for transient failures
+- Efficient data serialization
+
+## Testing
+
+To run tests (when implemented):
+
+**Backend:**
+```bash
+pytest
+```
+
+**Frontend:**
+```bash
+npm test
+```
+
+## Contributing
+
+Contributions are welcome. Please follow these guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is private and does not have a public license.
+
+## Acknowledgments
+
+Built with modern web technologies and financial analysis libraries to provide professional-grade portfolio tracking and analysis capabilities.

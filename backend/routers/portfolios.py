@@ -292,14 +292,25 @@ def get_position_history(
 
 
 @router.get("/analysis/{portfolio_id}")
-def analyze_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
+def analyze_portfolio(
+    portfolio_id: int,
+    monte_carlo_years: int = 1,
+    user: UserModel = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
     """
     Advanced portfolio analysis including:
     - Correlation matrix
-    - Monte Carlo simulation
+    - Monte Carlo simulation (configurable projection years)
     - Risk metrics (VaR, CVaR, Sharpe, Sortino, etc.)
     - Drawdown analysis
+
+    Query params:
+    - monte_carlo_years: Number of years for Monte Carlo projection (default: 1, max: 30)
     """
+    # Validate monte_carlo_years
+    if monte_carlo_years < 1 or monte_carlo_years > 30:
+        raise HTTPException(status_code=400, detail="monte_carlo_years must be between 1 and 30")
     portfolio = db.execute(
         select(PortfolioModel).where(PortfolioModel.id == portfolio_id, PortfolioModel.user_id == user.id)
     ).scalar_one_or_none()
@@ -478,7 +489,7 @@ def analyze_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token)
 
         # 3. Monte Carlo Simulation
         num_simulations = 1000
-        num_days = 252
+        num_days = 252 * monte_carlo_years  # Scale by number of years
         simulations = []
         for _ in range(num_simulations):
             sim_returns = np.random.choice(portfolio_returns, size=num_days, replace=True)
@@ -486,7 +497,7 @@ def analyze_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token)
             simulations.append(sim_cumulative.tolist())
 
         # Calculate percentiles for each day across all simulations
-        simulations_array = np.array(simulations)  # shape: (1000, 252)
+        simulations_array = np.array(simulations)  # shape: (1000, num_days)
 
         # Compute percentiles across simulations for each day
         p5_array = np.percentile(simulations_array, 5, axis=0)
@@ -495,7 +506,7 @@ def analyze_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token)
         p75_array = np.percentile(simulations_array, 75, axis=0)
         p95_array = np.percentile(simulations_array, 95, axis=0)
 
-        # Generate date labels for the simulation period (1 year forward)
+        # Generate date labels for the simulation period
         from datetime import timedelta
         today = dt_date.today()
         simulation_dates = [(today + timedelta(days=i)).strftime(DATE_FMT) for i in range(num_days)]
@@ -504,6 +515,7 @@ def analyze_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token)
             "simulations": simulations[:10],  # Return only first 10 for bandwidth
             "dates": simulation_dates,
             "current_value": float(total_value),
+            "years": monte_carlo_years,  # Include years in response
             "percentiles": {
                 "p5": [round(float(v * total_value), 2) for v in p5_array],
                 "p25": [round(float(v * total_value), 2) for v in p25_array],
