@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Info } from 'lucide-react';
 
 // Risk Metric Card with Info Tooltip
-function MetricCard({ title, value, subtitle, color, description, interpretation, showAbove = false }) {
+function MetricCard({ title, value, subtitle, color, description, interpretation, showAbove = false, hideInfo = false }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const cardRef = useRef(null);
 
@@ -94,18 +94,20 @@ function MetricCard({ title, value, subtitle, color, description, interpretation
     <div ref={cardRef} className={`${classes.bg} rounded-lg p-6 relative`}>
       <div className="flex items-center justify-between mb-2">
         <p className={`text-sm ${classes.title}`}>{title}</p>
-        <button
-          onClick={() => setShowTooltip(!showTooltip)}
-          className={`p-1 rounded-full ${classes.hover} transition`}
-          title="More info"
-        >
-          <Info size={14} className={classes.icon} />
-        </button>
+        {!hideInfo && (
+          <button
+            onClick={() => setShowTooltip(!showTooltip)}
+            className={`p-1 rounded-full ${classes.hover} transition`}
+            title="More info"
+          >
+            <Info size={14} className={classes.icon} />
+          </button>
+        )}
       </div>
       <p className={`text-3xl font-bold ${classes.value}`}>{value}</p>
       <p className={`text-xs ${classes.subtitle} mt-2`}>{subtitle}</p>
 
-      {showTooltip && (
+      {!hideInfo && showTooltip && (
         <div className={`absolute z-10 ${showAbove ? 'bottom-full mb-2' : 'top-full mt-2'} left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg p-4 text-sm`}>
           <p className="font-semibold text-slate-900 mb-2">Calculation:</p>
           <p className="text-slate-700 mb-3">{description}</p>

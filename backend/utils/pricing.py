@@ -2,8 +2,8 @@
 
 import json
 import os
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timezone, date
+from typing import Optional, Dict, List
 
 import pandas as pd
 import requests
@@ -1099,9 +1099,9 @@ def get_risk_free_rate(currency: str, db: Session, custom_source: Optional[str] 
     Helper function per ottenere il tasso risk-free corrente.
 
     Args:
-        currency: "USD" o "EUR"
+        currency: "USD", "EUR", o "GBP"
         db: Database session
-        custom_source: Fonte personalizzata ("auto", "USD_TREASURY", "EUR_ECB", o valore numerico custom)
+        custom_source: Fonte personalizzata ("auto", "USD_TREASURY", "EUR_ECB", "EUR_BUND", "GBP_GILT", o valore numerico custom)
 
     Returns:
         Tasso risk-free annuale in percentuale (es: 4.5)
@@ -1118,6 +1118,17 @@ def get_risk_free_rate(currency: str, db: Session, custom_source: Optional[str] 
             elif custom_source == "EUR_ECB":
                 data = fetch_ecb_rate(db)
                 return data.get("current_rate", 0.0)
+            elif custom_source == "EUR_BUND":
+                # German Bund 10Y - per ora usa ECB come fallback
+                # TODO: Implementare fetch specifico per Bund tramite yfinance (^TNX equivalente EU)
+                print("[RiskFree] EUR_BUND: using ECB as fallback")
+                data = fetch_ecb_rate(db)
+                return data.get("current_rate", 0.0)
+            elif custom_source == "GBP_GILT":
+                # UK Gilt 10Y - per ora usa un valore di default
+                # TODO: Implementare fetch specifico per UK Gilt
+                print("[RiskFree] GBP_GILT: using default 4.0%")
+                return 4.0
 
     # Auto mode: determina in base alla currency
     currency = currency.upper()
@@ -1125,6 +1136,10 @@ def get_risk_free_rate(currency: str, db: Session, custom_source: Optional[str] 
         data = fetch_us_treasury_rate(db)
     elif currency == "EUR":
         data = fetch_ecb_rate(db)
+    elif currency == "GBP":
+        # UK Gilt come default per GBP
+        print("[RiskFree] GBP auto: using default 4.0%")
+        return 4.0
     else:
         print(f"[RiskFree] Unknown currency {currency}, defaulting to 0.0")
         return 0.0
@@ -1170,3 +1185,88 @@ def get_market_benchmark_data(currency: str, db: Session, custom_benchmark: Opti
 
     # Auto mode: determina in base alla currency
     return fetch_market_benchmark(currency, db)
+
+
+def get_stock_splits(symbol: str, from_date: date) -> Dict[date, float]:
+    """
+    Recupera gli stock splits per un simbolo a partire da una data.
+
+    Args:
+        symbol: Simbolo dello stock (es. "NFLX")
+        from_date: Data da cui cercare gli split (tipicamente la data del primo ordine)
+
+    Returns:
+        Dict mapping date -> split ratio (es. {date(2024, 7, 15): 10.0} per split 10:1)
+    """
+    try:
+        ticker = yf.Ticker(symbol)
+        splits = ticker.splits
+
+        if splits is None or splits.empty:
+            return {}
+
+        # Filtra solo gli split dopo from_date e converti in dict
+        result = {}
+        for split_datetime, ratio in splits.items():
+            split_date = split_datetime.date() if hasattr(split_datetime, 'date') else split_datetime
+            if split_date >= from_date:
+                result[split_date] = float(ratio)
+                print(f"[SPLIT] {symbol}: {split_date} -> {ratio}:1 split")
+
+        return result
+    except Exception as e:
+        print(f"[SPLIT] Error fetching splits for {symbol}: {e}")
+        return {}
+
+
+def apply_splits_to_orders(orders: List, symbol_splits: Dict[str, Dict[date, float]]):
+    """
+    Applica gli stock splits agli ordini, aggiustando quantità e prezzi.
+
+    Logic:
+    - Per ogni ordine, controlla se ci sono stati split DOPO la data dell'ordine
+    - Se sì, moltiplica la quantità per il ratio cumulativo e dividi il prezzo
+
+    Args:
+        orders: Lista di OrderModel
+        symbol_splits: Dict mapping symbol -> {date: ratio}
+
+    Returns:
+        Lista di ordini con quantità e prezzi aggiustati (crea copie, non modifica gli originali)
+    """
+    adjusted_orders = []
+
+    for order in orders:
+        symbol = order.symbol.upper()
+        splits = symbol_splits.get(symbol, {})
+
+        if not splits:
+            # Nessuno split, usa ordine originale
+            adjusted_orders.append(order)
+            continue
+
+        # Calcola il ratio cumulativo di tutti gli split DOPO questo ordine
+        cumulative_ratio = 1.0
+        for split_date, ratio in splits.items():
+            if split_date > order.date:
+                cumulative_ratio *= ratio
+
+        if cumulative_ratio == 1.0:
+            # Nessuno split dopo questo ordine
+            adjusted_orders.append(order)
+        else:
+            # Crea una copia dell'ordine con valori aggiustati
+            # Nota: non modifichiamo l'oggetto DB originale, creiamo una copia
+            import copy
+            adjusted_order = copy.copy(order)
+            adjusted_order.quantity = order.quantity * cumulative_ratio
+            adjusted_order.price = order.price / cumulative_ratio
+
+            print(f"[SPLIT] Adjusted {symbol} order from {order.date}: "
+                  f"qty {order.quantity} -> {adjusted_order.quantity}, "
+                  f"price ${order.price:.2f} -> ${adjusted_order.price:.2f} "
+                  f"(ratio: {cumulative_ratio}:1)")
+
+            adjusted_orders.append(adjusted_order)
+
+    return adjusted_orders

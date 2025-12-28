@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { RefreshCw, Wallet, TrendingUp, TrendingDown, Layers, Percent } from 'lucide-react';
 import { API_URL } from '../config';
 import DashboardSkeleton from '../components/skeletons/DashboardSkeleton';
+import InteractivePieChart from '../components/charts/InteractivePieChart';
 import { formatCurrencyValue, parseDateDMY, invalidatePortfolioCache } from '../utils/helpers';
 
 function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted, refreshPortfolios }) {
@@ -171,14 +172,21 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
     }
   };
 
-  const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-  const pieData = data?.positions.map(p => ({ name: p.symbol, value: p.market_value })) || [];
+  // Ordina positions per valore di mercato decrescente (% del portfolio)
+  const sortedPositions = [...(data?.positions || [])].sort((a, b) => b.market_value - a.market_value);
+
+  // Ordina per valore decrescente (% del portfolio)
+  const pieData = sortedPositions.map(p => ({ name: p.symbol, value: p.market_value }));
+
   const typeMap = {};
   (data?.positions || []).forEach((p) => {
     const key = (p.instrument_type || 'Other').toUpperCase();
     typeMap[key] = (typeMap[key] || 0) + p.market_value;
   });
-  const typeData = Object.entries(typeMap).map(([name, value]) => ({ name, value }));
+  // Ordina per valore decrescente (% del portfolio)
+  const typeData = Object.entries(typeMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
   const summaryCurrency = data?.summary?.reference_currency || data?.positions?.[0]?.currency || 'EUR';
   const portfolioHistory = data?.history?.portfolio || [];
   const performanceHistory = data?.history?.performance || [];
@@ -465,7 +473,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
                 </tr>
               </thead>
               <tbody>
-                {data?.positions.map((pos, idx) => (
+                {sortedPositions.map((pos, idx) => (
                   <tr key={pos.symbol} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="py-2 px-1.5 text-center font-semibold text-slate-900 whitespace-nowrap">{pos.symbol}</td>
                     <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{pos.quantity}</td>
@@ -492,62 +500,22 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold text-slate-900 mb-4">Allocation by Asset</h2>
-          {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => {
-                    const pct = data.summary.total_value ? (value / data.summary.total_value) * 100 : 0;
-                    return pct >= 5 ? `${name}: ${pct.toFixed(1)}%` : '';
-                  }}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrencyValue(value, summaryCurrency)} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-center text-slate-500 py-16">No positions</p>
-          )}
+          <InteractivePieChart
+            data={pieData}
+            totalValue={data?.summary?.total_value || 0}
+            formatValue={formatCurrencyValue}
+            currency={summaryCurrency}
+          />
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold text-slate-900 mb-4">Allocation by Asset Type</h2>
-          {typeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={typeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => {
-                    const pct = data.summary.total_value ? (value / data.summary.total_value) * 100 : 0;
-                    return pct >= 5 ? `${name}: ${pct.toFixed(1)}%` : '';
-                  }}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {typeData.map((entry, index) => (
-                    <Cell key={`cell-type-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrencyValue(value, summaryCurrency)} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-center text-slate-500 py-16">No positions</p>
-          )}
+          <InteractivePieChart
+            data={typeData}
+            totalValue={data?.summary?.total_value || 0}
+            formatValue={formatCurrencyValue}
+            currency={summaryCurrency}
+          />
         </div>
       </div>
     </div>

@@ -157,7 +157,12 @@ export default function App() {
         )}
 
         {currentView === 'compare' && selectedPortfolio && (
-          <ComparePage token={token} portfolio={selectedPortfolio} />
+          <ComparePage
+            token={token}
+            portfolio={selectedPortfolio}
+            portfolios={portfolios}
+            onSelectPortfolio={setSelectedPortfolio}
+          />
         )}
 
         {currentView === 'optimize' && selectedPortfolio && (

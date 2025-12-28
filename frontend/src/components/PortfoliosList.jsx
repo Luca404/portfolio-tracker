@@ -4,6 +4,25 @@ import { getCurrencySymbol } from '../utils/currency';
 import { API_URL } from '../config';
 import PortfolioCardSkeleton from './skeletons/PortfolioCardSkeleton';
 
+// Helper functions for auto-detection
+const getAutoRiskFreeRate = (currency) => {
+  const map = {
+    'USD': 'US Treasury 10Y',
+    'EUR': 'ECB Rate',
+    'GBP': 'UK Gilt 10Y',
+  };
+  return map[currency] || 'US Treasury 10Y';
+};
+
+const getAutoBenchmark = (currency) => {
+  const map = {
+    'USD': 'S&P 500',
+    'EUR': 'VWCE (All-World)',
+    'GBP': 'FTSE 100',
+  };
+  return map[currency] || 'S&P 500';
+};
+
 // Portfolios List
 function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loading }) {
   const [showCreate, setShowCreate] = useState(false);
@@ -334,9 +353,13 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
                       onChange={(e) => setEditData({...editData, risk_free_source: e.target.value})}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                     >
-                      <option value="auto">Auto (based on currency)</option>
+                      <option value="auto">
+                        Auto ({getAutoRiskFreeRate(editData.reference_currency)})
+                      </option>
                       <option value="USD_TREASURY">US Treasury 10Y</option>
                       <option value="EUR_ECB">ECB Rate</option>
+                      <option value="EUR_BUND">German Bund 10Y</option>
+                      <option value="GBP_GILT">UK Gilt 10Y</option>
                       <option value="0">0% (No risk-free)</option>
                       <option value="2">2% (Custom)</option>
                       <option value="3">3% (Custom)</option>
@@ -357,7 +380,9 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
                       onChange={(e) => setEditData({...editData, market_benchmark: e.target.value})}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                     >
-                      <option value="auto">Auto (based on currency)</option>
+                      <option value="auto">
+                        Auto ({getAutoBenchmark(editData.reference_currency)})
+                      </option>
                       <option value="SP500">S&P 500</option>
                       <option value="VWCE">VWCE (All-World)</option>
                       <option value="QQQ">Nasdaq 100 (QQQ)</option>

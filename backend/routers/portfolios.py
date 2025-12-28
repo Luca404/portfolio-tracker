@@ -22,9 +22,50 @@ from utils import (
     convert_to_reference_currency,
     parse_date_input,
     DATE_FMT,
+    get_stock_splits,
+    apply_splits_to_orders,
 )
 
 router = APIRouter(prefix="/portfolios", tags=["portfolios"])
+
+
+def apply_stock_splits_to_orders(orders):
+    """
+    Helper function per applicare gli stock splits agli ordini.
+    Recupera automaticamente gli splits e li applica.
+
+    Args:
+        orders: Lista di OrderModel
+
+    Returns:
+        Lista di ordini con splits applicati (copie con valori aggiustati)
+    """
+    symbol_splits = {}
+    stock_symbols = set()
+    first_order_dates = {}
+
+    for o in orders:
+        symbol = o.symbol.upper()
+        instrument_type = (o.instrument_type or "stock").lower()
+
+        # Teniamo traccia solo degli stock, non degli ETF
+        if instrument_type == "stock":
+            stock_symbols.add(symbol)
+            if symbol not in first_order_dates or o.date < first_order_dates[symbol]:
+                first_order_dates[symbol] = o.date
+
+    # Recupera gli splits per ogni stock
+    for symbol in stock_symbols:
+        splits = get_stock_splits(symbol, first_order_dates[symbol])
+        if splits:
+            symbol_splits[symbol] = splits
+
+    # Applica gli splits agli ordini
+    if symbol_splits:
+        print(f"[SPLITS] Found splits for {len(symbol_splits)} symbols, applying adjustments...")
+        return apply_splits_to_orders(list(orders), symbol_splits)
+
+    return list(orders)
 
 
 @router.post("")
@@ -69,6 +110,10 @@ def get_portfolios(user: UserModel = Depends(verify_token), db: Session = Depend
     response = []
     for p in results:
         orders = db.execute(select(OrderModel).where(OrderModel.portfolio_id == p.id)).scalars().all()
+
+        # Applica gli stock splits agli ordini
+        orders = apply_stock_splits_to_orders(orders)
+
         positions_map = aggregate_positions(orders)
         orders_by_symbol = {}
         symbol_type_map = {}
@@ -122,6 +167,10 @@ def get_portfolio(portfolio_id: int, user: UserModel = Depends(verify_token), db
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     orders = db.execute(select(OrderModel).where(OrderModel.portfolio_id == portfolio.id)).scalars().all()
+
+    # Applica gli stock splits agli ordini
+    orders = apply_stock_splits_to_orders(orders)
+
     orders_by_symbol = {}
     symbol_type_map = {}
     symbol_isin_map = {}
@@ -327,6 +376,9 @@ def analyze_portfolio(
             "drawdown": None
         }
 
+    # Applica gli stock splits agli ordini
+    orders = apply_stock_splits_to_orders(orders)
+
     # Get positions and historical data from cache
     positions_map = aggregate_positions(orders)
     orders_by_symbol = {}
@@ -364,9 +416,13 @@ def analyze_portfolio(
             }
 
         # Build a unified DataFrame from cached price histories
+        # Only include symbols that are currently in the portfolio
+        current_symbols = {p["symbol"] for p in positions}
+        filtered_position_histories = {sym: hist for sym, hist in position_histories.items() if sym in current_symbols}
+
         # Find common dates across all symbols
         all_dates_sets = []
-        for symbol, history in position_histories.items():
+        for symbol, history in filtered_position_histories.items():
             dates = set()
             for point in history:
                 d = parse_date_input(point.get("date"))
@@ -406,9 +462,9 @@ def analyze_portfolio(
         sorted_dates = sorted(list(common_dates))
         print(f"[DRAWDOWN] Analysis period: {sorted_dates[0].strftime(DATE_FMT)} to {sorted_dates[-1].strftime(DATE_FMT)} ({len(sorted_dates)} days)")
 
-        # Build price DataFrame
+        # Build price DataFrame (only for current positions)
         price_data = {}
-        for symbol, history in position_histories.items():
+        for symbol, history in filtered_position_histories.items():
             prices_map = {}
             for point in history:
                 d = parse_date_input(point.get("date"))
@@ -593,8 +649,9 @@ def analyze_portfolio(
             print(f"Beta calculation failed: {str(e)}")
             # Keep beta as None
 
-        # 6. Performance Attribution
+        # 6. Asset Contribution (formerly Performance Attribution)
         assets_attribution = []
+        print(f"\n[ATTRIBUTION] Calculating contribution for {len(position_symbols)} assets")
         for symbol in data.columns:
             if symbol in position_symbols:
                 idx = position_symbols.index(symbol)
@@ -605,6 +662,12 @@ def analyze_portfolio(
                 weight = weights[idx]
                 contribution = (asset_returns * weight).sum() * 100  # Percentage contribution
                 total_return = asset_returns.sum() * 100  # Total return percentage
+
+                print(f"[ATTRIBUTION] {symbol}: weight={weight*100:.2f}%, "
+                      f"market_value={position['market_value']:.2f}, "
+                      f"gain_loss={position.get('gain_loss', 0):.2f}, "
+                      f"total_return={total_return:.2f}%, "
+                      f"contribution={contribution:.2f}%")
 
                 assets_attribution.append({
                     "symbol": symbol,
@@ -665,3 +728,622 @@ def analyze_portfolio(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+
+@router.get("/compare/{portfolio_id}")
+def compare_dca_vs_lumpsum(
+    portfolio_id: int,
+    user: UserModel = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """
+    Compare DCA (Dollar Cost Averaging) strategy vs Lump Sum investment.
+
+    DCA: The actual strategy used (buying assets over time as orders were placed)
+    Lump Sum: What would have happened if all current asset quantities were bought
+              on the date of the first order in the portfolio
+    """
+    # Get portfolio
+    pf = db.scalar(select(PortfolioModel).where(
+        PortfolioModel.id == portfolio_id,
+        PortfolioModel.user_id == user.id
+    ))
+    if not pf:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Get all orders
+    orders = list(db.scalars(
+        select(OrderModel)
+        .where(OrderModel.portfolio_id == portfolio_id)
+        .order_by(OrderModel.date)
+    ).all())
+
+    if not orders:
+        raise HTTPException(status_code=400, detail="No orders in portfolio")
+
+    # Apply stock splits
+    orders = apply_stock_splits_to_orders(orders)
+
+    # Get first order date
+    first_order_date = min(o.date for o in orders)
+
+    # Calculate current positions using same logic as dashboard
+    from utils import aggregate_positions
+
+    positions_map_temp = aggregate_positions(orders)
+
+    # Rebuild positions_map with instrument_type
+    positions_map = {}
+    for symbol, data in positions_map_temp.items():
+        # Find instrument type from orders
+        instrument_type = "stock"
+        for o in orders:
+            if o.symbol.upper() == symbol:
+                instrument_type = o.instrument_type or "stock"
+                break
+
+        positions_map[symbol] = {
+            "symbol": symbol,
+            "quantity": data["quantity"],
+            "total_cost": data["total_cost"],
+            "instrument_type": instrument_type
+        }
+
+    if not positions_map:
+        raise HTTPException(status_code=400, detail="No current positions")
+
+    # Total invested is the sum of total_cost from all current positions
+    # IMPORTANT: Need to convert to reference currency!
+    total_invested_dca = 0.0
+    for symbol, pos in positions_map.items():
+        # Get currency from first order
+        symbol_orders = [o for o in orders if o.symbol.upper() == symbol]
+        order_currency = symbol_orders[0].currency if symbol_orders else pf.reference_currency
+
+        # Convert cost to reference currency
+        cost_in_ref_currency = convert_to_reference_currency(
+            pos["total_cost"],
+            order_currency,
+            pf.reference_currency,
+            db
+        )
+        total_invested_dca += cost_in_ref_currency
+        pos["total_cost"] = cost_in_ref_currency  # Update for later use
+
+    # Get historical prices for all symbols from first_order_date to today
+    from utils import get_stock_price_and_history_cached, get_etf_price_and_history
+
+    # Calculate days from first order to today
+    days_since_first_order = (datetime.now().date() - first_order_date).days
+
+    symbols_history = {}
+    lumpsum_cost = 0.0
+
+    for symbol, pos_data in positions_map.items():
+        try:
+            instrument_type = pos_data["instrument_type"]
+
+            if instrument_type == "etf":
+                # For ETFs, we need to get the ISIN first
+                symbol_orders = [o for o in orders if o.symbol.upper() == symbol]
+                if not symbol_orders:
+                    continue
+
+                isin = symbol_orders[0].isin or ""
+                if not isin:
+                    continue
+
+                price_data = get_etf_price_and_history(isin=isin, db=db)
+            else:
+                price_data = get_stock_price_and_history_cached(
+                    symbol=symbol,
+                    db=db,
+                    days=days_since_first_order
+                )
+
+            if not price_data or "history" not in price_data or not price_data["history"]:
+                continue
+
+            history = price_data["history"]
+
+            # For currency conversion, we'll use the latest rate for simplicity
+            # (since historical FX rates might not align perfectly with asset prices)
+            symbol_currency = price_data.get("currency", "USD")
+
+            # Get FX rate if needed
+            fx_rate = 1.0
+            if symbol_currency != pf.reference_currency:
+                try:
+                    from utils import get_exchange_rate_history
+                    fx_data = get_exchange_rate_history(symbol_currency, pf.reference_currency, db)
+                    fx_rates = fx_data.get("rates", [])
+                    if fx_rates:
+                        fx_rate = fx_rates[-1].get("rate", 1.0)
+                except Exception:
+                    pass
+
+            # Convert history to dates and apply FX
+            converted_history = []
+            for entry in history:
+                price = entry.get("price", 0.0)
+                converted_price = price * fx_rate
+
+                # Parse date string to date object
+                entry_date = parse_date_input(entry["date"])
+                if entry_date:
+                    converted_history.append({
+                        "date": entry_date,
+                        "price": converted_price
+                    })
+
+            if not converted_history:
+                continue
+
+            # Sort by date
+            converted_history.sort(key=lambda x: x["date"])
+
+            symbols_history[symbol] = {
+                "history": converted_history,
+                "quantity": pos_data["quantity"],
+                "total_cost": pos_data["total_cost"]  # Already converted to ref currency
+            }
+
+        except Exception:
+            continue
+
+    if not symbols_history:
+        raise HTTPException(status_code=400, detail="Could not fetch price history")
+
+    # Calculate allocation percentages for Lump Sum strategy
+    # Lump Sum will invest total_invested_dca at first_order_date in current allocation percentages
+    allocation_percentages = {}
+    for symbol, symbol_data in symbols_history.items():
+        allocation_percentages[symbol] = symbol_data["total_cost"] / total_invested_dca if total_invested_dca > 0 else 0
+
+    # Build timeline of values for both strategies
+    # Collect all unique dates where ALL symbols have prices (to avoid partial data)
+    all_dates = set()
+    for symbol_data in symbols_history.values():
+        for entry in symbol_data["history"]:
+            all_dates.add(entry["date"])
+
+    sorted_dates = sorted(all_dates)
+
+    # Build price map for faster lookup
+    price_maps = {}
+    for symbol, symbol_data in symbols_history.items():
+        price_maps[symbol] = {entry["date"]: entry["price"] for entry in symbol_data["history"]}
+
+    # Calculate Lump Sum quantities based on first date prices
+    # Invest total_invested_dca at first_order_date according to allocation percentages
+    lumpsum_quantities = {}
+    for symbol in symbols_history.keys():
+        # Find price at first_order_date (or closest date after)
+        first_date_price = None
+        for date in sorted_dates:
+            if date >= first_order_date and symbol in price_maps and date in price_maps[symbol]:
+                first_date_price = price_maps[symbol][date]
+                break
+
+        if first_date_price and first_date_price > 0:
+            # Calculate how much to invest in this symbol
+            amount_to_invest = total_invested_dca * allocation_percentages[symbol]
+            # Calculate quantity
+            lumpsum_quantities[symbol] = amount_to_invest / first_date_price
+        else:
+            lumpsum_quantities[symbol] = 0
+
+    # For each date, calculate portfolio value under both strategies
+    dca_timeline = []
+    lumpsum_timeline = []
+
+    for current_date in sorted_dates:
+        # Skip dates before first order
+        if current_date < first_order_date:
+            continue
+
+        # Skip dates where not all symbols have prices
+        all_have_prices = all(current_date in price_maps[symbol] for symbol in symbols_history.keys())
+        if not all_have_prices:
+            continue
+
+        # DCA value: simulate buying current quantities gradually over time
+        # Using the same cost calculation as aggregate_positions
+        dca_value = 0.0
+        dca_invested = 0.0
+
+        for symbol, symbol_data in symbols_history.items():
+            current_qty = symbol_data["quantity"]
+            price_at_date = price_maps[symbol][current_date]
+
+            # Get the cost basis for this symbol at this date from positions_map
+            # This already accounts for sales correctly
+            symbol_total_cost = positions_map[symbol]["total_cost"]
+
+            # Calculate how many shares we had bought by this date
+            qty_bought_by_date = 0.0
+            for o in orders:
+                if o.symbol.upper() == symbol and o.date <= current_date and o.order_type.lower() == "buy":
+                    qty_bought_by_date += o.quantity
+
+            # Use minimum between bought quantity and current quantity
+            effective_qty = min(qty_bought_by_date, current_qty)
+
+            if effective_qty > 0:
+                dca_value += effective_qty * price_at_date
+                # Proportional cost: if we've bought all current qty, use full cost
+                # Otherwise use proportional cost
+                if qty_bought_by_date >= current_qty:
+                    dca_invested += symbol_total_cost
+                else:
+                    # Scale cost proportionally to how much we've bought
+                    dca_invested += symbol_total_cost * (qty_bought_by_date / current_qty)
+
+        # Lump sum value: quantities bought at first_order_date with total_invested_dca
+        lumpsum_value = 0.0
+        for symbol in symbols_history.keys():
+            price_at_date = price_maps[symbol][current_date]
+            lumpsum_value += lumpsum_quantities[symbol] * price_at_date
+
+        dca_timeline.append({
+            "date": current_date.strftime(DATE_FMT),
+            "value": round(dca_value, 2),
+            "invested": round(dca_invested, 2)
+        })
+
+        lumpsum_timeline.append({
+            "date": current_date.strftime(DATE_FMT),
+            "value": round(lumpsum_value, 2)
+        })
+
+    # Calculate final metrics using CURRENT prices (not last timeline date which might be old)
+    # Get current prices and calculate actual current value
+    final_dca_value = 0.0
+    final_lumpsum_value = 0.0
+
+    for symbol, symbol_data in symbols_history.items():
+        try:
+            instrument_type = positions_map[symbol]["instrument_type"]
+
+            # Get current price
+            if instrument_type == "etf":
+                symbol_orders = [o for o in orders if o.symbol.upper() == symbol]
+                isin = symbol_orders[0].isin if symbol_orders else ""
+                price_data = get_etf_price_and_history(isin, db)
+            else:
+                price_data = get_stock_price_and_history_cached(symbol, db, days=7)
+
+            current_price = price_data.get("last_price", 0.0)
+
+            # Get currency and convert if needed
+            symbol_orders = [o for o in orders if o.symbol.upper() == symbol]
+            order_currency = symbol_orders[0].currency if symbol_orders else pf.reference_currency
+
+            # Convert price to reference currency (using latest rate)
+            current_price_ref = convert_to_reference_currency(
+                current_price,
+                order_currency,
+                pf.reference_currency,
+                db
+            )
+
+            # Calculate DCA value (current quantities)
+            final_dca_value += symbol_data["quantity"] * current_price_ref
+
+            # Calculate Lump Sum value (quantities bought at first date)
+            final_lumpsum_value += lumpsum_quantities[symbol] * current_price_ref
+
+        except Exception:
+            # Fallback to last timeline value
+            if dca_timeline:
+                final_dca_value = dca_timeline[-1]["value"]
+            if lumpsum_timeline:
+                final_lumpsum_value = lumpsum_timeline[-1]["value"]
+            break
+
+    # Both strategies invest the same total amount
+    dca_return_pct = ((final_dca_value - total_invested_dca) / total_invested_dca * 100) if total_invested_dca > 0 else 0
+    lumpsum_return_pct = ((final_lumpsum_value - total_invested_dca) / total_invested_dca * 100) if total_invested_dca > 0 else 0
+
+    return {
+        "first_order_date": first_order_date.strftime(DATE_FMT),
+        "dca": {
+            "timeline": dca_timeline,
+            "total_invested": round(total_invested_dca, 2),
+            "final_value": round(final_dca_value, 2),
+            "return_pct": round(dca_return_pct, 2),
+            "gain_loss": round(final_dca_value - total_invested_dca, 2)
+        },
+        "lumpsum": {
+            "timeline": lumpsum_timeline,
+            "total_invested": round(total_invested_dca, 2),
+            "final_value": round(final_lumpsum_value, 2),
+            "return_pct": round(lumpsum_return_pct, 2),
+            "gain_loss": round(final_lumpsum_value - total_invested_dca, 2)
+        },
+        "comparison": {
+            "difference_value": round(final_dca_value - final_lumpsum_value, 2),
+            "difference_pct": round(abs(dca_return_pct - lumpsum_return_pct), 2),
+            "winner": "DCA" if final_dca_value > final_lumpsum_value else "Lump Sum"
+        }
+    }
+
+
+@router.get("/compare-benchmark/{portfolio_id}")
+def compare_portfolio_vs_benchmark(
+    portfolio_id: int,
+    benchmark: str = "SPY",
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(verify_token)
+):
+    """
+    Compare portfolio performance against a benchmark using the same DCA strategy.
+
+    Args:
+        portfolio_id: Portfolio ID
+        benchmark: Benchmark symbol (SPY, VWCE.DE, etc.) - defaults to SPY
+
+    Returns:
+        Comparison data showing portfolio vs benchmark with same DCA investment pattern
+    """
+    user_id = current_user.id
+
+    # Get portfolio
+    pf = db.query(PortfolioModel).filter_by(id=portfolio_id, user_id=user_id).first()
+    if not pf:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Get all orders for this portfolio
+    orders = db.query(OrderModel).filter_by(portfolio_id=portfolio_id).order_by(OrderModel.date).all()
+    if not orders:
+        raise HTTPException(status_code=400, detail="No orders found")
+
+    # Get first order date
+    first_order_date = min(o.date for o in orders)
+
+    # First, get current positions to know which assets are still in portfolio
+    from utils import aggregate_positions, convert_to_reference_currency
+
+    positions_map = aggregate_positions(orders)
+
+    # Get symbols that are currently in portfolio (quantity > 0)
+    current_symbols = set(positions_map.keys())
+
+    # Calculate total invested over time (in reference currency)
+    # Only consider orders for assets that are STILL in the portfolio
+    order_dates_amounts = []
+    for order in orders:
+        if order.order_type.lower() == "buy" and order.symbol.upper() in current_symbols:
+            # Convert order amount to reference currency
+            order_amount = order.quantity * order.price
+            order_amount_ref = convert_to_reference_currency(
+                order_amount,
+                order.currency,
+                pf.reference_currency,
+                db
+            )
+            order_dates_amounts.append({
+                "date": order.date,
+                "amount": order_amount_ref,
+                "symbol": order.symbol.upper()
+            })
+
+    if not order_dates_amounts:
+        raise HTTPException(status_code=400, detail="No buy orders found for current positions")
+
+    # Fetch benchmark data using cache
+    from utils import get_stock_price_and_history_cached, get_etf_price_and_history
+    from datetime import datetime
+    import datetime as dt_module
+
+    # Map common benchmark names to their symbols and types
+    benchmark_info = {
+        "SPY": {"symbol": "^GSPC", "type": "stock"},  # S&P 500 Index
+        "SP500": {"symbol": "^GSPC", "type": "stock"},
+        "VWCE": {"symbol": "VWCE.DE", "isin": "IE00BK5BQT80", "type": "etf"}  # FTSE All-World
+    }
+
+    bench_info = benchmark_info.get(benchmark.upper(), {"symbol": benchmark, "type": "stock"})
+    benchmark_symbol = bench_info["symbol"]
+    benchmark_type = bench_info["type"]
+
+    # Calculate how many days of history we need
+    first_order_date = min(o["date"] for o in order_dates_amounts)
+    today = datetime.now().date()
+    days_needed = (today - first_order_date).days + 30  # Add buffer for weekends/holidays
+
+    try:
+        # Use appropriate cached function based on benchmark type
+        if benchmark_type == "etf" and "isin" in bench_info:
+            # Use ETF function with ISIN
+            benchmark_data = get_etf_price_and_history(bench_info["isin"], db)
+        else:
+            # Use stock function with symbol
+            benchmark_data = get_stock_price_and_history_cached(benchmark_symbol, db, days=days_needed)
+
+        if not benchmark_data or not benchmark_data.get("history"):
+            raise HTTPException(status_code=500, detail=f"No data available for benchmark {benchmark_symbol}")
+
+        benchmark_history = benchmark_data.get("history", [])
+        last_price = benchmark_data.get("last_price", 0.0)
+
+        if not last_price:
+            raise HTTPException(status_code=500, detail=f"No price data available for benchmark {benchmark_symbol}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch benchmark data: {str(e)}")
+
+    # Build price map for benchmark
+    benchmark_price_map = {}
+    for entry in benchmark_history:
+        entry_date = parse_date_input(entry["date"])
+        if entry_date:
+            benchmark_price_map[entry_date] = entry["price"]
+
+    # Simulate DCA on benchmark: invest same amounts on same dates
+    benchmark_timeline = []
+    benchmark_shares = 0.0
+    benchmark_total_invested = 0.0
+
+    # Get all unique dates from first order to today
+    from datetime import datetime
+    import datetime as dt_module
+
+    all_dates = sorted(benchmark_price_map.keys())
+    today = datetime.now().date()
+
+    for current_date in all_dates:
+        if current_date < first_order_date or current_date > today:
+            continue
+
+        # Check if there are any orders on this date
+        orders_on_date = [o for o in order_dates_amounts if o["date"] == current_date]
+
+        # Buy benchmark shares with the same amount
+        for order_info in orders_on_date:
+            amount = order_info["amount"]
+            price_on_date = benchmark_price_map.get(current_date)
+
+            if price_on_date and price_on_date > 0:
+                shares_bought = amount / price_on_date
+                benchmark_shares += shares_bought
+                benchmark_total_invested += amount
+
+        # Calculate value at this date
+        price_at_date = benchmark_price_map.get(current_date, 0)
+        benchmark_value = benchmark_shares * price_at_date
+
+        if benchmark_shares > 0:  # Only add to timeline if we have shares
+            benchmark_timeline.append({
+                "date": current_date.strftime(DATE_FMT),
+                "value": round(benchmark_value, 2),
+                "invested": round(benchmark_total_invested, 2)
+            })
+
+    # Get portfolio performance with timeline (using existing logic)
+    from utils import compute_portfolio_value
+
+    # Aggregate positions to get current portfolio value (positions_map already calculated above)
+    symbol_type_map = {}
+    symbol_isin_map = {}
+    orders_by_symbol = {}
+
+    for o in orders:
+        sym = o.symbol.upper()
+        if sym not in symbol_type_map:
+            symbol_type_map[sym] = o.instrument_type or "stock"
+            symbol_isin_map[sym] = o.isin or ""
+        if sym not in orders_by_symbol:
+            orders_by_symbol[sym] = []
+        orders_by_symbol[sym].append(o)
+
+    positions, portfolio_current_value, portfolio_total_cost, _, _, position_histories = compute_portfolio_value(
+        positions_map,
+        orders_by_symbol,
+        symbol_type_map,
+        symbol_isin_map,
+        db,
+        include_history=True,
+        reference_currency=pf.reference_currency
+    )
+
+    # Build portfolio timeline reflecting DCA: quantities increase over time with each purchase
+    # Only consider assets still in portfolio (same logic as benchmark)
+    portfolio_timeline = []
+
+    if position_histories:
+        # Get all dates from position histories, but only from first_order_date onwards
+        all_dates = set()
+        price_map_current = {}
+
+        for symbol, history in position_histories.items():
+            # Only include symbols that are still in the portfolio
+            if symbol not in positions_map:
+                continue
+
+            price_map_current[symbol] = {}
+            for point in history:
+                d = parse_date_input(point.get("date"))
+                # Only include dates from first order onwards
+                if d and d >= first_order_date:
+                    price_map_current[symbol][d] = float(point.get("price", 0))
+                    all_dates.add(d)
+
+        # Track cumulative quantities per symbol (building up over time)
+        quantity_tracker = {sym: 0.0 for sym in positions_map.keys()}
+
+        # Get orders for current symbols only, sorted by date
+        current_orders = [o for o in orders if o.symbol.upper() in current_symbols]
+        current_orders.sort(key=lambda x: x.date)
+        order_index = 0
+
+        # For each date, calculate portfolio value with quantities accumulated up to that date
+        if all_dates:
+            for current_date in sorted(all_dates):
+                # Apply orders up to current_date
+                while order_index < len(current_orders) and current_orders[order_index].date <= current_date:
+                    order = current_orders[order_index]
+                    symbol = order.symbol.upper()
+                    if order.order_type.lower() == "buy":
+                        quantity_tracker[symbol] += order.quantity
+                    elif order.order_type.lower() == "sell":
+                        quantity_tracker[symbol] -= order.quantity
+                    order_index += 1
+
+                # Calculate total value with accumulated quantities
+                total_value = 0.0
+                valid = True
+
+                for symbol in positions_map.keys():
+                    qty = quantity_tracker[symbol]
+                    if qty > 0:  # Only if we have shares at this date
+                        if symbol in price_map_current:
+                            price = price_map_current[symbol].get(current_date)
+                            if price is not None:
+                                total_value += qty * price
+                            else:
+                                valid = False
+                                break
+                        else:
+                            # Symbol has no price history
+                            valid = False
+                            break
+
+                if valid and total_value > 0:  # Only add if value > 0 (we own something)
+                    portfolio_timeline.append({
+                        "date": current_date.strftime(DATE_FMT),
+                        "value": round(total_value, 2)
+                    })
+
+    # Calculate final benchmark value
+    final_benchmark_value = benchmark_shares * last_price
+
+    # Use portfolio_total_cost for both to ensure fair comparison
+    # This ensures both invested the same amount
+    benchmark_return_pct = ((final_benchmark_value - portfolio_total_cost) / portfolio_total_cost * 100) if portfolio_total_cost > 0 else 0
+    portfolio_return_pct = ((portfolio_current_value - portfolio_total_cost) / portfolio_total_cost * 100) if portfolio_total_cost > 0 else 0
+
+    return {
+        "benchmark_symbol": benchmark_symbol,
+        "portfolio": {
+            "timeline": portfolio_timeline,
+            "total_invested": round(portfolio_total_cost, 2),
+            "final_value": round(portfolio_current_value, 2),
+            "return_pct": round(portfolio_return_pct, 2),
+            "gain_loss": round(portfolio_current_value - portfolio_total_cost, 2)
+        },
+        "benchmark": {
+            "timeline": benchmark_timeline,
+            "total_invested": round(portfolio_total_cost, 2),  # Use same total invested
+            "final_value": round(final_benchmark_value, 2),
+            "return_pct": round(benchmark_return_pct, 2),
+            "gain_loss": round(final_benchmark_value - portfolio_total_cost, 2)
+        },
+        "comparison": {
+            "difference_value": round(portfolio_current_value - final_benchmark_value, 2),
+            "difference_pct": round(abs(portfolio_return_pct - benchmark_return_pct), 2),
+            "winner": "Portfolio" if portfolio_current_value > final_benchmark_value else "Benchmark"
+        }
+    }

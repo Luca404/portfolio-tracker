@@ -160,7 +160,7 @@ def compute_portfolio_value(
         symbol_type_map: Dict of symbol -> instrument_type
         symbol_isin_map: Dict of symbol -> ISIN
         db: Database session
-        include_history: Whether to include price history
+        include_history: Whether to include price history (if True, fetches history for all symbols with orders, including sold ones)
         reference_currency: Currency for totals
 
     Returns:
@@ -170,6 +170,10 @@ def compute_portfolio_value(
     total_value = 0.0
     total_cost = 0.0
     position_histories = {}
+
+    # Se include_history è True, dobbiamo fetchare la price history anche per gli asset venduti
+    # per poter mostrare correttamente il valore storico del portfolio
+    symbols_to_fetch_history = set(orders_by_symbol.keys()) if include_history else set()
 
     for symbol, data in positions_map.items():
         instrument_type = symbol_type_map.get(symbol, "stock")
@@ -313,6 +317,68 @@ def compute_portfolio_value(
         except Exception as e:
             print(f"Error fetching {symbol}: {e}")
 
+    # Fetch price history per gli asset venduti completamente (solo se include_history è True)
+    if include_history:
+        sold_symbols = symbols_to_fetch_history - set(positions_map.keys())
+        for symbol in sold_symbols:
+            try:
+                instrument_type = symbol_type_map.get(symbol, "stock")
+                price_history = []
+
+                if instrument_type == "etf":
+                    isin = symbol_isin_map.get(symbol, "")
+                    etf_data = get_etf_price_and_history(isin, db)
+                    price_history = etf_data.get("history", [])
+                else:
+                    stock_data = get_stock_price_and_history_cached(symbol, db, days=180)
+                    price_history = stock_data.get("history", [])
+
+                # Conversione valuta se necessario (stesso codice usato sopra)
+                orders_for_symbol = orders_by_symbol.get(symbol, [])
+                if orders_for_symbol and price_history:
+                    order_currency = orders_for_symbol[0].currency or ""
+                    if instrument_type == "etf":
+                        asset_currency = None
+                    else:
+                        asset_currency = "USD" if order_currency == "EUR" else ("EUR" if order_currency == "USD" else None)
+
+                    if order_currency and asset_currency and order_currency != asset_currency:
+                        print(f"[FX] {symbol} (sold): converting {asset_currency} -> {order_currency}")
+                        try:
+                            fx_data = get_exchange_rate_history(asset_currency, order_currency, db)
+                            fx_rates = fx_data.get("rates", [])
+
+                            if fx_rates:
+                                fx_map = {}
+                                for rate_point in fx_rates:
+                                    rate_date = parse_date_input(rate_point.get("date"))
+                                    if rate_date:
+                                        fx_map[rate_date] = rate_point.get("rate", 1.0)
+
+                                converted_history = []
+                                for price_point in price_history:
+                                    price_date = parse_date_input(price_point.get("date"))
+                                    if price_date and price_date in fx_map:
+                                        original_price = price_point.get("price", 0.0)
+                                        fx_rate = fx_map[price_date]
+                                        converted_price = original_price * fx_rate
+                                        converted_history.append({
+                                            "date": price_point.get("date"),
+                                            "price": converted_price
+                                        })
+
+                                if converted_history:
+                                    price_history = converted_history
+                                    print(f"[FX] {symbol} (sold): converted {len(converted_history)} prices")
+                        except Exception as e:
+                            print(f"[FX] {symbol} (sold): conversion failed: {e}")
+
+                if price_history:
+                    position_histories[symbol] = price_history
+                    print(f"[compute] {instrument_type.upper()} {symbol} (sold): history_len={len(price_history)}")
+            except Exception as e:
+                print(f"Error fetching history for sold symbol {symbol}: {e}")
+
     total_gain_loss = total_value - total_cost
     total_gain_loss_pct = (total_gain_loss / total_cost * 100) if total_cost > 0 else 0
 
@@ -321,8 +387,9 @@ def compute_portfolio_value(
 
 def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict):
     """
-    Aggrega il valore del portafoglio nel tempo usando solo le date in cui
-    tutti gli strumenti con posizione > 0 hanno un prezzo disponibile.
+    Aggrega il valore del portafoglio nel tempo considerando tutte le posizioni storiche,
+    inclusi gli asset venduti. Il valore riflette le vendite mostrando la diminuzione
+    del valore totale del portfolio.
 
     Args:
         position_histories: Dict of symbol -> price history
@@ -352,9 +419,12 @@ def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict
     if not all_dates:
         return [], price_map, []
 
-    orders_sorted = {sym: sorted(orders_by_symbol.get(sym, []), key=lambda o: o.date) for sym in price_map.keys()}
-    order_idx = {sym: 0 for sym in price_map.keys()}
-    qty_map = {sym: 0.0 for sym in price_map.keys()}
+    # Ottieni tutti i simboli che hanno avuto ordini (inclusi quelli venduti completamente)
+    all_symbols = set(orders_by_symbol.keys())
+
+    orders_sorted = {sym: sorted(orders_by_symbol.get(sym, []), key=lambda o: o.date) for sym in all_symbols}
+    order_idx = {sym: 0 for sym in all_symbols}
+    qty_map = {sym: 0.0 for sym in all_symbols}
 
     aggregated = []
     valid_dates = []
@@ -362,8 +432,9 @@ def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict
         total_value = 0.0
         any_position = False
         valid = True
+        symbols_with_position = set()
 
-        # applica ordini fino a questa data (inclusa)
+        # Applica ordini fino a questa data (inclusa)
         for sym, ords in orders_sorted.items():
             idx = order_idx[sym]
             while idx < len(ords) and ords[idx].date <= current_date:
@@ -372,17 +443,32 @@ def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict
                 idx += 1
             order_idx[sym] = idx
 
-        for sym, prices in price_map.items():
+        # Calcola valore per ogni simbolo che ha quantità > 0
+        for sym in all_symbols:
             qty = qty_map.get(sym, 0.0)
             if qty <= 0:
                 continue
+
+            symbols_with_position.add(sym)
             any_position = True
-            price = prices.get(current_date)
-            if price is None:
+
+            # Controlla se abbiamo il prezzo per questo simbolo e questa data
+            if sym in price_map:
+                price = price_map[sym].get(current_date)
+                if price is not None:
+                    total_value += qty * price
+                else:
+                    # Se manca il prezzo per un simbolo con posizione attiva,
+                    # la data non è valida
+                    valid = False
+                    break
+            else:
+                # Se il simbolo non ha price history ma ha quantità > 0,
+                # la data non è valida
                 valid = False
                 break
-            total_value += qty * price
 
+        # Salva il valore solo se è una data valida e c'è almeno una posizione
         if valid and any_position:
             aggregated.append({"date": current_date.strftime(DATE_FMT), "value": round(total_value, 2)})
             valid_dates.append(current_date)

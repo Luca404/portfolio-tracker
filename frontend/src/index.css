@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Remove focus outline from Recharts elements */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-layer,
+.recharts-bar,
+.recharts-line,
+.recharts-pie,
+.recharts-sector {
+  outline: none !important;
+  cursor: default !important;
+}
+
+/* Disable pointer events on chart elements to prevent interaction */
+.recharts-bar-rectangle,
+.recharts-rectangle {
+  pointer-events: none;
+}

@@ -16,6 +16,8 @@ from .pricing import (
     get_risk_free_rate,
     get_market_benchmark_data,
     normalize_chart_history,
+    get_stock_splits,
+    apply_splits_to_orders,
 )
 from .portfolio import (
     aggregate_positions,
@@ -64,6 +66,8 @@ __all__ = [
     "get_risk_free_rate",
     "get_market_benchmark_data",
     "normalize_chart_history",
+    "get_stock_splits",
+    "apply_splits_to_orders",
     # Portfolio
     "aggregate_positions",
     "compute_portfolio_value",

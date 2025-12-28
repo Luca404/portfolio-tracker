@@ -141,6 +141,20 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
         }
       }
 
+      // Also load historical_prices for attribution tab
+      const historicalPricesCacheKey = `analysis_${portfolio.id}_historical_prices`;
+      const historicalPricesCached = localStorage.getItem(historicalPricesCacheKey);
+      if (historicalPricesCached) {
+        try {
+          const historicalPricesData = JSON.parse(historicalPricesCached);
+          if (now - (historicalPricesData._cacheTime || 0) < 24 * 60 * 60 * 1000) {
+            cachedData.historical_prices = historicalPricesData.data;
+          }
+        } catch (e) {
+          console.warn('[CACHE] Error parsing historical_prices cache:', e);
+        }
+      }
+
       if (Object.keys(cachedData).length > 0) {
         console.log(`[CACHE] Loaded ${Object.keys(cachedData).length} tabs from cache for portfolio ${portfolio.id}`);
         setAnalysisData(cachedData);
@@ -228,7 +242,7 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
               activeTab === 'attribution' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            Performance Attribution
+            Asset Contribution
           </button>
         </div>
       </div>
@@ -440,10 +454,10 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center gap-2 mb-6">
                 <TrendingUp className="w-6 h-6 text-green-600" />
-                <h2 className="text-2xl font-bold text-slate-900">Performance Attribution</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Asset Contribution</h2>
               </div>
               <p className="text-slate-600 mb-6">
-                Contribution of each asset to portfolio returns. Understand which investments are driving performance.
+                How much each asset contributed to your portfolio's overall returns. Positive contributions helped performance, negative ones hurt it.
               </p>
 
               {analysisData.attribution ? (
