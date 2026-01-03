@@ -12,3 +12,6 @@ class UserModel(Base):
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     portfolios = relationship("PortfolioModel", back_populates="user", cascade="all, delete")
+    transactions = relationship("TransactionModel", back_populates="user", cascade="all, delete")
+    categories = relationship("CategoryModel", back_populates="user", cascade="all, delete")
+    accounts = relationship("AccountModel", back_populates="user", cascade="all, delete")

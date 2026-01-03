@@ -7,7 +7,7 @@ from models import UserModel
 from schemas import UserRegister, UserLogin, Token
 from utils import get_db, verify_password, get_password_hash, create_access_token, verify_token
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=Token)
@@ -26,7 +26,12 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": {"email": new_user.email, "username": new_user.username},
+        "user": {
+            "id": new_user.id,
+            "email": new_user.email,
+            "name": new_user.username,
+            "createdAt": new_user.created_at.isoformat() if new_user.created_at else None,
+        },
     }
 
 
@@ -40,7 +45,12 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": {"email": db_user.email, "username": db_user.username},
+        "user": {
+            "id": db_user.id,
+            "email": db_user.email,
+            "name": db_user.username,
+            "createdAt": db_user.created_at.isoformat() if db_user.created_at else None,
+        },
     }
 
 

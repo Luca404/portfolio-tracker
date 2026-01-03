@@ -3,6 +3,9 @@ from .portfolios import router as portfolios_router
 from .orders import router as orders_router
 from .symbols import router as symbols_router
 from .market_data import router as market_data_router
+from .transactions import router as transactions_router
+from .categories import router as categories_router
+from .accounts import router as accounts_router
 
 __all__ = [
     "auth_router",
@@ -10,4 +13,7 @@ __all__ = [
     "orders_router",
     "symbols_router",
     "market_data_router",
+    "transactions_router",
+    "categories_router",
+    "accounts_router",
 ]
