@@ -26,7 +26,7 @@ from utils import (
     apply_splits_to_orders,
 )
 
-router = APIRouter(prefix="/portfolios", tags=["portfolios"])
+router = APIRouter(prefix="/api/portfolios", tags=["portfolios"])
 
 
 def apply_stock_splits_to_orders(orders):

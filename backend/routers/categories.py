@@ -87,6 +87,7 @@ def create_category(
         user_id=user.id,
         name=category.name,
         icon=category.icon,
+        category_type=category.category_type,
     )
     db.add(new_category)
     db.commit()
@@ -129,6 +130,9 @@ def update_category(
 
     if category_update.icon is not None:
         category.icon = category_update.icon
+
+    if category_update.category_type is not None:
+        category.category_type = category_update.category_type
 
     category.updated_at = datetime.utcnow()
     db.commit()

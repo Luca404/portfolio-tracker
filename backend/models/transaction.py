@@ -18,6 +18,7 @@ class TransactionModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     type = Column(SQLEnum(TransactionType), nullable=False)
     category = Column(String, nullable=False)
     subcategory = Column(String, nullable=True)
@@ -33,5 +34,6 @@ class TransactionModel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationship
+    # Relationships
     user = relationship("UserModel", back_populates="transactions")
+    account = relationship("AccountModel", back_populates="transactions")

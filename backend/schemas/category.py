@@ -5,7 +5,6 @@ from typing import Optional
 
 class SubcategoryBase(BaseModel):
     name: str
-    icon: str = "📌"
 
 
 class SubcategoryCreate(SubcategoryBase):
@@ -14,7 +13,6 @@ class SubcategoryCreate(SubcategoryBase):
 
 class SubcategoryUpdate(BaseModel):
     name: Optional[str] = None
-    icon: Optional[str] = None
 
 
 class SubcategoryResponse(SubcategoryBase):

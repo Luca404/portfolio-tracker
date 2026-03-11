@@ -1,58 +1,90 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { apiService } from '../services/api';
+import { useData } from '../contexts/DataContext';
 import Layout from '../components/layout/Layout';
 import FAB from '../components/common/FAB';
 import Modal from '../components/common/Modal';
 import TransactionForm from '../components/transactions/TransactionForm';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import MonthYearPicker from '../components/common/MonthYearPicker';
+import PeriodSelector from '../components/common/PeriodSelector';
+import DateRangePicker from '../components/common/DateRangePicker';
+import { usePeriod } from '../hooks/usePeriod';
 import type { Transaction, TransactionFormData } from '../types';
 
+type PeriodType = 'day' | 'week' | 'month' | 'year' | 'all' | 'custom';
+
 export default function TransactionsPage() {
-  const now = new Date();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { transactions: allTransactions, accounts, categories, isLoading: dataLoading, addTransaction, updateTransaction: updateTransactionCache, deleteTransaction: deleteTransactionCache } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterType, setFilterType] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  useEffect(() => {
-    loadTransactions();
-  }, [filterCategory, filterType, selectedMonth, selectedYear]);
+  // Period state - condiviso tra le pagine
+  const { startDate, endDate, setPeriod } = usePeriod();
 
-  const loadTransactions = async () => {
-    setIsLoading(true);
-    try {
-      // Calcola start_date e end_date per il mese selezionato
-      const startDate = new Date(selectedYear, selectedMonth, 1);
-      const endDate = new Date(selectedYear, selectedMonth + 1, 0);
+  // Filtra le transazioni in base al periodo selezionato
+  const transactions = useMemo(() => {
+    return allTransactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    });
+  }, [allTransactions, startDate, endDate]);
 
-      const data = await apiService.getTransactions({
-        category: filterCategory || undefined,
-        type: filterType || undefined,
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
-      });
-      setTransactions(data);
-    } catch (error) {
-      console.error('Errore caricamento transazioni:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const getAccountName = (accountId: number) => {
+    if (!accountId) return '';
+    const account = accounts.find((a) => a.id === accountId);
+    return account ? `${account.icon} ${account.name}` : `Conto #${accountId}`;
+  };
+
+  const getCategoryIcon = (categoryName: string) => {
+    const category = categories.find((c) => c.name === categoryName);
+    return category?.icon || '📌';
+  };
+
+  const handlePeriodChange = (start: Date, end: Date, type: PeriodType) => {
+    setPeriod(start, end, type);
+  };
+
+  const handleCustomPeriodConfirm = (start: Date, end: Date) => {
+    setPeriod(start, end, 'custom');
   };
 
   const handleCreateTransaction = async (data: TransactionFormData) => {
-    await apiService.createTransaction(data);
-    await loadTransactions();
+    const newTransaction = await apiService.createTransaction(data);
+    addTransaction(newTransaction);
   };
 
-  const handleDeleteTransaction = async (id: string) => {
-    if (confirm('Sei sicuro di voler eliminare questa transazione?')) {
-      await apiService.deleteTransaction(id);
-      await loadTransactions();
+  const handleUpdateTransaction = async (data: TransactionFormData) => {
+    if (selectedTransaction) {
+      const updated = await apiService.updateTransaction(selectedTransaction.id, data);
+      updateTransactionCache(updated);
+      setIsModalOpen(false);
+      setSelectedTransaction(null);
+      setIsEditMode(false);
     }
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (selectedTransaction) {
+      await apiService.deleteTransaction(selectedTransaction.id);
+      deleteTransactionCache(selectedTransaction.id);
+      setIsModalOpen(false);
+      setSelectedTransaction(null);
+      setIsEditMode(false);
+    }
+  };
+
+  const handleTransactionClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleNewTransaction = () => {
+    setSelectedTransaction(null);
+    setIsEditMode(false);
+    setIsModalOpen(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -66,147 +98,133 @@ export default function TransactionsPage() {
     return new Date(dateStr).toLocaleDateString('it-IT', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric',
     });
   };
 
-  if (isLoading) {
+  if (dataLoading) {
     return <LoadingSpinner />;
   }
 
   return (
     <Layout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Transazioni
-        </h1>
-
-        {/* Selettore mese/anno */}
-        <MonthYearPicker
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onMonthChange={setSelectedMonth}
-          onYearChange={setSelectedYear}
+        {/* Period Selector */}
+        <PeriodSelector
+          startDate={startDate}
+          endDate={endDate}
+          onPeriodChange={handlePeriodChange}
+          onCustomClick={() => setIsDatePickerOpen(true)}
         />
-
-        {/* Filtri */}
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          <button
-            onClick={() => setFilterType('')}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filterType === ''
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Tutte
-          </button>
-          <button
-            onClick={() => setFilterType('expense')}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filterType === 'expense'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Uscite
-          </button>
-          <button
-            onClick={() => setFilterType('income')}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filterType === 'income'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Entrate
-          </button>
-          <button
-            onClick={() => setFilterType('investment')}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filterType === 'investment'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Investimenti
-          </button>
-        </div>
 
         {/* Lista transazioni */}
-        {transactions.length === 0 ? (
-          <div className="card text-center py-12">
-            <div className="text-6xl mb-4">📋</div>
-            <div className="text-gray-500 dark:text-gray-400">
-              Nessuna transazione trovata
+        <div>
+          {transactions.length === 0 ? (
+            <div className="card text-center py-12">
+              <div className="text-6xl mb-4">📋</div>
+              <div className="text-gray-500 dark:text-gray-400">
+                Nessuna transazione in questo periodo
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="card flex items-center justify-between"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      {transaction.category}
-                    </span>
-                    {transaction.ticker && (
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded">
-                        {transaction.ticker}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {transaction.description || '-'}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                    {formatDate(transaction.date)}
-                  </div>
-                  {transaction.ticker && (
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      {transaction.quantity} × {formatCurrency(transaction.price || 0)}
+          ) : (
+            <div className="space-y-2">
+              {transactions.map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="card flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => handleTransactionClick(transaction)}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-2xl">{getCategoryIcon(transaction.category)}</span>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {transaction.category}
+                        {transaction.subcategory && (
+                          <span className="text-sm text-gray-500 dark:text-gray-400"> ({transaction.subcategory})</span>
+                        )}
+                      </div>
+                      {transaction.description && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          {transaction.description}
+                        </div>
+                      )}
+                      {transaction.ticker && (
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          {transaction.ticker} • {transaction.quantity} x {formatCurrency(transaction.price || 0)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`text-lg font-bold ${
+                  </div>
+                  <div className="text-right ml-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      {getAccountName(transaction.account_id)}
+                    </div>
+                    <div className={`font-bold text-lg ${
                       transaction.type === 'income'
                         ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
-                    }`}
-                  >
-                    {transaction.type === 'income' ? '+' : '-'}
-                    {formatCurrency(transaction.amount)}
+                        : transaction.type === 'expense'
+                        ? 'text-red-600 dark:text-red-400'
+                        : transaction.type === 'investment'
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-purple-600 dark:text-purple-400'
+                    }`}>
+                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatDate(transaction.date)}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteTransaction(transaction.id)}
-                    className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg"
-                  >
-                    🗑️
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      <FAB onClick={() => setIsModalOpen(true)} />
+        {/* FAB */}
+        <FAB onClick={handleNewTransaction} />
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Nuova Transazione"
-      >
-        <TransactionForm
-          onSubmit={handleCreateTransaction}
-          onCancel={() => setIsModalOpen(false)}
+        {/* Modal transazione */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedTransaction(null);
+            setIsEditMode(false);
+          }}
+          title={isEditMode ? "Modifica Transazione" : "Nuova Transazione"}
+        >
+          <TransactionForm
+            onSubmit={isEditMode ? handleUpdateTransaction : handleCreateTransaction}
+            onCancel={() => {
+              setIsModalOpen(false);
+              setSelectedTransaction(null);
+              setIsEditMode(false);
+            }}
+            initialData={selectedTransaction ? {
+              type: selectedTransaction.type,
+              category: selectedTransaction.category,
+              subcategory: selectedTransaction.subcategory,
+              amount: Math.abs(selectedTransaction.amount),
+              description: selectedTransaction.description || '',
+              date: selectedTransaction.date,
+              account_id: selectedTransaction.account_id,
+              ticker: selectedTransaction.ticker,
+              quantity: selectedTransaction.quantity,
+              price: selectedTransaction.price,
+            } : undefined}
+            isEditMode={isEditMode}
+            onDelete={isEditMode ? handleDeleteTransaction : undefined}
+          />
+        </Modal>
+
+        {/* Date Range Picker */}
+        <DateRangePicker
+          isOpen={isDatePickerOpen}
+          onClose={() => setIsDatePickerOpen(false)}
+          onConfirm={handleCustomPeriodConfirm}
+          initialStart={startDate}
+          initialEnd={endDate}
         />
-      </Modal>
+      </div>
     </Layout>
   );
 }

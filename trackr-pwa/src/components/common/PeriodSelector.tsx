@@ -133,19 +133,108 @@ function PeriodSelector({
     setIsOpen(false);
   };
 
+  const navigatePeriod = (direction: 'prev' | 'next') => {
+    let newStart: Date;
+    let newEnd: Date;
+
+    switch (currentType) {
+      case 'day':
+        if (direction === 'prev') {
+          newStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() - 1);
+          newEnd = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() - 1, 23, 59, 59);
+        } else {
+          newStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 1);
+          newEnd = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 1, 23, 59, 59);
+        }
+        break;
+
+      case 'week':
+        if (direction === 'prev') {
+          newStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() - 7);
+          newEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() - 7, 23, 59, 59);
+        } else {
+          newStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 7);
+          newEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 7, 23, 59, 59);
+        }
+        break;
+
+      case 'month':
+        if (direction === 'prev') {
+          newStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
+          newEnd = new Date(startDate.getFullYear(), startDate.getMonth(), 0, 23, 59, 59);
+        } else {
+          newStart = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1);
+          newEnd = new Date(startDate.getFullYear(), startDate.getMonth() + 2, 0, 23, 59, 59);
+        }
+        break;
+
+      case 'year':
+        if (direction === 'prev') {
+          newStart = new Date(startDate.getFullYear() - 1, 0, 1);
+          newEnd = new Date(startDate.getFullYear() - 1, 11, 31, 23, 59, 59);
+        } else {
+          newStart = new Date(startDate.getFullYear() + 1, 0, 1);
+          newEnd = new Date(startDate.getFullYear() + 1, 11, 31, 23, 59, 59);
+        }
+        break;
+
+      default:
+        // Non navigabile per 'all' e 'custom'
+        return;
+    }
+
+    onPeriodChange(newStart, newEnd, currentType);
+  };
+
+  const canNavigate = currentType !== 'all' && currentType !== 'custom';
+
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 p-4 text-center"
+        className="w-full bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 py-3 px-4 text-center relative"
       >
+        {/* Freccia sinistra */}
+        {canNavigate && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigatePeriod('prev');
+            }}
+            className="absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center active:bg-gray-100 dark:active:bg-gray-700 md:hover:bg-gray-100 md:dark:hover:bg-gray-700 rounded-l-lg transition-all duration-75"
+            aria-label="Periodo precedente"
+          >
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
         <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
           {getPeriodLabel()}
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {formatDateRange(startDate, endDate, currentType)}
         </div>
+
+        {/* Freccia destra */}
+        {canNavigate && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigatePeriod('next');
+            }}
+            className="absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center active:bg-gray-100 dark:active:bg-gray-700 md:hover:bg-gray-100 md:dark:hover:bg-gray-700 rounded-r-lg transition-all duration-75"
+            aria-label="Periodo successivo"
+          >
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </button>
 
       {isOpen && (

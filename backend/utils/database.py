@@ -77,8 +77,34 @@ def ensure_portfolios_table_has_market_settings():
             conn.execute(text("ALTER TABLE portfolios ADD COLUMN market_benchmark STRING DEFAULT 'auto'"))
 
 
+def ensure_transactions_table_has_account_id():
+    """
+    Minimal migration for existing SQLite DBs: add `account_id` column if missing.
+    """
+    with engine.connect() as conn:
+        # Check if transactions table exists
+        tables = [row[0] for row in conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()]
+        if "transactions" not in tables:
+            return
+
+        cols = [row[1] for row in conn.execute(text("PRAGMA table_info(transactions)")).fetchall()]
+
+    if "account_id" not in cols:
+        # Add the column with a default value (first account for existing transactions)
+        with engine.begin() as conn:
+            # Get the first account ID to use as default
+            result = conn.execute(text("SELECT id FROM accounts LIMIT 1")).fetchone()
+            if result:
+                default_account_id = result[0]
+                conn.execute(text(f"ALTER TABLE transactions ADD COLUMN account_id INTEGER DEFAULT {default_account_id} NOT NULL REFERENCES accounts(id)"))
+            else:
+                # No accounts exist yet, just add the column as nullable for now
+                conn.execute(text("ALTER TABLE transactions ADD COLUMN account_id INTEGER REFERENCES accounts(id)"))
+
+
 def run_migrations():
     """Run all database migrations."""
     ensure_orders_table_has_isin()
     ensure_portfolios_table_has_reference_currency()
     ensure_portfolios_table_has_market_settings()
+    ensure_transactions_table_has_account_id()

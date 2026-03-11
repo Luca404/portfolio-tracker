@@ -1,6 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useMemo, type FormEvent } from 'react';
 import type { TransactionFormData, TransactionType, Category, Subcategory, Account } from '../../types';
-import { apiService } from '../../services/api';
+import { useData } from '../../contexts/DataContext';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 interface TransactionFormProps {
   onSubmit: (data: TransactionFormData) => Promise<void>;
@@ -11,9 +12,17 @@ interface TransactionFormProps {
 }
 
 export default function TransactionForm({ onSubmit, onCancel, initialData, isEditMode, onDelete }: TransactionFormProps) {
+  const { categories: allCategories, accounts: allAccounts } = useData();
   const [currentType, setCurrentType] = useState<TransactionType>(initialData?.type || 'expense');
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  // Filtra le categorie in base al tipo corrente
+  const categories = useMemo(() => {
+    if (currentType === 'transfer') {
+      return [];
+    }
+    // Filtra solo categorie che hanno esattamente category_type === currentType
+    return allCategories.filter(c => c.category_type === currentType);
+  }, [allCategories, currentType]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<Subcategory | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -29,16 +38,24 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // Carica categorie e conti all'avvio
+  // Inizializza l'account selezionato al primo caricamento
   useEffect(() => {
-    loadCategories();
-    loadAccounts();
-  }, []);
+    if (!selectedAccount && allAccounts.length > 0) {
+      // Cerca il conto preferito
+      const favoriteAccount = allAccounts.find(acc => acc.is_favorite);
+      if (favoriteAccount) {
+        setSelectedAccount(favoriteAccount);
+      } else {
+        // Se non c'è un preferito, usa il primo
+        setSelectedAccount(allAccounts[0]);
+      }
+    }
+  }, [allAccounts, selectedAccount]);
 
-  // Carica categorie quando cambia il tipo
+  // Reset categoria e sottocategoria quando cambia il tipo
   useEffect(() => {
-    loadCategories();
     setSelectedCategory(null);
     setSelectedSubcategory(null);
   }, [currentType]);
@@ -58,26 +75,15 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
     }
   }, [isEditMode, initialData, categories]);
 
-  const loadCategories = async () => {
-    try {
-      const data = await apiService.getCategories();
-      setCategories(data.filter(c => !c.category_type || c.category_type === currentType));
-    } catch (err) {
-      console.error('Errore caricamento categorie:', err);
-    }
-  };
-
-  const loadAccounts = async () => {
-    try {
-      const data = await apiService.getAccounts();
-      setAccounts(data);
-      if (data.length > 0 && !selectedAccount) {
-        setSelectedAccount(data[0]);
+  // Inizializza il conto selezionato quando siamo in modalità modifica
+  useEffect(() => {
+    if (isEditMode && initialData?.account_id && allAccounts.length > 0) {
+      const account = allAccounts.find(acc => acc.id === initialData.account_id);
+      if (account) {
+        setSelectedAccount(account);
       }
-    } catch (err) {
-      console.error('Errore caricamento conti:', err);
     }
-  };
+  }, [isEditMode, initialData, allAccounts]);
 
   const handleNumberClick = (num: string) => {
     if (num === '.' && amount.includes('.')) return;
@@ -97,6 +103,17 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
       'CHF': 'Fr',
     };
     return symbols[curr] || curr;
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!onDelete) return;
+    setIsLoading(true);
+    try {
+      await onDelete();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Errore durante l\'eliminazione');
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -129,6 +146,7 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
         amount: amountNum,
         description,
         date,
+        account_id: selectedAccount.id,
       });
       onCancel();
     } catch (err: any) {
@@ -212,14 +230,6 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
             ))}
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full btn-secondary"
-        >
-          Annulla
-        </button>
       </div>
     );
   }
@@ -258,36 +268,22 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
 
       {/* Sottocategorie */}
       {selectedCategory.subcategories && selectedCategory.subcategories.length > 0 && (
-        <div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Sottocategoria (opzionale)</div>
-          <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
+          {selectedCategory.subcategories.map((sub) => (
             <button
+              key={sub.id}
               type="button"
-              onClick={() => setSelectedSubcategory(null)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                !selectedSubcategory
+              onClick={() => setSelectedSubcategory(selectedSubcategory?.id === sub.id ? null : sub)}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1 ${
+                selectedSubcategory?.id === sub.id
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
-              Nessuna
+              <span>{sub.icon}</span>
+              <span>{sub.name}</span>
             </button>
-            {selectedCategory.subcategories.map((sub) => (
-              <button
-                key={sub.id}
-                type="button"
-                onClick={() => setSelectedSubcategory(sub)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1 ${
-                  selectedSubcategory?.id === sub.id
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <span>{sub.icon}</span>
-                <span>{sub.name}</span>
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       )}
 
@@ -362,17 +358,7 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
       {isEditMode && onDelete && (
         <button
           type="button"
-          onClick={async () => {
-            if (confirm('Sei sicuro di voler eliminare questa transazione?')) {
-              setIsLoading(true);
-              try {
-                await onDelete();
-              } catch (err: any) {
-                setError(err.response?.data?.message || 'Errore durante l\'eliminazione');
-                setIsLoading(false);
-              }
-            }
-          }}
+          onClick={() => setIsDeleteDialogOpen(true)}
           className="w-full px-4 py-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
           disabled={isLoading}
         >
@@ -412,7 +398,7 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Seleziona Conto</h3>
             <div className="space-y-2">
-              {accounts.map((account) => (
+              {allAccounts.map((account) => (
                 <button
                   key={account.id}
                   type="button"
@@ -550,6 +536,18 @@ export default function TransactionForm({ onSubmit, onCancel, initialData, isEdi
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Elimina Transazione"
+        message="Sei sicuro di voler eliminare questa transazione?"
+        confirmText="Elimina"
+        cancelText="Annulla"
+        isDestructive={true}
+      />
     </form>
   );
 }

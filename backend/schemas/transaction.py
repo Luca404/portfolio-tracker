@@ -17,7 +17,7 @@ class TransactionBase(BaseModel):
 
 
 class TransactionCreate(TransactionBase):
-    pass
+    account_id: Optional[int] = None  # Opzionale, se non specificato usa il preferito
 
 
 class TransactionUpdate(BaseModel):
@@ -30,11 +30,13 @@ class TransactionUpdate(BaseModel):
     ticker: Optional[str] = None
     quantity: Optional[float] = None
     price: Optional[float] = None
+    account_id: Optional[int] = None
 
 
 class TransactionResponse(TransactionBase):
     id: int
     user_id: int
+    account_id: int
     created_at: datetime
     updated_at: datetime
 

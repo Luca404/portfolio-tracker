@@ -13,22 +13,22 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.post("/register", response_model=Token)
 def register(user: UserRegister, db: Session = Depends(get_db)):
     hashed_password = get_password_hash(user.password)
-    new_user = UserModel(email=user.email.lower(), username=user.username, hashed_password=hashed_password)
+    new_user = UserModel(username=user.username, hashed_password=hashed_password)
     db.add(new_user)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Email or username already registered")
+        raise HTTPException(status_code=400, detail="Username already registered")
     db.refresh(new_user)
 
-    access_token = create_access_token(data={"sub": new_user.email})
+    access_token = create_access_token(data={"sub": new_user.username})
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": {
             "id": new_user.id,
-            "email": new_user.email,
+            "email": new_user.username,
             "name": new_user.username,
             "createdAt": new_user.created_at.isoformat() if new_user.created_at else None,
         },
@@ -37,17 +37,17 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.execute(select(UserModel).where(UserModel.email == user.email.lower())).scalar_one_or_none()
+    db_user = db.execute(select(UserModel).where(UserModel.username == user.username)).scalar_one_or_none()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    access_token = create_access_token(data={"sub": db_user.email})
+    access_token = create_access_token(data={"sub": db_user.username})
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": {
             "id": db_user.id,
-            "email": db_user.email,
+            "email": db_user.username,
             "name": db_user.username,
             "createdAt": db_user.created_at.isoformat() if db_user.created_at else None,
         },
@@ -56,4 +56,4 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me")
 def get_current_user(user: UserModel = Depends(verify_token)):
-    return {"email": user.email, "username": user.username}
+    return {"username": user.username}

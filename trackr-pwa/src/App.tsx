@@ -1,16 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { DataProvider } from './contexts/DataContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import AccountsPage from './pages/AccountsPage';
-import CategoriesPageNew from './pages/CategoriesPageNew';
-import TransactionsPageNew from './pages/TransactionsPageNew';
-import StatsPageNew from './pages/StatsPageNew';
+import CategoriesPage from './pages/CategoriesPage';
+import TransactionsPage from './pages/TransactionsPage';
+import StatsPage from './pages/StatsPage';
+import PortfoliosPage from './pages/PortfoliosPage';
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <DataProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
@@ -25,7 +28,7 @@ function App() {
             path="/categories"
             element={
               <ProtectedRoute>
-                <CategoriesPageNew />
+                <CategoriesPage />
               </ProtectedRoute>
             }
           />
@@ -33,7 +36,7 @@ function App() {
             path="/transactions"
             element={
               <ProtectedRoute>
-                <TransactionsPageNew />
+                <TransactionsPage />
               </ProtectedRoute>
             }
           />
@@ -41,13 +44,22 @@ function App() {
             path="/stats"
             element={
               <ProtectedRoute>
-                <StatsPageNew />
+                <StatsPage />
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/accounts" replace />} />
+          <Route
+            path="/portfolios"
+            element={
+              <ProtectedRoute>
+                <PortfoliosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/transactions" replace />} />
         </Routes>
       </BrowserRouter>
+      </DataProvider>
     </AuthProvider>
   );
 }

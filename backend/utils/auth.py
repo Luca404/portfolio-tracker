@@ -62,10 +62,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), 
     try:
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if email is None:
+        username = payload.get("sub")
+        if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        user = db.execute(select(UserModel).where(UserModel.email == email)).scalar_one_or_none()
+        user = db.execute(select(UserModel).where(UserModel.username == username)).scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid or expired user")
         return user

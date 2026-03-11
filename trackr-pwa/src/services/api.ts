@@ -15,6 +15,8 @@ import type {
   SubcategoryFormData,
   Account,
   AccountFormData,
+  Portfolio,
+  PortfolioFormData,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -66,6 +68,7 @@ class ApiService {
   // Auth endpoints
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const { data } = await this.api.post<AuthResponse>('/api/auth/login', credentials);
+    localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('authToken', data.access_token);
     localStorage.setItem('user', JSON.stringify(data.user));
     return data;
@@ -73,12 +76,14 @@ class ApiService {
 
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     const { data } = await this.api.post<AuthResponse>('/api/auth/register', credentials);
+    localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('authToken', data.access_token);
     localStorage.setItem('user', JSON.stringify(data.user));
     return data;
   }
 
   logout() {
+    localStorage.removeItem('access_token');
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     window.location.href = '/login';
@@ -105,7 +110,15 @@ class ApiService {
     category?: string;
     type?: string;
   }): Promise<Transaction[]> {
-    const { data } = await this.api.get<Transaction[]>('/api/transactions', { params });
+    // Converti camelCase a snake_case per il backend
+    const backendParams = params ? {
+      start_date: params.startDate,
+      end_date: params.endDate,
+      category: params.category,
+      type: params.type,
+    } : undefined;
+
+    const { data } = await this.api.get<Transaction[]>('/api/transactions', { params: backendParams });
     return data;
   }
 
@@ -182,22 +195,43 @@ class ApiService {
   // ==================== ACCOUNTS ====================
 
   async getAccounts(): Promise<Account[]> {
-    const response = await this.api.get('/accounts/');
+    const response = await this.api.get('/api/accounts/');
     return response.data;
   }
 
   async createAccount(data: AccountFormData): Promise<Account> {
-    const response = await this.api.post('/accounts/', data);
+    const response = await this.api.post('/api/accounts/', data);
     return response.data;
   }
 
   async updateAccount(id: number, data: Partial<AccountFormData>): Promise<Account> {
-    const response = await this.api.put(`/accounts/${id}`, data);
+    const response = await this.api.put(`/api/accounts/${id}`, data);
     return response.data;
   }
 
   async deleteAccount(id: number): Promise<void> {
-    await this.api.delete(`/accounts/${id}`);
+    await this.api.delete(`/api/accounts/${id}`);
+  }
+
+  // ==================== PORTFOLIOS ====================
+
+  async getPortfolios(): Promise<Portfolio[]> {
+    const response = await this.api.get('/api/portfolios');
+    return response.data.portfolios || [];
+  }
+
+  async createPortfolio(data: PortfolioFormData): Promise<Portfolio> {
+    const response = await this.api.post('/api/portfolios', data);
+    return response.data;
+  }
+
+  async updatePortfolio(id: number, data: Partial<PortfolioFormData>): Promise<Portfolio> {
+    const response = await this.api.put(`/api/portfolios/${id}`, data);
+    return response.data;
+  }
+
+  async deletePortfolio(id: number): Promise<void> {
+    await this.api.delete(`/api/portfolios/${id}`);
   }
 }
 

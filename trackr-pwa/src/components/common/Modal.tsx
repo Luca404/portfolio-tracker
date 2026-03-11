@@ -3,36 +3,44 @@ import { type ReactNode, useEffect } from 'react';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onBackdropClick?: () => void;
   title: string | ReactNode;
   children: ReactNode;
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, onBackdropClick, title, children }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
+      // Blocca lo scroll della pagina quando il modal è aperto
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      return () => {
+        document.body.style.overflow = '';
+      };
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+    >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
+        className="fixed inset-0 bg-black bg-opacity-50"
+        onClick={onBackdropClick || onClose}
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-lg rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+      <div
+        className="relative bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-lg rounded-t-2xl overflow-y-auto animate-slide-up"
+        style={{
+          maxHeight: '75vh',
+          marginBottom: '5rem'
+        }}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {title}
           </h2>
@@ -57,7 +65,9 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
         </div>
 
         {/* Body */}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-4">
+          {children}
+        </div>
       </div>
     </div>
   );

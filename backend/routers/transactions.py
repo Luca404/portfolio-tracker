@@ -19,11 +19,37 @@ def create_transaction(
 ):
     """Crea una nuova transazione. Se è un investimento, crea anche un order in pfTrackr."""
 
+    # Se account_id non è specificato, usa il conto preferito
+    account_id = transaction.account_id
+    if account_id is None:
+        from models import AccountModel
+        favorite_account = db.execute(
+            select(AccountModel).where(
+                AccountModel.user_id == user.id,
+                AccountModel.is_favorite == True
+            )
+        ).scalar_one_or_none()
+
+        if favorite_account:
+            account_id = favorite_account.id
+        else:
+            # Se non c'è un preferito, usa il primo account
+            first_account = db.execute(
+                select(AccountModel).where(AccountModel.user_id == user.id)
+            ).scalar_one_or_none()
+
+            if not first_account:
+                raise HTTPException(status_code=400, detail="Nessun conto disponibile. Crea almeno un conto prima di aggiungere transazioni.")
+
+            account_id = first_account.id
+
     # Crea la transazione
     new_transaction = TransactionModel(
         user_id=user.id,
+        account_id=account_id,
         type=transaction.type,
         category=transaction.category,
+        subcategory=transaction.subcategory,
         amount=transaction.amount,
         description=transaction.description,
         date=transaction.date,
@@ -89,7 +115,7 @@ def get_transactions(
     if type:
         query = query.where(TransactionModel.type == type)
 
-    query = query.order_by(TransactionModel.date.desc())
+    query = query.order_by(TransactionModel.date.desc(), TransactionModel.created_at.desc())
 
     transactions = db.execute(query).scalars().all()
     return transactions

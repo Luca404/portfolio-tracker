@@ -63,10 +63,11 @@ export default defineConfig({
     })
   ],
   server: {
+    host: '0.0.0.0', // Permette accesso dalla rete locale
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8000', // Il proxy gira sul PC, quindi usa localhost
         changeOrigin: true
       }
     }

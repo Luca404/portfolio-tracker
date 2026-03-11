@@ -1,39 +1,56 @@
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const { login, register } = useAuth();
+  const { refreshAll } = useData();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validazione registrazione
+    if (!isLogin) {
+      if (password !== confirmPassword) {
+        setError('Le password non corrispondono');
+        return;
+      }
+      if (password.length < 6) {
+        setError('La password deve essere di almeno 6 caratteri');
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
       if (isLogin) {
-        await login({ email, password });
+        await login({ username, password });
       } else {
-        await register({ email, password, username });
+        await register({ username, password });
       }
-      navigate('/dashboard');
+      // Ricarica i dati dopo il login
+      await refreshAll();
+      navigate('/accounts');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Errore durante l\'autenticazione');
+      setError(err.response?.data?.detail || err.response?.data?.message || 'Errore durante l\'autenticazione');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 px-4">
+    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-primary-500 to-primary-700 px-4 pt-20">
       <div className="w-full max-w-md">
         {/* Logo/Title */}
         <div className="text-center mb-8">
@@ -47,7 +64,10 @@ export default function LoginPage() {
           <div className="flex mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
               type="button"
-              onClick={() => setIsLogin(true)}
+              onClick={() => {
+                setIsLogin(true);
+                setError('');
+              }}
               className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
                 isLogin
                   ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
@@ -58,7 +78,10 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setIsLogin(false)}
+              onClick={() => {
+                setIsLogin(false);
+                setError('');
+              }}
               className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
                 !isLogin
                   ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
@@ -71,41 +94,21 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div>
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Nome utente
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="input-field"
-                  required
-                  placeholder="Il tuo nome utente"
-                />
-              </div>
-            )}
-
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Email
+                Nome utente
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="input-field"
                 required
-                placeholder="email@esempio.com"
+                placeholder="Il tuo nome utente"
               />
             </div>
 
@@ -127,6 +130,27 @@ export default function LoginPage() {
                 minLength={6}
               />
             </div>
+
+            {!isLogin && (
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Conferma password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="input-field"
+                  required
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
