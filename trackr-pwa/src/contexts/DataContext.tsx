@@ -217,6 +217,10 @@ export function DataProvider({ children }: DataProviderProps) {
 
   const deleteAccount = (id: number) => {
     setAccounts(prev => prev.filter(a => a.id !== id));
+    // Se era l'ultimo account, ricrea i default al prossimo fetch
+    if (accounts.filter(a => a.id !== id).length === 0) {
+      refreshAccounts();
+    }
   };
 
   // Category operations
@@ -230,6 +234,10 @@ export function DataProvider({ children }: DataProviderProps) {
 
   const deleteCategory = (id: number) => {
     setCategories(prev => prev.filter(c => c.id !== id));
+    // Dopo ogni eliminazione, ricarica dal DB: se è vuoto ricrea i default
+    // (non si può usare il conteggio state perché alcune categorie, es. "Trasferimento",
+    // non sono visibili nell'UI e non possono essere eliminate dall'utente)
+    refreshCategories().catch(() => {});
   };
 
   // Transaction operations

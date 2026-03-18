@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,9 +22,11 @@ export default function Modal({ isOpen, onClose, onBackdropClick, title, childre
 
   if (!isOpen) return null;
 
-  return (
+  // Usa un portal per renderizzare il modal direttamente in document.body,
+  // evitando che il transform del parent (Layout) rompa il position:fixed
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center"
     >
       {/* Backdrop */}
       <div
@@ -36,7 +39,7 @@ export default function Modal({ isOpen, onClose, onBackdropClick, title, childre
         className="relative bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-lg rounded-t-2xl overflow-y-auto animate-slide-up"
         style={{
           maxHeight: '75vh',
-          marginBottom: '5rem'
+          marginBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))'
         }}
       >
         {/* Header */}
@@ -69,6 +72,7 @@ export default function Modal({ isOpen, onClose, onBackdropClick, title, childre
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

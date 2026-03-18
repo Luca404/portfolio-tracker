@@ -8,6 +8,7 @@ import CategoriesPage from './pages/CategoriesPage';
 import TransactionsPage from './pages/TransactionsPage';
 import StatsPage from './pages/StatsPage';
 import PortfoliosPage from './pages/PortfoliosPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -53,6 +54,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PortfoliosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />

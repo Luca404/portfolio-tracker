@@ -1,25 +1,26 @@
-# Trackr PWA - Gestione Spese Personali
+# Trackr PWA - Gestione Spese Offline-First
 
-Progressive Web App mobile-first per tracciare spese quotidiane stile Kakebo, con integrazione al backend pfTrackr per sincronizzare investimenti.
+Progressive Web App per tracciare le tue spese personali, **completamente funzionante offline** senza bisogno di server.
 
 ## Caratteristiche
 
-- **PWA Installabile**: Installabile su dispositivi mobili e desktop
-- **Offline-Ready**: Funziona offline grazie a Service Worker e cache
+- **100% Offline**: Tutti i dati salvati localmente su IndexedDB
+- **PWA Installabile**: Funziona come app nativa su Android, iOS e desktop
+- **Zero dipendenze server**: Non serve backend per il funzionamento normale
+- **Backup/Restore**: Esporta e importa i tuoi dati in formato JSON
 - **Mobile-First**: UI ottimizzata per dispositivi touch
-- **Dark Mode**: Supporto per tema scuro
-- **Autenticazione JWT**: Login sicuro con token
-- **Integrazione pfTrackr**: Investimenti sincronizzati automaticamente con il portfolio tracker
+- **Dark Mode**: Supporto automatico per modalità scura
+- **Modalità Online (opzionale)**: Supporto per backend se necessario
 
 ## Tecnologie
 
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS
-- React Router
-- Axios
-- Vite PWA Plugin
-- Workbox
+- **React 18** + **TypeScript**
+- **Vite** (build tool)
+- **Tailwind CSS** (styling)
+- **IndexedDB** (database locale)
+- **Vite PWA Plugin** (service worker + manifest)
+- **React Router** (navigation)
+- **Axios** (API client per modalità online)
 
 ## Setup
 
@@ -32,15 +33,17 @@ npm install
 
 ### 2. Configurazione ambiente
 
-Copia il file `.env.example` in `.env` e configura l'URL del backend:
+Il file `.env` è già configurato per modalità offline (default):
 
-```bash
-cp .env.example .env
+```env
+VITE_OFFLINE_MODE=true
+VITE_API_URL=http://localhost:8000
 ```
 
-Modifica `.env`:
-```
-VITE_API_URL=http://localhost:5000
+**Per usare un backend server invece** (opzionale):
+```env
+VITE_OFFLINE_MODE=false
+VITE_API_URL=http://localhost:8000  # URL del tuo backend
 ```
 
 ### 3. Avvio server di sviluppo
@@ -49,7 +52,7 @@ VITE_API_URL=http://localhost:5000
 npm run dev
 ```
 
-L'app sarà disponibile su [http://localhost:5174](http://localhost:5174)
+L'app sarà disponibile su [http://localhost:5174](http://localhost:5174) (o porta successiva se occupata)
 
 ### 4. Build per produzione
 
@@ -87,92 +90,136 @@ trackr-pwa/
 └── package.json
 ```
 
+## Modalità di Funzionamento
+
+### Modalità Offline (Default)
+
+L'app usa **IndexedDB** per salvare tutti i dati localmente:
+
+- Transazioni (spese, entrate, investimenti, trasferimenti)
+- Categorie e sottocategorie
+- Account
+- Portfolio
+
+**Vantaggi**:
+- Nessun costo server
+- Funziona sempre, anche senza internet
+- Privacy totale (dati solo sul tuo dispositivo)
+- Velocità massima
+
+**Backup**: Vai su Impostazioni → Esporta Backup (file JSON)
+
+### Modalità Online (Opzionale)
+
+Imposta `VITE_OFFLINE_MODE=false` nel file `.env` per usare un backend.
+
 ## Funzionalità
 
 ### Autenticazione
 
-- Registrazione nuovi utenti
-- Login con email/password
-- Token JWT salvato in localStorage
+- Login automatico in modalità offline (utente locale)
+- Login con username/password se backend attivo
 - Logout
 
-### Dashboard
+### Account
 
-- Overview mensile: entrate, uscite, investimenti, bilancio
-- Spese per categoria (top 5)
-- Ultimi 5 transazioni
-- FAB per aggiungere velocemente una spesa
+- Gestione conti bancari/portafogli
+- Bilancio calcolato automaticamente
+- Icone personalizzate
+
+### Categorie
+
+- Gestione categorie con sottocategorie
+- Statistiche per categoria
+- Icone personalizzate
 
 ### Transazioni
 
 - Lista completa di tutte le transazioni
-- Filtri per tipo (entrate/uscite/investimenti)
-- Eliminazione transazioni
-- Dettagli investimenti (ticker, quantità, prezzo)
+- Filtri per data, categoria, tipo
+- Modifica ed eliminazione
+- Supporto investimenti (ticker, quantità, prezzo)
+- Supporto trasferimenti tra conti
 
-### Statistiche
+### Statistiche (Recap)
 
-- Vista mensile/annuale
-- Distribuzione per categoria con grafici a barre
+- Vista per periodo personalizzato
+- Distribuzione per categoria
 - Trend mensile
-- Totale investimenti sincronizzati con pfTrackr
+- Grafici delle spese
 
-### Form Inserimento
+### Portfolio
 
-- Tipo: Entrata/Uscita
-- Categoria selezionabile
-- Importo con tastierino numerico ottimizzato
-- Data
-- Descrizione opzionale
-- **Campi speciali per Investimenti**:
-  - Ticker/Simbolo
-  - Quantità
-  - Prezzo
-  - Sincronizzazione automatica con pfTrackr
+- Gestione portfolio investimenti
+- Integrazione futura con pfTrackr
 
-## Integrazione Backend
+### Impostazioni
 
-### Endpoints Utilizzati
+- Visualizzazione info utente
+- **Export Backup**: Scarica tutti i dati in JSON
+- **Import Backup**: Ripristina dati da backup precedente
+- Istruzioni installazione PWA
+- Logout
 
-**Auth:**
-- `POST /api/auth/register` - Registrazione
-- `POST /api/auth/login` - Login
+## Struttura Dati IndexedDB
 
-**Transactions:**
-- `GET /api/transactions` - Lista transazioni (con filtri)
-- `POST /api/transactions` - Crea transazione
-- `GET /api/transactions/:id` - Dettaglio transazione
-- `PUT /api/transactions/:id` - Aggiorna transazione
-- `DELETE /api/transactions/:id` - Elimina transazione
-- `GET /api/transactions/stats` - Statistiche
+### Stores
 
-### Sincronizzazione Investimenti
+- `users`: Informazioni utente locale
+- `transactions`: Tutte le transazioni
+- `categories`: Categorie con sottocategorie
+- `subcategories`: Sottocategorie
+- `accounts`: Account finanziari
+- `portfolios`: Portfolio di investimenti
 
-Quando crei una transazione di tipo "Investimento" con ticker, quantità e prezzo:
+### Export Format
 
-1. Viene creata una transazione in Trackr
-2. Viene automaticamente creato un `Order` nel portfolio pfTrackr
-3. L'investimento appare in entrambe le app
+Il backup è un file JSON:
 
-## PWA Features
+```json
+{
+  "version": 1,
+  "exportDate": "2026-03-11T...",
+  "userId": "local-user",
+  "data": {
+    "transactions": [...],
+    "categories": [...],
+    "accounts": [...],
+    "portfolios": [...]
+  }
+}
+```
 
-### Installazione
+## Installare come App
 
-Su mobile: tap "Aggiungi a schermata Home"
-Su desktop: click sull'icona di installazione nella barra degli indirizzi
+### Android
+1. Apri l'app nel browser Chrome
+2. Tocca i 3 puntini → "Aggiungi a schermata Home"
+3. L'app funzionerà come un'app nativa
 
-### Offline Mode
+### iOS
+1. Apri l'app in Safari
+2. Tocca "Condividi" → "Aggiungi a Home"
+3. L'app apparirà sulla home screen
 
-- Le chiamate API sono cachate con strategia NetworkFirst
-- Cache di 24 ore per le risposte API
-- Asset statici cachati automaticamente
+### Desktop (Chrome/Edge)
+1. Clicca l'icona di installazione nella barra degli indirizzi
+2. Conferma l'installazione
 
-### Manifest
+## Convertire in APK (Opzionale)
 
-- Nome: "Trackr - Gestione Spese"
-- Tema: Blue (#0ea5e9)
-- Orientamento: Portrait
-- Display: Standalone
+Per creare un file APK nativo:
+
+```bash
+npm install @capacitor/core @capacitor/cli @capacitor/android
+npx cap init
+npx cap add android
+npm run build
+npx cap sync
+npx cap open android
+```
+
+Poi genera l'APK da Android Studio.
 
 ## Scripts Disponibili
 
@@ -190,11 +237,28 @@ npm run lint       # Linting ESLint
 - Firefox 88+
 - Mobile: iOS 14+, Android 8+
 
-## Note
+## Sicurezza Dati
 
-- Il backend deve essere avviato su `http://localhost:5000` (o modificare `VITE_API_URL`)
-- Le icone PWA vanno aggiunte in `public/` (pwa-192x192.png, pwa-512x512.png)
-- Per HTTPS in produzione, aggiornare `VITE_API_URL` con l'URL corretto
+I dati sono salvati nel browser (IndexedDB):
+
+- **Pro**: Privacy totale, nessun dato in rete
+- **Con**: Se cancelli i dati del browser, perdi tutto
+
+**Raccomandazione**: Fai backup regolari con la funzione Export!
+
+## Limiti IndexedDB
+
+- ~50-100MB di spazio (dipende dal browser)
+- Persistenti finché non cancellati manualmente
+- Non condivisi tra browser
+- Non sincronizzati tra dispositivi
+
+## File Principali
+
+- [src/services/db.ts](src/services/db.ts): Gestione IndexedDB
+- [src/services/localStorage.ts](src/services/localStorage.ts): Service layer dati locali
+- [src/services/api.ts](src/services/api.ts): API service con switch offline/online
+- [src/pages/SettingsPage.tsx](src/pages/SettingsPage.tsx): Export/Import backup
 
 ## Licenza
 
