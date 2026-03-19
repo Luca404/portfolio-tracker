@@ -51,6 +51,7 @@ logs/
 
 # Claude
 .claude/
+CLAUDE.md
 
 # Backup files
 *.backup
