@@ -178,7 +178,7 @@ def get_etf_price_and_history(isin: str, db: Session):
         cached_price = cache.last_price or (cached_history[-1]["price"] if cached_history else 0.0)
 
         # Nuova logica: cache è fresca se il dato più recente è odierno (o max 3gg fa)
-        cache_is_fresh = is_cache_data_fresh(cached_history)
+        cache_is_fresh = is_cache_data_fresh(cached_history, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_price:
             print(f"[ETF] {isin}: cache hit ({len(cached_history)} days)")
@@ -606,7 +606,7 @@ def get_stock_price_and_history_cached(symbol: str, db: Session, days: int = 180
         cached_price = cache.last_price or (cached_history[-1]["price"] if cached_history else 0.0)
 
         # Nuova logica: cache è fresca se il dato più recente è odierno (o max 3gg fa)
-        cache_is_fresh = is_cache_data_fresh(cached_history)
+        cache_is_fresh = is_cache_data_fresh(cached_history, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_price:
             print(f"[STOCK] {symbol}: cache hit ({len(cached_history)} days, last={cached_price:.2f})")
@@ -702,7 +702,7 @@ def get_exchange_rate_history(from_currency: str, to_currency: str, db: Session)
             cached_rates = [{"date": item["date_str"], "rate": item["rate"]} for item in fixed_with_dates]
 
         # Cache fresca se ultimo dato è recente
-        cache_is_fresh = is_cache_data_fresh(cached_rates)
+        cache_is_fresh = is_cache_data_fresh(cached_rates, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_rates:
             print(f"[FX] {pair}: cache hit ({len(cached_rates)} days)")
@@ -791,7 +791,7 @@ def fetch_us_treasury_rate(db: Session) -> dict:
 
     if cache:
         cached_history = json.loads(cache.history_json or "[]")
-        cache_is_fresh = is_cache_data_fresh(cached_history)
+        cache_is_fresh = is_cache_data_fresh(cached_history, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_history:
             print(f"[RiskFree] USD Treasury: cache hit ({len(cached_history)} days)")
@@ -885,7 +885,7 @@ def fetch_ecb_rate(db: Session) -> dict:
 
     if cache:
         cached_history = json.loads(cache.history_json or "[]")
-        cache_is_fresh = is_cache_data_fresh(cached_history)
+        cache_is_fresh = is_cache_data_fresh(cached_history, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_history:
             print(f"[RiskFree] EUR ECB: cache hit ({len(cached_history)} days)")
@@ -1001,7 +1001,7 @@ def fetch_market_benchmark(currency: str, db: Session) -> dict:
 
     if cache:
         cached_history = json.loads(cache.history_json or "[]")
-        cache_is_fresh = is_cache_data_fresh(cached_history)
+        cache_is_fresh = is_cache_data_fresh(cached_history, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_history:
             print(f"[Benchmark] {currency} ({symbol}): cache hit ({len(cached_history)} days)")
