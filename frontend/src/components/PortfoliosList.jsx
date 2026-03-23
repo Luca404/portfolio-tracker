@@ -64,6 +64,7 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
         const res = await fetch(`${API_URL}/portfolios/count`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (!res.ok) return;
         const data = await res.json();
         setPortfolioCount(data.count);
         sessionStorage.setItem('portfolio_count', data.count.toString());
