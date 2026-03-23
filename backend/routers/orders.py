@@ -95,6 +95,7 @@ def create_order(order: Order, user_id: str = Depends(verify_token), db: Session
 
     result = sb.table("orders").insert({
         "portfolio_id": order.portfolio_id,
+        "user_id": user_id,
         "symbol": order.symbol.upper(),
         "isin": resolved_isin,
         "ter": resolved_ter,
