@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import date as dt_date
+from datetime import date as dt_date, datetime
 from types import SimpleNamespace
 
 import yfinance as yf
@@ -46,7 +46,7 @@ def _order_from_row(row: dict) -> SimpleNamespace:
         instrument_type=(row.get("instrument_type") or "stock").lower(),
         order_type=(row.get("order_type") or "buy").lower(),
         date=date_val,
-        created_at=row.get("created_at"),
+        created_at=datetime.fromisoformat(row["created_at"]) if row.get("created_at") else None,
     )
 
 
