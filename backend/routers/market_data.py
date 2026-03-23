@@ -1,11 +1,12 @@
+import json
 import yfinance as yf
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from models import UserModel, PortfolioModel
+from models import ETFPriceCacheModel, StockPriceCacheModel, ExchangeRateCacheModel
 from utils import (
     get_db,
+    get_supabase,
     verify_token,
     get_risk_free_rate,
     get_market_benchmark_data,
@@ -15,6 +16,51 @@ from utils import (
 )
 
 router = APIRouter(prefix="/market-data", tags=["market-data"])
+
+
+@router.get("/cache-status")
+def get_cache_status(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+    """Mostra lo stato della cache prezzi: ultimo dato di mercato e quando è stata scaricata."""
+
+    def last_date(history_json: str) -> str | None:
+        try:
+            history = json.loads(history_json or "[]")
+            return history[-1].get("date") if history else None
+        except Exception:
+            return None
+
+    etfs = db.query(ETFPriceCacheModel).all()
+    stocks = db.query(StockPriceCacheModel).all()
+    fx = db.query(ExchangeRateCacheModel).all()
+
+    return {
+        "etf": [
+            {
+                "isin": e.isin,
+                "last_price": e.last_price,
+                "last_market_date": last_date(e.history_json),
+                "cache_updated_at": e.updated_at.isoformat() if e.updated_at else None,
+            }
+            for e in etfs
+        ],
+        "stock": [
+            {
+                "symbol": s.symbol,
+                "last_price": s.last_price,
+                "last_market_date": last_date(s.history_json),
+                "cache_updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            }
+            for s in stocks
+        ],
+        "fx": [
+            {
+                "pair": f.pair,
+                "last_market_date": last_date(f.history_json),
+                "cache_updated_at": f.updated_at.isoformat() if f.updated_at else None,
+            }
+            for f in fx
+        ],
+    }
 
 
 @router.get("/{symbol}")
@@ -41,128 +87,55 @@ def get_market_data(symbol: str):
 
 @router.get("/risk-free-rate/{currency}")
 def get_risk_free_rate_endpoint(currency: str, db: Session = Depends(get_db)):
-    """
-    Get risk-free rate for a currency.
-    - USD: US Treasury 10Y
-    - EUR: ECB Main Refinancing Operations rate
-
-    Returns:
-        {
-            "currency": "USD",
-            "current_rate": 4.5,
-            "history": [{"date": "DD-MM-YYYY", "rate": 4.5}, ...]
-        }
-    """
     currency = currency.upper()
     if currency not in ["USD", "EUR"]:
-        raise HTTPException(status_code=400, detail=f"Unsupported currency: {currency}. Supported: USD, EUR")
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {currency}")
 
     try:
-        if currency == "USD":
-            data = fetch_us_treasury_rate(db)
-        else:  # EUR
-            data = fetch_ecb_rate(db)
-
-        return {
-            "currency": currency,
-            "current_rate": data.get("current_rate", 0.0),
-            "history": data.get("history", [])
-        }
+        data = fetch_us_treasury_rate(db) if currency == "USD" else fetch_ecb_rate(db)
+        return {"currency": currency, "current_rate": data.get("current_rate", 0.0), "history": data.get("history", [])}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching risk-free rate: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/benchmark/{currency}")
 def get_benchmark_endpoint(currency: str, db: Session = Depends(get_db)):
-    """
-    Get market benchmark data for a currency.
-    - USD: S&P 500 (^GSPC)
-    - EUR: VWCE (VWCE.DE - Vanguard FTSE All-World)
-
-    Returns:
-        {
-            "currency": "USD",
-            "symbol": "^GSPC",
-            "last_price": 4500.00,
-            "history": [{"date": "DD-MM-YYYY", "price": 4500}, ...]
-        }
-    """
     currency = currency.upper()
     if currency not in ["USD", "EUR"]:
-        raise HTTPException(status_code=400, detail=f"Unsupported currency: {currency}. Supported: USD, EUR")
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {currency}")
 
     try:
         data = fetch_market_benchmark(currency, db)
-        return {
-            "currency": currency,
-            "symbol": data.get("symbol", ""),
-            "last_price": data.get("last_price", 0.0),
-            "history": data.get("history", [])
-        }
+        return {"currency": currency, "symbol": data.get("symbol", ""), "last_price": data.get("last_price", 0.0), "history": data.get("history", [])}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching benchmark data: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/portfolio-context/{portfolio_id}")
-def get_portfolio_market_context(portfolio_id: int, user: UserModel = Depends(verify_token), db: Session = Depends(get_db)):
-    """
-    Get appropriate risk-free rate and benchmark for a portfolio
-    based on its reference_currency.
-
-    Returns:
-        {
-            "portfolio_id": 1,
-            "currency": "EUR",
-            "risk_free_rate": {
-                "current_rate": 4.5,
-                "source": "ECB Main Refinancing Operations"
-            },
-            "benchmark": {
-                "symbol": "VWCE.DE",
-                "name": "Vanguard FTSE All-World",
-                "last_price": 100.50
-            }
-        }
-    """
-    portfolio = db.execute(
-        select(PortfolioModel).where(PortfolioModel.id == portfolio_id, PortfolioModel.user_id == user.id)
-    ).scalar_one_or_none()
-
-    if not portfolio:
+def get_portfolio_market_context(portfolio_id: int, user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+    sb = get_supabase()
+    portfolio = sb.table("portfolios").select("reference_currency").eq("id", portfolio_id).eq("user_id", user_id).execute()
+    if not portfolio.data:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
-    currency = (portfolio.reference_currency or "EUR").upper()
+    currency = (portfolio.data[0].get("reference_currency") or "EUR").upper()
 
     try:
-        # Fetch risk-free rate
         rf_rate = get_risk_free_rate(currency, db)
-
-        # Fetch benchmark data
         benchmark_data = get_market_benchmark_data(currency, db)
 
-        # Descriptive names
-        rf_source_map = {
-            "USD": "US Treasury 10Y",
-            "EUR": "ECB Main Refinancing Operations"
-        }
-
-        benchmark_name_map = {
-            "USD": "S&P 500",
-            "EUR": "Vanguard FTSE All-World"
-        }
+        rf_source_map = {"USD": "US Treasury 10Y", "EUR": "ECB Main Refinancing Operations"}
+        benchmark_name_map = {"USD": "S&P 500", "EUR": "Vanguard FTSE All-World"}
 
         return {
             "portfolio_id": portfolio_id,
             "currency": currency,
-            "risk_free_rate": {
-                "current_rate": rf_rate,
-                "source": rf_source_map.get(currency, "Unknown")
-            },
+            "risk_free_rate": {"current_rate": rf_rate, "source": rf_source_map.get(currency, "Unknown")},
             "benchmark": {
                 "symbol": benchmark_data.get("symbol", ""),
                 "name": benchmark_name_map.get(currency, "Unknown"),
-                "last_price": benchmark_data.get("last_price", 0.0)
-            }
+                "last_price": benchmark_data.get("last_price", 0.0),
+            },
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching market context: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
