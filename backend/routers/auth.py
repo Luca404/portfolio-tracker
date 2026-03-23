@@ -10,7 +10,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register(user: UserRegister):
     sb = get_supabase()
     try:
-        res = sb.auth.sign_up({"email": user.username, "password": user.password})
+        res = sb.auth.sign_up({"email": user.email, "password": user.password})
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -33,7 +33,7 @@ def register(user: UserRegister):
 def login(user: UserLogin):
     sb = get_supabase()
     try:
-        res = sb.auth.sign_in_with_password({"email": user.username, "password": user.password})
+        res = sb.auth.sign_in_with_password({"email": user.email, "password": user.password})
     except Exception:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
