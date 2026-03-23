@@ -219,7 +219,7 @@ export const analysisAPI = {
    * Get portfolio analysis
    */
   getPortfolioAnalysis: async (token, portfolioId) => {
-    const res = await fetch(`${API_URL}/analysis/${portfolioId}`, {
+    const res = await fetch(`${API_URL}/portfolios/analysis/${portfolioId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to fetch analysis');

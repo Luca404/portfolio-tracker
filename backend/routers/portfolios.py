@@ -26,7 +26,7 @@ from utils import (
     apply_splits_to_orders,
 )
 
-router = APIRouter(prefix="/api/portfolios", tags=["portfolios"])
+router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
 
 def _order_from_row(row: dict) -> SimpleNamespace:

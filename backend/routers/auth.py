@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from schemas import UserRegister, UserLogin, Token
 from utils import verify_token, get_supabase
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=Token)
