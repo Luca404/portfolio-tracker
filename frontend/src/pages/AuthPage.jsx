@@ -31,7 +31,7 @@ function AuthPage({ onLogin }) {
       const data = await res.json();
 
       if (res.ok) {
-        onLogin(data.access_token, data.user);
+        onLogin(data.access_token, data.refresh_token, data.user);
       } else {
         setError(data.detail || 'Authentication failed');
       }

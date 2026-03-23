@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from schemas import UserRegister, UserLogin, Token
+from schemas.user import RefreshRequest
 from utils import verify_token, get_supabase
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -19,6 +20,7 @@ def register(user: UserRegister):
 
     return {
         "access_token": res.session.access_token if res.session else "",
+        "refresh_token": res.session.refresh_token if res.session else "",
         "token_type": "bearer",
         "user": {
             "id": res.user.id,
@@ -39,6 +41,7 @@ def login(user: UserLogin):
 
     return {
         "access_token": res.session.access_token,
+        "refresh_token": res.session.refresh_token,
         "token_type": "bearer",
         "user": {
             "id": res.user.id,
@@ -47,6 +50,19 @@ def login(user: UserLogin):
             "createdAt": res.user.created_at.isoformat() if res.user.created_at else None,
         },
     }
+
+
+@router.post("/refresh")
+def refresh_token(body: RefreshRequest):
+    sb = get_supabase()
+    try:
+        res = sb.auth.refresh_session(body.refresh_token)
+        return {
+            "access_token": res.session.access_token,
+            "refresh_token": res.session.refresh_token,
+        }
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
 
 @router.get("/me")

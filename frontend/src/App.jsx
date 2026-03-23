@@ -14,6 +14,33 @@ import {
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
+
+  // Auto-refresh token ogni 50 minuti (scade dopo 1h)
+  useEffect(() => {
+    const refresh = async () => {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) return;
+      try {
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setToken(data.access_token);
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('refreshToken', data.refresh_token);
+        } else {
+          handleLogout();
+        }
+      } catch {
+        // network error, don't logout — will retry next interval
+      }
+    };
+    const interval = setInterval(refresh, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
   const [currentView, setCurrentView] = useState('portfolios');
   const [selectedPortfolio, setSelectedPortfolio] = useState(null);
   const [portfolios, setPortfolios] = useState([]);
@@ -73,6 +100,7 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setToken(null);
     setUser(null);
     setCurrentView('portfolios');
@@ -81,10 +109,11 @@ export default function App() {
   };
 
   if (!token) {
-    return <AuthPage onLogin={(newToken, userData) => {
+    return <AuthPage onLogin={(newToken, newRefreshToken, userData) => {
       setToken(newToken);
       setUser(userData);
       localStorage.setItem('token', newToken);
+      localStorage.setItem('refreshToken', newRefreshToken);
     }} />;
   }
 
