@@ -1,9 +1,4 @@
-"""
-Utilità per creare categorie di default per nuovi utenti
-"""
-from sqlalchemy.orm import Session
-from models import CategoryModel, UserModel
-
+"""Categorie di default per nuovi utenti."""
 
 DEFAULT_CATEGORIES = [
     {"name": "Alimentari", "icon": "🍔", "category_type": "expense"},
@@ -16,36 +11,15 @@ DEFAULT_CATEGORIES = [
     {"name": "Stipendio", "icon": "💵", "category_type": "income"},
     {"name": "Bonus", "icon": "🎁", "category_type": "income"},
     {"name": "Trasferimento", "icon": "🔄", "category_type": "transfer"},
-    {"name": "Altro", "icon": "📌", "category_type": None},  # Categoria generica per tutti i tipi
+    {"name": "Altro", "icon": "📌", "category_type": None},
 ]
 
-# IMPORTANTE: Questi nomi devono corrispondere esattamente a TransactionCategory enum nel frontend!
 
+def create_default_categories_if_needed(supabase, user_id: str) -> None:
+    """Crea le categorie di default se l'utente non ne ha ancora."""
+    result = supabase.table("categories").select("id").eq("user_id", user_id).limit(1).execute()
+    if result.data:
+        return
 
-def create_default_categories(db: Session, user: UserModel) -> None:
-    """
-    Crea le categorie di default per un utente se non ne ha già.
-
-    Args:
-        db: Sessione database
-        user: Modello utente per cui creare le categorie
-    """
-    # Verifica se l'utente ha già delle categorie
-    existing_count = db.query(CategoryModel).filter(
-        CategoryModel.user_id == user.id
-    ).count()
-
-    if existing_count > 0:
-        return  # L'utente ha già delle categorie
-
-    # Crea le categorie di default
-    for cat_data in DEFAULT_CATEGORIES:
-        category = CategoryModel(
-            user_id=user.id,
-            name=cat_data["name"],
-            icon=cat_data["icon"],
-            category_type=cat_data["category_type"],
-        )
-        db.add(category)
-
-    db.commit()
+    rows = [{"user_id": user_id, **cat} for cat in DEFAULT_CATEGORIES]
+    supabase.table("categories").insert(rows).execute()

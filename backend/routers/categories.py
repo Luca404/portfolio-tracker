@@ -1,10 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import select, func
 from typing import Optional
 from datetime import datetime
 
-from models import CategoryModel, SubcategoryModel, UserModel, TransactionModel, TransactionType
 from schemas import (
     CategoryCreate,
     CategoryUpdate,
@@ -14,302 +11,165 @@ from schemas import (
     SubcategoryUpdate,
     SubcategoryResponse,
 )
-from utils import get_db, verify_token
-from utils.default_categories import create_default_categories
+from utils import get_supabase, verify_token
+from utils.default_categories import create_default_categories_if_needed
 
 router = APIRouter(prefix="/api/categories", tags=["categories"])
 
 
 # CATEGORIES
 
-
-@router.get("", response_model=list[CategoryWithStats])
+@router.get("")
 def get_categories(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
+    user_id: str = Depends(verify_token),
 ):
-    """Get all categories for the current user with optional stats"""
-    # Crea categorie di default se l'utente non ne ha
-    create_default_categories(db, user)
+    sb = get_supabase()
+    create_default_categories_if_needed(sb, user_id)
 
-    categories = db.execute(
-        select(CategoryModel).where(CategoryModel.user_id == user.id)
-    ).scalars().all()
+    categories = sb.table("categories").select("*, subcategories(*)").eq("user_id", user_id).execute().data
 
-    # If date filters provided, calculate stats
     result = []
-    for category in categories:
-        category_data = CategoryWithStats.model_validate(category)
-
+    for cat in categories:
+        total_amount = 0
+        transaction_count = 0
         if start_date or end_date:
-            # Build query for transactions
-            query = select(func.sum(TransactionModel.amount), func.count(TransactionModel.id)).where(
-                TransactionModel.user_id == user.id,
-                TransactionModel.category == category.name,
-                TransactionModel.type == TransactionType.EXPENSE
-            )
-
+            query = sb.table("transactions").select("amount").eq("user_id", user_id).eq("category", cat["name"]).eq("type", "expense")
             if start_date:
-                query = query.where(TransactionModel.date >= datetime.fromisoformat(start_date))
+                query = query.gte("date", start_date)
             if end_date:
-                query = query.where(TransactionModel.date <= datetime.fromisoformat(end_date))
+                query = query.lte("date", end_date)
+            txs = query.execute().data
+            total_amount = sum(float(t["amount"]) for t in txs)
+            transaction_count = len(txs)
 
-            total, count = db.execute(query).first()
-            category_data.total_amount = total or 0
-            category_data.transaction_count = count or 0
-
-        result.append(category_data)
+        result.append({
+            "id": cat["id"],
+            "user_id": cat["user_id"],
+            "name": cat["name"],
+            "icon": cat.get("icon", "📌"),
+            "category_type": cat.get("category_type"),
+            "subcategories": cat.get("subcategories") or [],
+            "total_amount": total_amount,
+            "transaction_count": transaction_count,
+            "created_at": cat.get("created_at"),
+            "updated_at": cat.get("updated_at"),
+        })
 
     return result
 
 
-@router.post("", response_model=CategoryResponse)
-def create_category(
-    category: CategoryCreate,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Create a new category"""
-    # Check if category with same name already exists
-    existing = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.user_id == user.id,
-            CategoryModel.name == category.name
-        )
-    ).scalars().first()
-
+@router.post("")
+def create_category(category: CategoryCreate, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    existing = sb.table("categories").select("id").eq("user_id", user_id).eq("name", category.name).execute().data
     if existing:
         raise HTTPException(status_code=400, detail="Category with this name already exists")
 
-    new_category = CategoryModel(
-        user_id=user.id,
-        name=category.name,
-        icon=category.icon,
-        category_type=category.category_type,
-    )
-    db.add(new_category)
-    db.commit()
-    db.refresh(new_category)
-    return new_category
+    result = sb.table("categories").insert({
+        "user_id": user_id,
+        "name": category.name,
+        "icon": category.icon,
+        "category_type": category.category_type,
+    }).execute()
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to create category")
+    return result.data[0]
 
 
-@router.put("/{category_id}", response_model=CategoryResponse)
-def update_category(
-    category_id: int,
-    category_update: CategoryUpdate,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Update a category"""
-    category = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.id == category_id,
-            CategoryModel.user_id == user.id
-        )
-    ).scalars().first()
-
-    if not category:
+@router.put("/{category_id}")
+def update_category(category_id: int, category_update: CategoryUpdate, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    existing = sb.table("categories").select("*").eq("id", category_id).eq("user_id", user_id).execute().data
+    if not existing:
         raise HTTPException(status_code=404, detail="Category not found")
 
+    update_data = {}
     if category_update.name is not None:
-        # Check if new name conflicts with existing category
-        existing = db.execute(
-            select(CategoryModel).where(
-                CategoryModel.user_id == user.id,
-                CategoryModel.name == category_update.name,
-                CategoryModel.id != category_id
-            )
-        ).scalars().first()
-
-        if existing:
+        conflict = sb.table("categories").select("id").eq("user_id", user_id).eq("name", category_update.name).neq("id", category_id).execute().data
+        if conflict:
             raise HTTPException(status_code=400, detail="Category with this name already exists")
-
-        category.name = category_update.name
-
+        update_data["name"] = category_update.name
     if category_update.icon is not None:
-        category.icon = category_update.icon
-
+        update_data["icon"] = category_update.icon
     if category_update.category_type is not None:
-        category.category_type = category_update.category_type
+        update_data["category_type"] = category_update.category_type
 
-    category.updated_at = datetime.utcnow()
-    db.commit()
-    db.refresh(category)
-    return category
+    result = sb.table("categories").update(update_data).eq("id", category_id).execute()
+    return result.data[0] if result.data else existing[0]
 
 
 @router.delete("/{category_id}")
-def delete_category(
-    category_id: int,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Delete a category"""
-    category = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.id == category_id,
-            CategoryModel.user_id == user.id
-        )
-    ).scalars().first()
-
-    if not category:
+def delete_category(category_id: int, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    existing = sb.table("categories").select("id").eq("id", category_id).eq("user_id", user_id).execute().data
+    if not existing:
         raise HTTPException(status_code=404, detail="Category not found")
-
-    db.delete(category)
-    db.commit()
+    sb.table("categories").delete().eq("id", category_id).execute()
     return {"message": "Category deleted successfully"}
 
 
 # SUBCATEGORIES
 
+@router.get("/{category_id}/subcategories")
+def get_subcategories(category_id: int, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    cat = sb.table("categories").select("id").eq("id", category_id).eq("user_id", user_id).execute().data
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return sb.table("subcategories").select("*").eq("category_id", category_id).execute().data
 
-@router.get("/{category_id}/subcategories", response_model=list[SubcategoryResponse])
-def get_subcategories(
-    category_id: int,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Get all subcategories for a category"""
-    # Verify category belongs to user
-    category = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.id == category_id,
-            CategoryModel.user_id == user.id
-        )
-    ).scalars().first()
 
-    if not category:
+@router.post("/{category_id}/subcategories")
+def create_subcategory(category_id: int, subcategory: SubcategoryCreate, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    cat = sb.table("categories").select("id").eq("id", category_id).eq("user_id", user_id).execute().data
+    if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    return category.subcategories
-
-
-@router.post("/{category_id}/subcategories", response_model=SubcategoryResponse)
-def create_subcategory(
-    category_id: int,
-    subcategory: SubcategoryCreate,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Create a new subcategory"""
-    # Verify category belongs to user
-    category = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.id == category_id,
-            CategoryModel.user_id == user.id
-        )
-    ).scalars().first()
-
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    # Check if subcategory with same name already exists
-    existing = db.execute(
-        select(SubcategoryModel).where(
-            SubcategoryModel.category_id == category_id,
-            SubcategoryModel.name == subcategory.name
-        )
-    ).scalars().first()
-
+    existing = sb.table("subcategories").select("id").eq("category_id", category_id).eq("name", subcategory.name).execute().data
     if existing:
         raise HTTPException(status_code=400, detail="Subcategory with this name already exists")
 
-    new_subcategory = SubcategoryModel(
-        category_id=category_id,
-        name=subcategory.name,
-        icon=subcategory.icon,
-    )
-    db.add(new_subcategory)
-    db.commit()
-    db.refresh(new_subcategory)
-    return new_subcategory
+    result = sb.table("subcategories").insert({"category_id": category_id, "name": subcategory.name, "icon": subcategory.icon}).execute()
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to create subcategory")
+    return result.data[0]
 
 
-@router.put("/{category_id}/subcategories/{subcategory_id}", response_model=SubcategoryResponse)
-def update_subcategory(
-    category_id: int,
-    subcategory_id: int,
-    subcategory_update: SubcategoryUpdate,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Update a subcategory"""
-    # Verify category belongs to user
-    category = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.id == category_id,
-            CategoryModel.user_id == user.id
-        )
-    ).scalars().first()
-
-    if not category:
+@router.put("/{category_id}/subcategories/{subcategory_id}")
+def update_subcategory(category_id: int, subcategory_id: int, subcategory_update: SubcategoryUpdate, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    cat = sb.table("categories").select("id").eq("id", category_id).eq("user_id", user_id).execute().data
+    if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    subcategory = db.execute(
-        select(SubcategoryModel).where(
-            SubcategoryModel.id == subcategory_id,
-            SubcategoryModel.category_id == category_id
-        )
-    ).scalars().first()
-
-    if not subcategory:
+    existing = sb.table("subcategories").select("*").eq("id", subcategory_id).eq("category_id", category_id).execute().data
+    if not existing:
         raise HTTPException(status_code=404, detail="Subcategory not found")
 
+    update_data = {}
     if subcategory_update.name is not None:
-        # Check if new name conflicts with existing subcategory
-        existing = db.execute(
-            select(SubcategoryModel).where(
-                SubcategoryModel.category_id == category_id,
-                SubcategoryModel.name == subcategory_update.name,
-                SubcategoryModel.id != subcategory_id
-            )
-        ).scalars().first()
-
-        if existing:
+        conflict = sb.table("subcategories").select("id").eq("category_id", category_id).eq("name", subcategory_update.name).neq("id", subcategory_id).execute().data
+        if conflict:
             raise HTTPException(status_code=400, detail="Subcategory with this name already exists")
-
-        subcategory.name = subcategory_update.name
-
+        update_data["name"] = subcategory_update.name
     if subcategory_update.icon is not None:
-        subcategory.icon = subcategory_update.icon
+        update_data["icon"] = subcategory_update.icon
 
-    subcategory.updated_at = datetime.utcnow()
-    db.commit()
-    db.refresh(subcategory)
-    return subcategory
+    result = sb.table("subcategories").update(update_data).eq("id", subcategory_id).execute()
+    return result.data[0] if result.data else existing[0]
 
 
 @router.delete("/{category_id}/subcategories/{subcategory_id}")
-def delete_subcategory(
-    category_id: int,
-    subcategory_id: int,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Delete a subcategory"""
-    # Verify category belongs to user
-    category = db.execute(
-        select(CategoryModel).where(
-            CategoryModel.id == category_id,
-            CategoryModel.user_id == user.id
-        )
-    ).scalars().first()
-
-    if not category:
+def delete_subcategory(category_id: int, subcategory_id: int, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    cat = sb.table("categories").select("id").eq("id", category_id).eq("user_id", user_id).execute().data
+    if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
-
-    subcategory = db.execute(
-        select(SubcategoryModel).where(
-            SubcategoryModel.id == subcategory_id,
-            SubcategoryModel.category_id == category_id
-        )
-    ).scalars().first()
-
-    if not subcategory:
+    existing = sb.table("subcategories").select("id").eq("id", subcategory_id).eq("category_id", category_id).execute().data
+    if not existing:
         raise HTTPException(status_code=404, detail="Subcategory not found")
-
-    db.delete(subcategory)
-    db.commit()
+    sb.table("subcategories").delete().eq("id", subcategory_id).execute()
     return {"message": "Subcategory deleted successfully"}

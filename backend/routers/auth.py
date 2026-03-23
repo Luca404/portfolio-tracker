@@ -1,59 +1,59 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
-from models import UserModel
 from schemas import UserRegister, UserLogin, Token
-from utils import get_db, verify_password, get_password_hash, create_access_token, verify_token
+from utils import verify_token, get_supabase
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=Token)
-def register(user: UserRegister, db: Session = Depends(get_db)):
-    hashed_password = get_password_hash(user.password)
-    new_user = UserModel(username=user.username, hashed_password=hashed_password)
-    db.add(new_user)
+def register(user: UserRegister):
+    sb = get_supabase()
     try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Username already registered")
-    db.refresh(new_user)
+        res = sb.auth.sign_up({"email": user.username, "password": user.password})
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    access_token = create_access_token(data={"sub": new_user.username})
+    if not res.user:
+        raise HTTPException(status_code=400, detail="Registration failed")
+
     return {
-        "access_token": access_token,
+        "access_token": res.session.access_token if res.session else "",
         "token_type": "bearer",
         "user": {
-            "id": new_user.id,
-            "email": new_user.username,
-            "name": new_user.username,
-            "createdAt": new_user.created_at.isoformat() if new_user.created_at else None,
+            "id": res.user.id,
+            "email": res.user.email,
+            "name": res.user.email,
+            "createdAt": res.user.created_at.isoformat() if res.user.created_at else None,
         },
     }
 
 
 @router.post("/login", response_model=Token)
-def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.execute(select(UserModel).where(UserModel.username == user.username)).scalar_one_or_none()
-    if not db_user or not verify_password(user.password, db_user.hashed_password):
+def login(user: UserLogin):
+    sb = get_supabase()
+    try:
+        res = sb.auth.sign_in_with_password({"email": user.username, "password": user.password})
+    except Exception:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    access_token = create_access_token(data={"sub": db_user.username})
     return {
-        "access_token": access_token,
+        "access_token": res.session.access_token,
         "token_type": "bearer",
         "user": {
-            "id": db_user.id,
-            "email": db_user.username,
-            "name": db_user.username,
-            "createdAt": db_user.created_at.isoformat() if db_user.created_at else None,
+            "id": res.user.id,
+            "email": res.user.email,
+            "name": res.user.email,
+            "createdAt": res.user.created_at.isoformat() if res.user.created_at else None,
         },
     }
 
 
 @router.get("/me")
-def get_current_user(user: UserModel = Depends(verify_token)):
-    return {"username": user.username}
+def get_current_user(user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    try:
+        res = sb.auth.admin.get_user_by_id(user_id)
+        return {"id": res.user.id, "email": res.user.email}
+    except Exception:
+        return {"id": user_id}

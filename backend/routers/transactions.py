@@ -1,252 +1,172 @@
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func, extract
-from sqlalchemy.orm import Session
 
-from models import TransactionModel, TransactionType, UserModel, OrderModel
 from schemas import TransactionCreate, TransactionUpdate, TransactionResponse, TransactionStats
-from utils import get_db, verify_token
+from utils import get_supabase, verify_token
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
 
-@router.post("", response_model=TransactionResponse)
-def create_transaction(
-    transaction: TransactionCreate,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Crea una nuova transazione. Se è un investimento, crea anche un order in pfTrackr."""
+@router.post("")
+def create_transaction(transaction: TransactionCreate, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
 
-    # Se account_id non è specificato, usa il conto preferito
     account_id = transaction.account_id
     if account_id is None:
-        from models import AccountModel
-        favorite_account = db.execute(
-            select(AccountModel).where(
-                AccountModel.user_id == user.id,
-                AccountModel.is_favorite == True
-            )
-        ).scalar_one_or_none()
-
-        if favorite_account:
-            account_id = favorite_account.id
+        fav = sb.table("accounts").select("id").eq("user_id", user_id).eq("is_favorite", True).limit(1).execute().data
+        if fav:
+            account_id = fav[0]["id"]
         else:
-            # Se non c'è un preferito, usa il primo account
-            first_account = db.execute(
-                select(AccountModel).where(AccountModel.user_id == user.id)
-            ).scalar_one_or_none()
+            first = sb.table("accounts").select("id").eq("user_id", user_id).limit(1).execute().data
+            if not first:
+                raise HTTPException(status_code=400, detail="Nessun conto disponibile.")
+            account_id = first[0]["id"]
 
-            if not first_account:
-                raise HTTPException(status_code=400, detail="Nessun conto disponibile. Crea almeno un conto prima di aggiungere transazioni.")
+    date_val = transaction.date
+    if hasattr(date_val, "isoformat"):
+        date_val = date_val.isoformat()
 
-            account_id = first_account.id
+    insert_data = {
+        "user_id": user_id,
+        "account_id": account_id,
+        "type": transaction.type if isinstance(transaction.type, str) else transaction.type.value,
+        "category": transaction.category,
+        "subcategory": transaction.subcategory,
+        "amount": transaction.amount,
+        "description": transaction.description,
+        "date": date_val,
+        "ticker": transaction.ticker,
+        "quantity": transaction.quantity,
+        "price": transaction.price,
+    }
+    result = sb.table("transactions").insert(insert_data).execute()
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to create transaction")
 
-    # Crea la transazione
-    new_transaction = TransactionModel(
-        user_id=user.id,
-        account_id=account_id,
-        type=transaction.type,
-        category=transaction.category,
-        subcategory=transaction.subcategory,
-        amount=transaction.amount,
-        description=transaction.description,
-        date=transaction.date,
-        ticker=transaction.ticker,
-        quantity=transaction.quantity,
-        price=transaction.price,
-    )
-    db.add(new_transaction)
+    new_transaction = result.data[0]
 
-    # Se è un investimento, crea anche un order nella tabella orders di pfTrackr
-    if transaction.type == TransactionType.INVESTMENT and transaction.ticker:
-        # Trova o crea il portfolio di default dell'utente
-        from models import PortfolioModel
-        portfolio = db.execute(
-            select(PortfolioModel).where(PortfolioModel.user_id == user.id)
-        ).scalars().first()
-
+    # Se è un investimento, crea anche un order
+    if new_transaction.get("type") == "investment" and transaction.ticker:
+        portfolio = sb.table("portfolios").select("id").eq("user_id", user_id).limit(1).execute().data
         if not portfolio:
-            # Crea un portfolio di default
-            portfolio = PortfolioModel(
-                user_id=user.id,
-                name="Portfolio Principale",
-            )
-            db.add(portfolio)
-            db.flush()  # Per ottenere l'ID
-
-        # Crea l'order
-        new_order = OrderModel(
-            portfolio_id=portfolio.id,
-            symbol=transaction.ticker,
-            quantity=transaction.quantity or 0,
-            price=transaction.price or 0,
-            date=transaction.date,
-            type="buy",  # Sempre buy per ora
-        )
-        db.add(new_order)
-
-    db.commit()
-    db.refresh(new_transaction)
+            portfolio = sb.table("portfolios").insert({"user_id": user_id, "name": "Portfolio Principale"}).execute().data
+        if portfolio:
+            portfolio_id = portfolio[0]["id"]
+            sb.table("orders").insert({
+                "portfolio_id": portfolio_id,
+                "symbol": transaction.ticker,
+                "quantity": transaction.quantity or 0,
+                "price": transaction.price or 0,
+                "date": date_val,
+                "order_type": "buy",
+            }).execute()
 
     return new_transaction
 
 
-@router.get("", response_model=list[TransactionResponse])
+@router.get("")
 def get_transactions(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     category: Optional[str] = None,
     type: Optional[str] = None,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
+    user_id: str = Depends(verify_token),
 ):
-    """Ottieni tutte le transazioni dell'utente con filtri opzionali."""
-
-    query = select(TransactionModel).where(TransactionModel.user_id == user.id)
-
+    sb = get_supabase()
+    query = sb.table("transactions").select("*").eq("user_id", user_id)
     if start_date:
-        query = query.where(TransactionModel.date >= datetime.fromisoformat(start_date))
+        query = query.gte("date", start_date)
     if end_date:
-        query = query.where(TransactionModel.date <= datetime.fromisoformat(end_date))
+        query = query.lte("date", end_date)
     if category:
-        query = query.where(TransactionModel.category == category)
+        query = query.eq("category", category)
     if type:
-        query = query.where(TransactionModel.type == type)
-
-    query = query.order_by(TransactionModel.date.desc(), TransactionModel.created_at.desc())
-
-    transactions = db.execute(query).scalars().all()
-    return transactions
+        query = query.eq("type", type)
+    query = query.order("date", desc=True)
+    return query.execute().data
 
 
-@router.get("/stats", response_model=TransactionStats)
+@router.get("/stats")
 def get_transaction_stats(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
+    user_id: str = Depends(verify_token),
 ):
-    """Ottieni statistiche sulle transazioni."""
-
-    query = select(TransactionModel).where(TransactionModel.user_id == user.id)
-
+    sb = get_supabase()
+    query = sb.table("transactions").select("*").eq("user_id", user_id)
     if start_date:
-        query = query.where(TransactionModel.date >= datetime.fromisoformat(start_date))
+        query = query.gte("date", start_date)
     if end_date:
-        query = query.where(TransactionModel.date <= datetime.fromisoformat(end_date))
+        query = query.lte("date", end_date)
+    transactions = query.execute().data
 
-    transactions = db.execute(query).scalars().all()
-
-    total_expenses = sum(t.amount for t in transactions if t.type == TransactionType.EXPENSE)
-    total_income = sum(t.amount for t in transactions if t.type == TransactionType.INCOME)
-    total_investments = sum(t.amount for t in transactions if t.type == TransactionType.INVESTMENT)
-
+    total_expenses = sum(float(t["amount"]) for t in transactions if t.get("type") == "expense")
+    total_income = sum(float(t["amount"]) for t in transactions if t.get("type") == "income")
+    total_investments = sum(float(t["amount"]) for t in transactions if t.get("type") == "investment")
     balance = total_income - total_expenses - total_investments
 
-    # Spese per categoria
     expenses_by_category = {}
     for t in transactions:
-        if t.type == TransactionType.EXPENSE:
-            if t.category not in expenses_by_category:
-                expenses_by_category[t.category] = 0
-            expenses_by_category[t.category] += t.amount
+        if t.get("type") == "expense":
+            cat = t.get("category", "")
+            expenses_by_category[cat] = expenses_by_category.get(cat, 0) + float(t["amount"])
 
-    # Trend mensile
     monthly_data = {}
     for t in transactions:
-        month_key = t.date.strftime("%Y-%m")
-        if month_key not in monthly_data:
-            monthly_data[month_key] = {"month": month_key, "expenses": 0, "income": 0}
+        date_str = t.get("date", "")
+        month_key = date_str[:7] if date_str else ""
+        if month_key:
+            if month_key not in monthly_data:
+                monthly_data[month_key] = {"month": month_key, "expenses": 0, "income": 0}
+            if t.get("type") == "expense":
+                monthly_data[month_key]["expenses"] += float(t["amount"])
+            elif t.get("type") == "income":
+                monthly_data[month_key]["income"] += float(t["amount"])
 
-        if t.type == TransactionType.EXPENSE:
-            monthly_data[month_key]["expenses"] += t.amount
-        elif t.type == TransactionType.INCOME:
-            monthly_data[month_key]["income"] += t.amount
-
-    monthly_trend = sorted(monthly_data.values(), key=lambda x: x["month"])
-
-    return TransactionStats(
-        total_expenses=total_expenses,
-        total_income=total_income,
-        total_investments=total_investments,
-        balance=balance,
-        expenses_by_category=expenses_by_category,
-        monthly_trend=monthly_trend,
-    )
+    return {
+        "total_expenses": total_expenses,
+        "total_income": total_income,
+        "total_investments": total_investments,
+        "balance": balance,
+        "expenses_by_category": expenses_by_category,
+        "monthly_trend": sorted(monthly_data.values(), key=lambda x: x["month"]),
+    }
 
 
-@router.get("/{transaction_id}", response_model=TransactionResponse)
-def get_transaction(
-    transaction_id: int,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Ottieni una singola transazione."""
+@router.get("/{transaction_id}")
+def get_transaction(transaction_id: int, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    result = sb.table("transactions").select("*").eq("id", transaction_id).eq("user_id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Transazione non trovata")
+    return result.data[0]
 
-    transaction = db.execute(
-        select(TransactionModel).where(
-            TransactionModel.id == transaction_id,
-            TransactionModel.user_id == user.id,
-        )
-    ).scalar_one_or_none()
 
-    if not transaction:
+@router.put("/{transaction_id}")
+def update_transaction(transaction_id: int, transaction_update: TransactionUpdate, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    existing = sb.table("transactions").select("id").eq("id", transaction_id).eq("user_id", user_id).execute().data
+    if not existing:
         raise HTTPException(status_code=404, detail="Transazione non trovata")
 
-    return transaction
-
-
-@router.put("/{transaction_id}", response_model=TransactionResponse)
-def update_transaction(
-    transaction_id: int,
-    transaction_update: TransactionUpdate,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Aggiorna una transazione esistente."""
-
-    transaction = db.execute(
-        select(TransactionModel).where(
-            TransactionModel.id == transaction_id,
-            TransactionModel.user_id == user.id,
-        )
-    ).scalar_one_or_none()
-
-    if not transaction:
-        raise HTTPException(status_code=404, detail="Transazione non trovata")
-
-    # Aggiorna solo i campi forniti
     update_data = transaction_update.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(transaction, key, value)
+    if "date" in update_data and hasattr(update_data["date"], "isoformat"):
+        update_data["date"] = update_data["date"].isoformat()
+    if "type" in update_data and not isinstance(update_data["type"], str):
+        update_data["type"] = update_data["type"].value
 
-    db.commit()
-    db.refresh(transaction)
-
-    return transaction
+    result = sb.table("transactions").update(update_data).eq("id", transaction_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to update transaction")
+    return result.data[0]
 
 
 @router.delete("/{transaction_id}")
-def delete_transaction(
-    transaction_id: int,
-    db: Session = Depends(get_db),
-    user: UserModel = Depends(verify_token),
-):
-    """Elimina una transazione."""
-
-    transaction = db.execute(
-        select(TransactionModel).where(
-            TransactionModel.id == transaction_id,
-            TransactionModel.user_id == user.id,
-        )
-    ).scalar_one_or_none()
-
-    if not transaction:
+def delete_transaction(transaction_id: int, user_id: str = Depends(verify_token)):
+    sb = get_supabase()
+    existing = sb.table("transactions").select("id").eq("id", transaction_id).eq("user_id", user_id).execute().data
+    if not existing:
         raise HTTPException(status_code=404, detail="Transazione non trovata")
-
-    db.delete(transaction)
-    db.commit()
-
+    sb.table("transactions").delete().eq("id", transaction_id).execute()
     return {"message": "Transazione eliminata con successo"}

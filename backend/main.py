@@ -27,7 +27,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from utils.database import engine as db_engine, run_migrations
+from utils.database import engine, run_migrations
 from routers import auth_router, portfolios_router, orders_router, symbols_router, market_data_router, transactions_router, categories_router, accounts_router
 
 # =============================================================================
@@ -50,11 +50,13 @@ app.add_middleware(
 
 # =============================================================================
 # DATABASE INITIALIZATION
+# Solo tabelle cache su SQLite — i dati utente sono su Supabase
 # =============================================================================
 
-from models import Base
+from models.base import Base
+from models.cache import ETFPriceCacheModel, StockPriceCacheModel, ExchangeRateCacheModel, RiskFreeRateCacheModel, MarketBenchmarkCacheModel  # noqa: ensure cache models are registered
 
-Base.metadata.create_all(bind=db_engine)
+Base.metadata.create_all(bind=engine)
 run_migrations()
 
 # =============================================================================
@@ -76,5 +78,4 @@ app.include_router(accounts_router)
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
