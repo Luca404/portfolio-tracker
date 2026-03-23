@@ -1,28 +1,21 @@
-import os
-
-import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-security = HTTPBearer()
+from .supabase_client import get_supabase
 
-# Trovabile in: Supabase Dashboard → Project Settings → API → JWT Secret
-SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+security = HTTPBearer()
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    """Verifica il JWT Supabase e restituisce lo user_id (UUID string)."""
+    """Verifica il JWT Supabase tramite get_user e restituisce lo user_id (UUID string)."""
     try:
         token = credentials.credentials
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
-        user_id = payload.get("sub")
-        if not user_id:
+        sb = get_supabase()
+        res = sb.auth.get_user(token)
+        if not res.user:
             raise HTTPException(status_code=401, detail="Invalid token")
-        return user_id
-    except jwt.PyJWTError:
+        return str(res.user.id)
+    except HTTPException:
+        raise
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
