@@ -19,7 +19,7 @@ router = APIRouter(prefix="/market-data", tags=["market-data"])
 
 
 @router.get("/cache-status")
-def get_cache_status(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+def get_cache_status(db: Session = Depends(get_db)):
     """Mostra lo stato della cache prezzi: ultimo dato di mercato e quando è stata scaricata."""
 
     def last_date(history_json: str) -> str | None:
