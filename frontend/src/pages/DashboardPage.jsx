@@ -8,8 +8,10 @@ import { formatCurrencyValue, parseDateDMY, invalidatePortfolioCache } from '../
 
 function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted, refreshPortfolios }) {
   const [data, setData] = useState(null);
+  const [summary, setSummary] = useState(null); // dati leggeri (caricati per primi)
   const [loading, setLoading] = useState(true);
-   const [actionLoading, setActionLoading] = useState(false);
+  const [loadingFull, setLoadingFull] = useState(false); // caricamento dati completi in background
+  const [actionLoading, setActionLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('MAX');
   const [logScale, setLogScale] = useState(false);
   const [referenceCurrency, setReferenceCurrency] = useState('EUR');
@@ -19,56 +21,72 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
 
   useEffect(() => {
     let isMounted = true;
+    setSummary(null);
+    setData(null);
 
     const loadData = async () => {
       if (!isMounted) return;
-
-      // Previeni fetch multipli simultanei
-      if (fetchingRef.current) {
-        console.log(`[CACHE] Portfolio ${portfolio.id}: fetch già in corso, skip`);
-        return;
-      }
+      if (fetchingRef.current) return;
 
       // Controlla cache sessionStorage (valida per sessione browser)
       const cacheKey = `portfolio_${portfolio.id}`;
       const cached = sessionStorage.getItem(cacheKey);
-      console.log(`[CACHE] Portfolio ${portfolio.id}: cache present = ${!!cached}`);
 
       if (cached) {
         try {
           const cachedData = JSON.parse(cached);
-          const cacheTime = cachedData._cacheTime || 0;
-          const now = Date.now();
-          const cacheAge = now - cacheTime;
-
-          // Invalida cache se manca portfolio_xirr (nuova feature) o se la struttura è vecchia
+          const cacheAge = Date.now() - (cachedData._cacheTime || 0);
           const hasXirr = cachedData.summary && cachedData.summary.portfolio_xirr !== undefined;
           const hasNewStructure = cachedData.portfolio && cachedData.summary && cachedData.history;
 
-          // Cache valida per 1 giorno (dati EOD non cambiano durante giornata)
           if (cacheAge < 24 * 60 * 60 * 1000 && hasXirr && hasNewStructure) {
-            const ageMinutes = Math.round(cacheAge / 60000);
-            const ageHours = Math.round(ageMinutes / 60);
-            const ageDisplay = ageHours > 0 ? `${ageHours}h fa` : `${ageMinutes}m fa`;
-            console.log(`[CACHE] Portfolio ${portfolio.id}: usando cache (${ageDisplay})`);
-            setData(cachedData);
-            setLoading(false);
+            if (isMounted) {
+              setData(cachedData);
+              setLoading(false);
+            }
             return;
-          } else if (!hasXirr) {
-            console.log(`[CACHE] Portfolio ${portfolio.id}: cache invalidata (manca portfolio_xirr)`);
-          } else if (!hasNewStructure) {
-            console.log(`[CACHE] Portfolio ${portfolio.id}: cache invalidata (struttura vecchia)`);
           }
         } catch (e) {
           console.warn('[CACHE] Errore parsing cache:', e);
         }
       }
 
-      // Cache miss o stale: fetch dal server
+      // Cache miss: carica prima il summary (veloce), poi i dati completi in background
       fetchingRef.current = true;
       try {
-        await fetchData();
+        // 1. Summary leggero — appare subito
+        const resSummary = await fetch(`${API_URL}/portfolios/${portfolio.id}/summary`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (resSummary.ok && isMounted) {
+          const s = await resSummary.json();
+          setSummary(s);
+          setLoading(false);
+          setLoadingFull(true);
+        }
+
+        // 2. Dati completi in background — aggiorna grafici e holdings
+        const resFull = await fetch(`${API_URL}/portfolios/${portfolio.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (resFull.ok && isMounted) {
+          const result = await resFull.json();
+          result._cacheTime = Date.now();
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(result));
+          } catch (e) {
+            console.warn('[CACHE] Errore salvataggio cache:', e);
+          }
+          setData(result);
+          setSummary(null);
+        }
+      } catch (err) {
+        console.error('Error:', err);
       } finally {
+        if (isMounted) {
+          setLoading(false);
+          setLoadingFull(false);
+        }
         fetchingRef.current = false;
       }
     };
@@ -78,28 +96,23 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
     return () => {
       isMounted = false;
     };
-  }, [portfolio.id]); // Usa solo ID per evitare re-render non necessari
+  }, [portfolio.id]);
 
   const fetchData = async () => {
     setLoading(true);
+    setSummary(null);
     try {
       const res = await fetch(`${API_URL}/portfolios/${portfolio.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const result = await res.json();
-
-      // Aggiungi timestamp cache
       result._cacheTime = Date.now();
-
-      // Salva in cache
       const cacheKey = `portfolio_${portfolio.id}`;
       try {
         sessionStorage.setItem(cacheKey, JSON.stringify(result));
-        console.log(`[CACHE] Portfolio ${portfolio.id}: salvato in cache`);
       } catch (e) {
         console.warn('[CACHE] Errore salvataggio cache:', e);
       }
-
       setData(result);
     } catch (err) {
       console.error('Error:', err);
@@ -109,10 +122,9 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
   };
 
   useEffect(() => {
-    if (data?.summary?.reference_currency) {
-      setReferenceCurrency(data.summary.reference_currency);
-    }
-  }, [data]);
+    const currency = data?.summary?.reference_currency || summary?.reference_currency;
+    if (currency) setReferenceCurrency(currency);
+  }, [data, summary]);
 
   const handleRefresh = async () => {
     // Invalida cache e ricarica
@@ -172,6 +184,9 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
     }
   };
 
+  // Dati metriche: usa summary leggero finché non arrivano i dati completi
+  const s = data?.summary || summary;
+
   // Ordina positions per valore di mercato decrescente (% del portfolio)
   const sortedPositions = [...(data?.positions || [])].sort((a, b) => b.market_value - a.market_value);
 
@@ -187,7 +202,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
   const typeData = Object.entries(typeMap)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
-  const summaryCurrency = data?.summary?.reference_currency || data?.positions?.[0]?.currency || 'EUR';
+  const summaryCurrency = s?.reference_currency || data?.positions?.[0]?.currency || 'EUR';
   const portfolioHistory = data?.history?.portfolio || [];
   const performanceHistory = data?.history?.performance || [];
 
@@ -319,14 +334,14 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
             </div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Value</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{formatCurrencyValue(data?.summary.total_value, summaryCurrency)}</p>
+          <p className="text-2xl font-bold text-slate-900">{formatCurrencyValue(s?.total_value, summaryCurrency)}</p>
         </div>
 
         {/* Total P&L */}
         <div className="bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 transition-colors">
           <div className="flex items-center gap-3 mb-3">
-            <div className={`p-2 rounded-lg ${data?.summary.total_gain_loss >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-              {data?.summary.total_gain_loss >= 0 ? (
+            <div className={`p-2 rounded-lg ${(s?.total_gain_loss ?? 0) >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+              {(s?.total_gain_loss ?? 0) >= 0 ? (
                 <TrendingUp className="w-5 h-5 text-green-600" />
               ) : (
                 <TrendingDown className="w-5 h-5 text-red-600" />
@@ -335,11 +350,11 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Profit & Loss</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <p className={`text-2xl font-bold ${data?.summary.total_gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrencyValue(data?.summary.total_gain_loss, summaryCurrency)}
+            <p className={`text-2xl font-bold ${(s?.total_gain_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrencyValue(s?.total_gain_loss, summaryCurrency)}
             </p>
-            <span className={`text-sm font-semibold ${data?.summary.total_gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {data?.summary.total_gain_loss_pct >= 0 ? '+' : ''}{data?.summary.total_gain_loss_pct.toFixed(2)}%
+            <span className={`text-sm font-semibold ${(s?.total_gain_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {(s?.total_gain_loss_pct ?? 0) >= 0 ? '+' : ''}{(s?.total_gain_loss_pct ?? 0).toFixed(2)}%
             </span>
           </div>
         </div>
@@ -347,17 +362,17 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
         {/* Annual Return (XIRR) */}
         <div className="bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 transition-colors">
           <div className="flex items-center gap-3 mb-3">
-            <div className={`p-2 rounded-lg ${(data?.summary.portfolio_xirr || 0) >= 0 ? 'bg-purple-50' : 'bg-orange-50'}`}>
-              <Percent className={`w-5 h-5 ${(data?.summary.portfolio_xirr || 0) >= 0 ? 'text-purple-600' : 'text-orange-600'}`} />
+            <div className={`p-2 rounded-lg ${(s?.portfolio_xirr ?? s?.xirr ?? 0) >= 0 ? 'bg-purple-50' : 'bg-orange-50'}`}>
+              <Percent className={`w-5 h-5 ${(s?.portfolio_xirr ?? s?.xirr ?? 0) >= 0 ? 'text-purple-600' : 'text-orange-600'}`} />
             </div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Annual Return</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <p className={`text-2xl font-bold ${(data?.summary.portfolio_xirr || 0) >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
-              {data?.summary.portfolio_xirr !== null && data?.summary.portfolio_xirr !== undefined
-                ? `${data.summary.portfolio_xirr >= 0 ? '+' : ''}${data.summary.portfolio_xirr.toFixed(2)}%`
-                : 'N/A'}
+            {(() => { const xirr = s?.portfolio_xirr ?? s?.xirr; return (
+            <p className={`text-2xl font-bold ${(xirr ?? 0) >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
+              {xirr != null ? `${xirr >= 0 ? '+' : ''}${xirr.toFixed(2)}%` : 'N/A'}
             </p>
+            ); })()}
             <span className="text-xs text-slate-500">XIRR</span>
           </div>
         </div>
@@ -370,7 +385,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
             </div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Positions</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{data?.positions.length}</p>
+          <p className="text-2xl font-bold text-slate-900">{data?.positions.length ?? summary?.positions_count ?? '—'}</p>
         </div>
       </div>
 
@@ -393,7 +408,11 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
             ))}
           </div>
         </div>
-        {perfPercentSeries.length > 0 ? (
+        {loadingFull ? (
+          <div className="flex items-center justify-center h-[260px] text-slate-400 text-sm gap-2">
+            <RefreshCw size={16} className="animate-spin" /> Caricamento dati completi...
+          </div>
+        ) : perfPercentSeries.length > 0 ? (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={perfPercentSeries}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -429,7 +448,11 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
             </button>
           </div>
         </div>
-        {chartHistory.length > 0 ? (
+        {loadingFull ? (
+          <div className="flex items-center justify-center h-[280px] text-slate-400 text-sm gap-2">
+            <RefreshCw size={16} className="animate-spin" /> Caricamento dati completi...
+          </div>
+        ) : chartHistory.length > 0 ? (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartHistory}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -457,6 +480,11 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
 
       <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-5">Holdings</h2>
+          {loadingFull ? (
+            <div className="flex items-center justify-center py-12 text-slate-400 text-sm gap-2">
+              <RefreshCw size={16} className="animate-spin" /> Caricamento posizioni...
+            </div>
+          ) : (
           <div className="inline-block w-full border border-slate-200 rounded-lg overflow-hidden">
             <table className="w-full text-[15px] leading-tight table-auto">
               <thead className="bg-slate-50 text-slate-600">
@@ -495,6 +523,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
               </tbody>
             </table>
           </div>
+          )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

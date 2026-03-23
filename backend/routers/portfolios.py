@@ -244,6 +244,61 @@ def get_portfolio(portfolio_id: int, user_id: str = Depends(verify_token), db: S
     }
 
 
+@router.get("/{portfolio_id}/summary")
+def get_portfolio_summary(portfolio_id: int, user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+    """Endpoint leggero: solo valore attuale, P/L e XIRR — senza storico prezzi."""
+    sb = get_supabase()
+    p = _get_portfolio(sb, portfolio_id, user_id)
+    orders = _get_orders(sb, portfolio_id)
+    orders = _apply_stock_splits_to_orders(orders)
+
+    positions_map = aggregate_positions(orders)
+    orders_by_symbol = {}
+    symbol_type_map = {}
+    symbol_isin_map = {}
+    for o in orders:
+        orders_by_symbol.setdefault(o.symbol, []).append(o)
+        symbol_type_map[o.symbol] = o.instrument_type
+        symbol_isin_map[o.symbol] = o.isin.upper()
+
+    reference_currency = p.get("reference_currency") or "EUR"
+    _, total_value, total_cost, total_gain_loss, total_gain_loss_pct, _ = compute_portfolio_value(
+        positions_map, orders_by_symbol, symbol_type_map, symbol_isin_map, db,
+        reference_currency=reference_currency
+    )
+
+    positions_count = sum(1 for v in positions_map.values() if v["quantity"] > 0)
+
+    portfolio_xirr = None
+    try:
+        daily_cashflows = defaultdict(float)
+        for o in orders:
+            order_currency = o.currency or reference_currency
+            rate = 1.0 if order_currency == reference_currency else convert_to_reference_currency(1.0, order_currency, reference_currency, db)
+            cf = -(o.quantity * o.price + o.commission) * rate if o.order_type == "buy" else (o.quantity * o.price - o.commission) * rate
+            daily_cashflows[o.date] += cf
+        cashflows = list(daily_cashflows.items())
+        if total_value > 0:
+            cashflows.append((dt_date.today(), total_value))
+        if len(cashflows) > 1:
+            cashflows.sort(key=lambda x: x[0])
+            portfolio_xirr = round(calc_xirr(cashflows) * 100, 2)
+    except Exception as e:
+        print(f"[XIRR] Summary error: {e}")
+
+    return {
+        "id": p["id"],
+        "name": p["name"],
+        "reference_currency": reference_currency,
+        "total_value": round(total_value, 2),
+        "total_cost": round(total_cost, 2),
+        "total_gain_loss": round(total_gain_loss, 2),
+        "total_gain_loss_pct": round(total_gain_loss_pct, 2),
+        "positions_count": positions_count,
+        "xirr": portfolio_xirr,
+    }
+
+
 @router.put("/{portfolio_id}")
 def update_portfolio(portfolio_id: int, portfolio_update: Portfolio, user_id: str = Depends(verify_token)):
     sb = get_supabase()
