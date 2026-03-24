@@ -46,16 +46,12 @@ export default function App() {
   const [portfolios, setPortfolios] = useState([]);
   const [portfoliosLoading, setPortfoliosLoading] = useState(false);
 
-  // Flag per evitare fetch multipli simultanei
-  const initializingRef = React.useRef(false);
-
   useEffect(() => {
-    if (token && !initializingRef.current) {
-      initializingRef.current = true;
+    if (token) {
       fetchUser();
       fetchPortfolios();
     }
-  }, [token]);
+  }, []);
 
   const fetchUser = async () => {
     try {
@@ -73,12 +69,12 @@ export default function App() {
     }
   };
 
-  const fetchPortfolios = async () => {
-    if (!token) return;
+  const fetchPortfolios = async (authToken = token) => {
+    if (!authToken) return;
     setPortfoliosLoading(true);
     try {
       const res = await fetch(`${API_URL}/portfolios`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${authToken}` }
       });
       const data = await res.json();
       setPortfolios(data.portfolios || []);
@@ -114,6 +110,7 @@ export default function App() {
       setUser(userData);
       localStorage.setItem('token', newToken);
       localStorage.setItem('refreshToken', newRefreshToken);
+      fetchPortfolios(newToken);
     }} />;
   }
 
