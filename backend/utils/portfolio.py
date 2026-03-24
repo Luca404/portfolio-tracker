@@ -1,5 +1,6 @@
 """Portfolio calculation and aggregation utilities."""
 
+import bisect
 from datetime import date, datetime, timezone
 from typing import List
 
@@ -416,6 +417,9 @@ def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict
                 continue
         price_map[symbol] = m
 
+    # Pre-compute forward-fill maps: for each symbol, sorted dates with prices
+    price_sorted_dates = {sym: sorted(m.keys()) for sym, m in price_map.items()}
+
     if not all_dates:
         return [], price_map, []
 
@@ -455,11 +459,16 @@ def aggregate_portfolio_history(position_histories: dict, orders_by_symbol: dict
             # Controlla se abbiamo il prezzo per questo simbolo e questa data
             if sym in price_map:
                 price = price_map[sym].get(current_date)
+                if price is None:
+                    # Forward-fill: use the most recent price before current_date
+                    dates_for_sym = price_sorted_dates.get(sym, [])
+                    idx = bisect.bisect_right(dates_for_sym, current_date) - 1
+                    if idx >= 0:
+                        price = price_map[sym][dates_for_sym[idx]]
                 if price is not None:
                     total_value += qty * price
                 else:
-                    # Se manca il prezzo per un simbolo con posizione attiva,
-                    # la data non è valida
+                    # No price at all (asset data starts after this date) — skip date
                     valid = False
                     break
             else:
