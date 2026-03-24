@@ -22,7 +22,7 @@ from models import (
 from utils.cache import is_cache_data_fresh, merge_historical_data
 from utils.database import commit_with_retry
 from utils.dates import DATE_FMT, parse_date_input
-from etf_cache_ucits import ETF_UCITS_CACHE
+from utils.etf_cache import ETF_UCITS_CACHE
 
 # API Configuration
 FMP_API_KEY = os.environ.get("FMP_API_KEY")

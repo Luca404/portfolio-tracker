@@ -1,7 +1,7 @@
 """Symbol search and validation utilities."""
 
 from fastapi import HTTPException
-from etf_cache_ucits import ETF_UCITS_CACHE
+from utils.etf_cache import ETF_UCITS_CACHE
 from utils.pricing import fmp_get, FMP_STABLE_BASE
 
 

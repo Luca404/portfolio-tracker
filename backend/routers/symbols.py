@@ -5,7 +5,7 @@ import pandas as pd
 import requests as http_requests
 from fastapi import APIRouter, HTTPException
 
-from etf_cache_ucits import ETF_UCITS_CACHE
+from utils.etf_cache import ETF_UCITS_CACHE
 from utils.supabase_client import get_supabase
 from utils import search_symbol
 
@@ -189,15 +189,8 @@ def get_etf_list(etf_type: str = "all"):
         results.extend(us_etfs)
 
     if etf_type in ["ucits", "all"]:
-        try:
-            from etf_cache_ucits import get_all_ucits_etfs
-            ucits_etfs = get_all_ucits_etfs()
-            # Add tag to identify type
-            for etf in ucits_etfs:
-                etf["region"] = "UCITS"
-            results.extend(ucits_etfs)
-        except ImportError:
-            pass
+        ucits_etfs = [dict(e, region="UCITS") for e in ETF_UCITS_CACHE]
+        results.extend(ucits_etfs)
 
     return {
         "etfs": results,
@@ -227,11 +220,8 @@ def get_etf_stats():
         pass
 
     try:
-        from etf_cache_ucits import get_all_ucits_etfs
-        ucits_etfs = get_all_ucits_etfs()
-        stats["ucits_etfs"] = len(ucits_etfs)
-
-        for etf in ucits_etfs:
+        stats["ucits_etfs"] = len(ETF_UCITS_CACHE)
+        for etf in ETF_UCITS_CACHE:
             curr = etf.get("currency", "Unknown")
             stats["currencies"][curr] = stats["currencies"].get(curr, 0) + 1
 

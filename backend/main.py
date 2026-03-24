@@ -59,18 +59,17 @@ from models.cache import ETFPriceCacheModel, StockPriceCacheModel, ExchangeRateC
 Base.metadata.create_all(bind=engine)
 run_migrations()
 
-# Carica ETF custom scoperti a runtime (salvati su Supabase) nella cache in-memory
-def _load_supabase_etf_cache():
+# Carica la cache ETF UCITS: Supabase come fonte primaria, file statico come fallback
+def _load_etf_cache():
     from utils.supabase_client import get_supabase
-    from etf_cache_ucits import ETF_UCITS_CACHE
+    from utils.etf_cache import ETF_UCITS_CACHE
+
+    # 1. Prova Supabase
     try:
         sb = get_supabase()
         rows = sb.table("etf_ucits_cache").select("*").execute().data or []
-        existing_keys = {(e.get("isin", "").upper(), e.get("symbol", "").upper()) for e in ETF_UCITS_CACHE}
-        added = 0
-        for row in rows:
-            key = (row["isin"].upper(), row["ticker"].upper())
-            if key not in existing_keys:
+        if len(rows) >= 100:
+            for row in rows:
                 ETF_UCITS_CACHE.append({
                     "symbol": row["ticker"],
                     "isin": row["isin"],
@@ -81,14 +80,21 @@ def _load_supabase_etf_cache():
                     "ticker": row["ticker"],
                     "type": "ETF",
                 })
-                existing_keys.add(key)
-                added += 1
-        if added:
-            print(f"[ETF cache] loaded {added} custom ETFs from Supabase")
+            print(f"[ETF cache] loaded {len(rows)} ETFs from Supabase")
+            return
+        print(f"[ETF cache] Supabase returned only {len(rows)} rows, falling back to static file")
     except Exception as e:
-        print(f"[ETF cache] Supabase load failed (non-fatal): {e}")
+        print(f"[ETF cache] Supabase load failed, falling back to static file: {e}")
 
-_load_supabase_etf_cache()
+    # 2. Fallback: file statico
+    try:
+        from etf_cache_ucits import ETF_UCITS_CACHE as static
+        ETF_UCITS_CACHE.extend(static)
+        print(f"[ETF cache] loaded {len(static)} ETFs from static file")
+    except ImportError:
+        print("[ETF cache] static file not found, ETF cache is empty")
+
+_load_etf_cache()
 
 # =============================================================================
 # ROUTER MOUNTING
