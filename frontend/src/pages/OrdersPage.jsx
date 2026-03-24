@@ -12,7 +12,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const [symbolLoading, setSymbolLoading] = useState(false);
   const [searchCompleted, setSearchCompleted] = useState(false);
   const [ucitsCache, setUcitsCache] = useState([]);
-  const [selectedInfo, setSelectedInfo] = useState({ name: '', exchange: '', currency: '', ter: '' });
+  const [selectedInfo, setSelectedInfo] = useState({ name: '', exchange: '', currency: '', ter: '', isin: '' });
   const [skipSearch, setSkipSearch] = useState(false);
   const [lastChosenSymbol, setLastChosenSymbol] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -143,12 +143,14 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   }, []); // Nessuna dipendenza - carica solo una volta
 
   const parseNum = (val) => parseFloat(String(val).replace(',', '.'));
+  const isIsin = (s) => /^[A-Z]{2}[A-Z0-9]{10}$/.test(s);
 
   const handleSubmit = async () => {
     const errs = {};
     const qtyVal = parseNum(formData.quantity);
     const priceVal = parseNum(formData.price);
-    if (!formData.symbol || !selectedInfo.name) errs.symbol = true;
+    const symbolIsIsin = isIsin(formData.symbol);
+    if (!formData.symbol || (!selectedInfo.name && !symbolIsIsin)) errs.symbol = true;
     if (!formData.quantity || isNaN(qtyVal) || qtyVal <= 0) errs.quantity = true;
     if (!formData.price || isNaN(priceVal) || priceVal <= 0) errs.price = true;
     if (Object.keys(errs).length > 0) {
@@ -158,9 +160,11 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
     setSubmitting(true);
     try {
       const datePayload = toISODateFromDMY(formData.date) || formData.date;
+      const symbolIsIsin = isIsin(formData.symbol);
       const payload = {
         portfolio_id: portfolio.id,
-        symbol: formData.symbol,
+        symbol: symbolIsIsin ? (selectedInfo.isin || formData.symbol) : formData.symbol,
+        isin: selectedInfo.isin || (symbolIsIsin ? formData.symbol : ''),
         name: selectedInfo.name,
         exchange: selectedInfo.exchange,
         currency: selectedInfo.currency,
@@ -360,7 +364,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     setFormData({...formData, symbol: e.target.value.toUpperCase()});
                     setSelectedInfo({ name: '', exchange: '', currency: '', ter: '' });
                   }}
-                  className={`w-full px-4 py-2 ${symbolLoading ? 'pr-10' : ''} border ${touched.symbol && (!formData.symbol || !selectedInfo.name) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  className={`w-full px-4 py-2 ${symbolLoading ? 'pr-10' : ''} border ${touched.symbol && (!formData.symbol || (!selectedInfo.name && !isIsin(formData.symbol))) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                   placeholder={formData.instrument_type === 'etf' ? 'Es: VWCE, SWDA' : 'Es: AAPL, MSFT'}
                 />
                 {symbolLoading && (
@@ -382,7 +386,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                             name: opt.name || '',
                             exchange: opt.exchange || '',
                             currency: opt.currency || '',
-                            ter: opt.ter || ''
+                            ter: opt.ter || '',
+                            isin: opt.isin || ''
                           });
                           setSymbolOptions([]);
                           setSearchCompleted(false);
@@ -405,7 +410,9 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     ))
                   ) : (
                     <div className="px-3 py-3 text-sm text-slate-500 text-center">
-                      No results
+                      {isIsin(formData.symbol)
+                        ? 'ISIN not in local cache — you can still submit and the backend will fetch price data'
+                        : 'No results'}
                     </div>
                   )}
                 </div>
