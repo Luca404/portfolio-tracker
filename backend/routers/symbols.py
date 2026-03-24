@@ -1,9 +1,74 @@
-from fastapi import APIRouter
+import re
+from io import StringIO
+
+import pandas as pd
+import requests as http_requests
+from fastapi import APIRouter, HTTPException
 
 from etf_cache_ucits import ETF_UCITS_CACHE
 from utils import search_symbol
 
 router = APIRouter(prefix="/symbols", tags=["symbols"])
+
+_JUSTETF_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
+
+
+def _scrape_justetf(isin: str) -> dict | None:
+    """Scarica dati ETF da JustETF per un singolo ISIN."""
+    url = f"https://www.justetf.com/en/etf-profile.html?isin={isin}"
+    try:
+        r = http_requests.get(url, headers=_JUSTETF_HEADERS, timeout=20)
+        if r.status_code != 200:
+            return None
+        html = r.text
+
+        # Nome dal tag <title>: "TICKER | ETF Full Name | justETF"
+        name = ""
+        m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+        if m:
+            parts = [p.strip() for p in m.group(1).split("|")]
+            parts = [p for p in parts if p.lower() not in ("justetf", "just etf", "")]
+            name = parts[1] if len(parts) >= 2 else (parts[0] if parts else "")
+
+        # TER dalla pagina
+        ter = None
+        m2 = re.search(r"(?:TER|Total expense ratio)[^0-9]*(\d+[.,]\d+)\s*%", html, re.IGNORECASE)
+        if m2:
+            try:
+                ter = float(m2.group(1).replace(",", "."))
+            except Exception:
+                pass
+
+        # Tabella listings con pd.read_html
+        listings = []
+        try:
+            tables = pd.read_html(StringIO(html))
+            for t in tables:
+                cols = {str(c).lower(): c for c in t.columns}
+                if any("listing" in k for k in cols) and any("ticker" in k for k in cols):
+                    listing_col = next(v for k, v in cols.items() if "listing" in k)
+                    ticker_col = next(v for k, v in cols.items() if "ticker" in k)
+                    currency_col = next((v for k, v in cols.items() if "currency" in k), None)
+                    for _, row in t.iterrows():
+                        ticker = str(row[ticker_col]).strip()
+                        if not ticker or ticker in ("nan", "None", "-"):
+                            continue
+                        exchange = str(row[listing_col]).strip()
+                        currency = str(row[currency_col]).strip() if currency_col else ""
+                        if currency in ("nan", "None"):
+                            currency = ""
+                        listings.append({"ticker": ticker, "exchange": exchange, "currency": currency})
+                    break
+        except Exception:
+            pass
+
+        return {"isin": isin, "name": name, "ter": ter, "listings": listings}
+    except Exception:
+        return None
 
 
 @router.get("/search")
@@ -41,6 +106,52 @@ def symbols_ucits():
             "ter": item.get("ter", ""),
         })
     return {"results": formatted}
+
+
+@router.get("/isin-lookup")
+def isin_lookup(isin: str):
+    """
+    Cerca un ETF per ISIN: prima nella cache locale, poi scrapa JustETF.
+    Se trovato su JustETF, aggiunge i risultati alla cache in-memory.
+    """
+    isin = isin.upper().strip()
+
+    # 1. Cache locale
+    cached = [e for e in ETF_UCITS_CACHE if e.get("isin", "").upper() == isin]
+    if cached:
+        return {
+            "source": "cache",
+            "listings": [
+                {"ticker": e["symbol"], "exchange": e.get("exchange", ""), "currency": e.get("currency", ""), "name": e.get("name", ""), "ter": e.get("ter")}
+                for e in cached
+            ],
+        }
+
+    # 2. Scraping JustETF
+    data = _scrape_justetf(isin)
+    if not data or not data.get("listings"):
+        raise HTTPException(status_code=404, detail="ETF not found on JustETF")
+
+    # Aggiunge alla cache in-memory per requests successive
+    for l in data["listings"]:
+        ETF_UCITS_CACHE.append({
+            "symbol": l["ticker"],
+            "isin": isin,
+            "name": data["name"],
+            "currency": l["currency"],
+            "exchange": l["exchange"],
+            "ter": data.get("ter"),
+            "ticker": l["ticker"],
+            "type": "ETF",
+        })
+
+    return {
+        "source": "justetf",
+        "listings": [
+            {"ticker": l["ticker"], "exchange": l["exchange"], "currency": l["currency"], "name": data["name"], "ter": data.get("ter")}
+            for l in data["listings"]
+        ],
+    }
 
 
 @router.get("/etf-list")

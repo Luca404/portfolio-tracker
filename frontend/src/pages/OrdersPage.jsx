@@ -20,6 +20,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const [currentPage, setCurrentPage] = useState(0);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
   const [submitting, setSubmitting] = useState(false);
+  const [isinLookupLoading, setIsinLookupLoading] = useState(false);
+  const [isinLookupError, setIsinLookupError] = useState(false);
   const formRef = React.useRef(null);
   const scrollToForm = () => {
     requestAnimationFrame(() => {
@@ -144,6 +146,31 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
 
   const parseNum = (val) => parseFloat(String(val).replace(',', '.'));
   const isIsin = (s) => /^[A-Z]{2}[A-Z0-9]{10}$/.test(s);
+
+  const handleIsinLookup = async () => {
+    setIsinLookupLoading(true);
+    setIsinLookupError(false);
+    try {
+      const res = await fetch(`${API_URL}/symbols/isin-lookup?isin=${formData.symbol}`);
+      if (!res.ok) throw new Error('not found');
+      const data = await res.json();
+      const entries = data.listings.map(l => ({
+        symbol: l.ticker,
+        isin: formData.symbol,
+        name: l.name,
+        exchange: l.exchange,
+        currency: l.currency,
+        ter: l.ter,
+      }));
+      setUcitsCache(prev => [...prev, ...entries]);
+      setSymbolOptions(entries);
+      setSearchCompleted(true);
+    } catch {
+      setIsinLookupError(true);
+    } finally {
+      setIsinLookupLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     const errs = {};
@@ -362,7 +389,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                   value={formData.symbol}
                   onChange={(e) => {
                     setFormData({...formData, symbol: e.target.value.toUpperCase()});
-                    setSelectedInfo({ name: '', exchange: '', currency: '', ter: '' });
+                    setSelectedInfo({ name: '', exchange: '', currency: '', ter: '', isin: '' });
+                    setIsinLookupError(false);
                   }}
                   className={`w-full px-4 py-2 ${symbolLoading ? 'pr-10' : ''} border ${touched.symbol && (!formData.symbol || (!selectedInfo.name && !isIsin(formData.symbol))) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                   placeholder={formData.instrument_type === 'etf' ? 'Es: VWCE, SWDA' : 'Es: AAPL, MSFT'}
@@ -410,9 +438,26 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     ))
                   ) : (
                     <div className="px-3 py-3 text-sm text-slate-500 text-center">
-                      {isIsin(formData.symbol)
-                        ? 'ISIN not in local cache — you can still submit and the backend will fetch price data'
-                        : 'No results'}
+                      {isIsin(formData.symbol) ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <span>ISIN not in local cache</span>
+                          {isinLookupError && <span className="text-red-500 text-xs">Not found on JustETF</span>}
+                          <button
+                            type="button"
+                            onClick={handleIsinLookup}
+                            disabled={isinLookupLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
+                          >
+                            {isinLookupLoading ? (
+                              <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                              </svg>
+                            ) : null}
+                            {isinLookupLoading ? 'Searching...' : 'Look up on JustETF'}
+                          </button>
+                        </div>
+                      ) : 'No results'}
                     </div>
                   )}
                 </div>
