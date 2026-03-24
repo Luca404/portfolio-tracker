@@ -19,6 +19,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
+  const [submitting, setSubmitting] = useState(false);
   const formRef = React.useRef(null);
   const scrollToForm = () => {
     requestAnimationFrame(() => {
@@ -141,16 +142,20 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
     loadUcits();
   }, []); // Nessuna dipendenza - carica solo una volta
 
+  const parseNum = (val) => parseFloat(String(val).replace(',', '.'));
+
   const handleSubmit = async () => {
     const errs = {};
-    const qtyVal = parseInt(formData.quantity, 10);
+    const qtyVal = parseNum(formData.quantity);
+    const priceVal = parseNum(formData.price);
     if (!formData.symbol || !selectedInfo.name) errs.symbol = true;
     if (!formData.quantity || isNaN(qtyVal) || qtyVal <= 0) errs.quantity = true;
-    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) errs.price = true;
+    if (!formData.price || isNaN(priceVal) || priceVal <= 0) errs.price = true;
     if (Object.keys(errs).length > 0) {
       setTouched({...touched, ...errs});
       return;
     }
+    setSubmitting(true);
     try {
       const datePayload = toISODateFromDMY(formData.date) || formData.date;
       const payload = {
@@ -161,8 +166,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
         currency: selectedInfo.currency,
         ter: selectedInfo.ter,
         quantity: qtyVal,
-        price: parseFloat(formData.price),
-        commission: parseFloat(formData.commission || 0),
+        price: priceVal,
+        commission: parseNum(formData.commission || 0),
         instrument_type: formData.instrument_type,
         order_type: formData.order_type,
         date: datePayload
@@ -199,6 +204,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       }
     } catch (err) {
       console.error('Error:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -519,9 +526,16 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
             <div className="flex items-end gap-3">
               <button
                 onClick={handleSubmit}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                disabled={submitting}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                Submit
+                {submitting && (
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                )}
+                {submitting ? 'Saving...' : 'Submit'}
               </button>
               <button
                 onClick={() => setShowForm(false)}
