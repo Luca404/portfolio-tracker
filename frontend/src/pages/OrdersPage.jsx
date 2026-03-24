@@ -5,6 +5,7 @@ import { formatCurrencyValue, formatTerValue, parseDateDMY, toISODateFromDMY, in
 
 function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPortfolios }) {
   const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [symbolOptions, setSymbolOptions] = useState([]);
@@ -77,6 +78,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   };
 
   const fetchOrders = async () => {
+    setOrdersLoading(true);
     try {
       const res = await fetch(`${API_URL}/orders/${portfolio.id}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -90,6 +92,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       setOrders(sorted);
     } catch (err) {
       console.error('Error:', err);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -468,11 +472,11 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
               <label className="block text-sm font-medium text-slate-700 mb-2">Quantity</label>
               <input
                 type="number"
-                min="1"
-                step="1"
+                min="0.0001"
+                step="any"
                 value={formData.quantity}
                 onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                className={`w-full px-4 py-2 border ${touched.quantity && (!formData.quantity || isNaN(parseInt(formData.quantity, 10)) || parseInt(formData.quantity, 10) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-4 py-2 border ${touched.quantity && (!formData.quantity || isNaN(parseFloat(formData.quantity)) || parseFloat(formData.quantity) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
               />
             </div>
             <div>
@@ -630,7 +634,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
             </tbody>
           </table>
         </div>
-        {orders.length === 0 && (
+        {!ordersLoading && orders.length === 0 && (
           <div className="text-center py-16 text-slate-500">No orders yet</div>
         )}
 

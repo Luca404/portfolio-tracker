@@ -238,13 +238,13 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600">Portfolio Value</span>
                       <span className="text-lg font-bold text-blue-600">
-                        {getCurrencySymbol(portfolio.reference_currency || 'EUR')}{(portfolio.total_value || 0).toLocaleString()}
+                        {getCurrencySymbol(portfolio.reference_currency || 'EUR')}{(portfolio.total_value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600">P&L</span>
                       <span className={`text-sm font-semibold ${(portfolio.total_gain_loss || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {getCurrencySymbol(portfolio.reference_currency || 'EUR')}{(portfolio.total_gain_loss || 0).toLocaleString()} ({(portfolio.total_gain_loss_pct || 0) >= 0 ? '+' : ''}{(portfolio.total_gain_loss_pct || 0).toFixed(2)}%)
+                        {getCurrencySymbol(portfolio.reference_currency || 'EUR')}{(portfolio.total_gain_loss || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ({(portfolio.total_gain_loss_pct || 0) >= 0 ? '+' : ''}{(portfolio.total_gain_loss_pct || 0).toFixed(2)}%)
                       </span>
                     </div>
                   </div>
