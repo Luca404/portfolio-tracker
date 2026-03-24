@@ -67,7 +67,7 @@ def _load_etf_cache():
     # 1. Prova Supabase
     try:
         sb = get_supabase()
-        rows = sb.table("etf_ucits_cache").select("*").execute().data or []
+        rows = sb.table("etf_ucits_cache").select("*").limit(10000).execute().data or []
         if len(rows) >= 100:
             for row in rows:
                 ETF_UCITS_CACHE.append({

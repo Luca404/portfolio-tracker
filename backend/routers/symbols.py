@@ -36,8 +36,9 @@ def _scrape_justetf(isin: str) -> dict | None:
             m = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:title["\']', html, re.IGNORECASE)
         if m:
             raw = m.group(1).strip()
-            # Rimuovi "| justETF" finale e il ticker iniziale "TICKER – "
-            raw = re.sub(r'\s*\|\s*justETF\s*$', '', raw, flags=re.IGNORECASE).strip()
+            # Rimuovi tutto ciò che viene dopo il primo "|" (WKN, ISIN, "justETF")
+            raw = raw.split("|")[0].strip()
+            # Rimuovi il ticker iniziale "TICKER – " o "TICKER - "
             raw = re.sub(r'^[A-Z0-9]{1,10}\s*[–-]\s*', '', raw).strip()
             if len(raw) > 5:
                 name = raw
