@@ -6,6 +6,7 @@ import requests as http_requests
 from fastapi import APIRouter, HTTPException
 
 from etf_cache_ucits import ETF_UCITS_CACHE
+from utils.supabase_client import get_supabase
 from utils import search_symbol
 
 router = APIRouter(prefix="/symbols", tags=["symbols"])
@@ -111,12 +112,12 @@ def symbols_ucits():
 @router.get("/isin-lookup")
 def isin_lookup(isin: str):
     """
-    Cerca un ETF per ISIN: prima nella cache locale, poi scrapa JustETF.
-    Se trovato su JustETF, aggiunge i risultati alla cache in-memory.
+    Cerca un ETF per ISIN: prima nella cache in-memory, poi scrapa JustETF.
+    Se trovato su JustETF, persiste su Supabase e aggiunge alla cache in-memory.
     """
     isin = isin.upper().strip()
 
-    # 1. Cache locale
+    # 1. Cache in-memory (include statica + ETF scoperti in precedenza)
     cached = [e for e in ETF_UCITS_CACHE if e.get("isin", "").upper() == isin]
     if cached:
         return {
@@ -132,8 +133,9 @@ def isin_lookup(isin: str):
     if not data or not data.get("listings"):
         raise HTTPException(status_code=404, detail="ETF not found on JustETF")
 
-    # Aggiunge alla cache in-memory per requests successive
+    sb = get_supabase()
     for l in data["listings"]:
+        # Cache in-memory
         ETF_UCITS_CACHE.append({
             "symbol": l["ticker"],
             "isin": isin,
@@ -144,6 +146,18 @@ def isin_lookup(isin: str):
             "ticker": l["ticker"],
             "type": "ETF",
         })
+        # Persistenza Supabase (upsert su chiave isin+ticker+exchange)
+        try:
+            sb.table("etf_ucits_cache").upsert({
+                "isin": isin,
+                "ticker": l["ticker"],
+                "exchange": l["exchange"],
+                "name": data["name"],
+                "currency": l["currency"],
+                "ter": data.get("ter"),
+            }, on_conflict="isin,ticker,exchange").execute()
+        except Exception as e:
+            print(f"[ETF cache] Supabase save failed (non-fatal): {e}")
 
     return {
         "source": "justetf",

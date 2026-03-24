@@ -59,6 +59,37 @@ from models.cache import ETFPriceCacheModel, StockPriceCacheModel, ExchangeRateC
 Base.metadata.create_all(bind=engine)
 run_migrations()
 
+# Carica ETF custom scoperti a runtime (salvati su Supabase) nella cache in-memory
+def _load_supabase_etf_cache():
+    from utils.supabase_client import get_supabase
+    from etf_cache_ucits import ETF_UCITS_CACHE
+    try:
+        sb = get_supabase()
+        rows = sb.table("etf_ucits_cache").select("*").execute().data or []
+        existing_keys = {(e.get("isin", "").upper(), e.get("symbol", "").upper()) for e in ETF_UCITS_CACHE}
+        added = 0
+        for row in rows:
+            key = (row["isin"].upper(), row["ticker"].upper())
+            if key not in existing_keys:
+                ETF_UCITS_CACHE.append({
+                    "symbol": row["ticker"],
+                    "isin": row["isin"],
+                    "name": row.get("name", ""),
+                    "currency": row.get("currency", ""),
+                    "exchange": row.get("exchange", ""),
+                    "ter": row.get("ter"),
+                    "ticker": row["ticker"],
+                    "type": "ETF",
+                })
+                existing_keys.add(key)
+                added += 1
+        if added:
+            print(f"[ETF cache] loaded {added} custom ETFs from Supabase")
+    except Exception as e:
+        print(f"[ETF cache] Supabase load failed (non-fatal): {e}")
+
+_load_supabase_etf_cache()
+
 # =============================================================================
 # ROUTER MOUNTING
 # =============================================================================
