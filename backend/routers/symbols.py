@@ -27,13 +27,36 @@ def _scrape_justetf(isin: str) -> dict | None:
             return None
         html = r.text
 
-        # Nome dal tag <title>: "TICKER | ETF Full Name | justETF"
+        # Nome ETF — proviamo in ordine di affidabilità:
         name = ""
-        m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+
+        # 1. og:title: "EDEF – Amundi MSCI Europe Ex-UK Equity UCITS ETF | justETF"
+        m = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
+        if not m:
+            m = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:title["\']', html, re.IGNORECASE)
         if m:
-            parts = [p.strip() for p in m.group(1).split("|")]
-            parts = [p for p in parts if p.lower() not in ("justetf", "just etf", "")]
-            name = parts[1] if len(parts) >= 2 else (parts[0] if parts else "")
+            raw = m.group(1).strip()
+            # Rimuovi "| justETF" finale e il ticker iniziale "TICKER – "
+            raw = re.sub(r'\s*\|\s*justETF\s*$', '', raw, flags=re.IGNORECASE).strip()
+            raw = re.sub(r'^[A-Z0-9]{1,10}\s*[–-]\s*', '', raw).strip()
+            if len(raw) > 5:
+                name = raw
+
+        # 2. <h1> della pagina
+        if not name:
+            m = re.search(r'<h1[^>]*>(.*?)</h1>', html, re.IGNORECASE | re.DOTALL)
+            if m:
+                raw = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+                if len(raw) > 5:
+                    name = raw
+
+        # 3. <title> come ultimo fallback (formato: "TICKER | WKN | justETF")
+        if not name:
+            m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+            if m:
+                parts = [p.strip() for p in m.group(1).split("|")]
+                parts = [p for p in parts if p.lower() not in ("justetf", "just etf", "") and not re.match(r'^[A-Z0-9]{4,8}$', p)]
+                name = parts[0] if parts else ""
 
         # TER dalla pagina
         ter = None
