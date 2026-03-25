@@ -87,7 +87,7 @@ function OptimizePage({ token, portfolio }) {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-bold mb-6">Optimization Results</h2>
 
-          <div className="grid grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6 mb-8">
             <div className="text-center p-6 bg-green-50 rounded-lg">
               <p className="text-sm text-green-700 mb-2">Expected Return</p>
               <p className="text-3xl font-bold text-green-600">{result.expected_return}%</p>
@@ -104,7 +104,7 @@ function OptimizePage({ token, portfolio }) {
 
           <div className="mb-8">
             <h3 className="font-bold text-lg mb-4">Recommended Weights</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               {Object.entries(result.weights).map(([symbol, weight]) => (
                 <div key={symbol} className="flex justify-between bg-slate-50 p-4 rounded-lg">
                   <span className="font-semibold text-slate-900">{symbol}</span>
@@ -116,7 +116,7 @@ function OptimizePage({ token, portfolio }) {
 
           <div>
             <h3 className="font-bold text-lg mb-4">Shares to Buy</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               {Object.entries(result.allocation).map(([symbol, qty]) => (
                 <div key={symbol} className="flex justify-between bg-slate-50 p-4 rounded-lg">
                   <span className="font-semibold text-slate-900">{symbol}</span>

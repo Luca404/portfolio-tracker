@@ -143,14 +143,14 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">My Portfolios</h1>
-          <p className="text-slate-600">Manage your investment portfolios</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">My Portfolios</h1>
+          <p className="text-slate-600 text-sm md:text-base">Manage your investment portfolios</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg hover:bg-blue-700 transition text-sm md:text-base shrink-0"
         >
           <Plus className="w-5 h-5" />
           New Portfolio
@@ -214,7 +214,7 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {loading && portfolios.length === 0 ? (
           // Show skeleton cards based on actual count
           Array.from({ length: portfolioCount || 3 }).map((_, i) => <PortfolioCardSkeleton key={i} />)
@@ -289,7 +289,7 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
       {editingId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               <h3 className="text-2xl font-bold text-slate-900 mb-6">Edit Portfolio Settings</h3>
 
               <div className="space-y-5">

@@ -151,40 +151,24 @@ function ComparePage({ token, portfolio, portfolios, onSelectPortfolio }) {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => setActiveTab('dcavslumpsum')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'dcavslumpsum' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            DCA vs Lump Sum
-          </button>
-          <button
-            onClick={() => setActiveTab('benchmarks')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'benchmarks' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Portfolio vs Benchmark
-          </button>
-          <button
-            onClick={() => setActiveTab('efficient')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'efficient' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Efficient Frontier
-          </button>
-          <button
-            onClick={() => setActiveTab('allocation')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'allocation' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Model Portfolios
-          </button>
+      <div className="bg-white rounded-lg shadow p-3 md:p-6 mb-6">
+        <div className="flex flex-wrap gap-1 md:gap-3">
+          {[
+            { id: 'dcavslumpsum', label: 'DCA vs Lump Sum' },
+            { id: 'benchmarks',  label: 'vs Benchmark' },
+            { id: 'efficient',   label: 'Efficient Frontier' },
+            { id: 'allocation',  label: 'Model Portfolios' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-sm font-medium transition ${
+                activeTab === id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 

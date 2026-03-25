@@ -279,16 +279,16 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{data?.portfolio?.name || portfolio.name}</h1>
-          <p className="text-slate-600">{data?.portfolio?.description || portfolio.description || 'Portfolio Overview'}</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1 truncate">{data?.portfolio?.name || portfolio.name}</h1>
+          <p className="text-slate-600 text-sm md:text-base">{data?.portfolio?.description || portfolio.description || 'Portfolio Overview'}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={referenceCurrency}
             onChange={(e) => handleCurrencyChange(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 bg-white hover:border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+            className="px-2 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 bg-white hover:border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
           >
             <option value="EUR">EUR (€)</option>
             <option value="USD">USD ($)</option>
@@ -300,7 +300,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
           <select
             value={portfolio.id}
             onChange={handlePortfolioChange}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 max-w-[160px] truncate"
           >
             {portfolios.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -309,16 +309,16 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition disabled:opacity-50 flex items-center gap-1.5 text-sm"
             title="Aggiorna dati (ignora cache)"
           >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Refresh
+            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Refresh</span>
           </button>
           <button
             onClick={handleDelete}
             disabled={actionLoading}
-            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition disabled:opacity-50"
+            className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition disabled:opacity-50 text-sm"
           >
             Delete
           </button>
@@ -478,50 +478,52 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
           )}
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-5">Holdings</h2>
+      <div className="bg-white border border-slate-200 rounded-lg p-4 md:p-6 mb-6">
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-4">Holdings</h2>
           {loadingFull ? (
             <div className="flex items-center justify-center py-12 text-slate-400 text-sm gap-2">
               <RefreshCw size={16} className="animate-spin" /> Caricamento posizioni...
             </div>
           ) : (
-          <div className="inline-block w-full border border-slate-200 rounded-lg overflow-hidden">
-            <table className="w-full text-[15px] leading-tight table-auto">
+          <div className="overflow-x-auto -mx-4 md:mx-0">
+            <div className="inline-block min-w-full px-4 md:px-0">
+            <table className="min-w-full text-xs md:text-[14px] leading-tight table-auto border border-slate-200 rounded-lg overflow-hidden">
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">Symbol</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">Qty</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">Avg Price</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">Curr Price</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">Init Value</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">Mkt Value</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">P/L</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">P/L %</th>
-                  <th className="py-2 px-1.5 text-center whitespace-nowrap">XIRR</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">Symbol</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">Qty</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap hidden sm:table-cell">Avg Price</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">Curr Price</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap hidden md:table-cell">Init Value</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">Mkt Value</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">P/L</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">P/L %</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap hidden sm:table-cell">XIRR</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedPositions.map((pos, idx) => (
                   <tr key={pos.symbol} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                    <td className="py-2 px-1.5 text-center font-semibold text-slate-900 whitespace-nowrap">{pos.symbol}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{pos.quantity}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.avg_price, pos.currency)}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.current_price, pos.currency)}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.cost_basis, pos.currency)}</td>
-                    <td className="py-2 px-1.5 text-center text-slate-900 font-semibold whitespace-nowrap">{formatCurrencyValue(pos.market_value, pos.currency)}</td>
-                    <td className={`py-2 px-1.5 text-center font-semibold whitespace-nowrap ${pos.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <td className="py-2 px-2 text-center font-semibold text-slate-900 whitespace-nowrap">{pos.symbol}</td>
+                    <td className="py-2 px-2 text-center text-slate-700 whitespace-nowrap">{pos.quantity}</td>
+                    <td className="py-2 px-2 text-center text-slate-700 whitespace-nowrap hidden sm:table-cell">{formatCurrencyValue(pos.avg_price, pos.currency)}</td>
+                    <td className="py-2 px-2 text-center text-slate-700 whitespace-nowrap">{formatCurrencyValue(pos.current_price, pos.currency)}</td>
+                    <td className="py-2 px-2 text-center text-slate-700 whitespace-nowrap hidden md:table-cell">{formatCurrencyValue(pos.cost_basis, pos.currency)}</td>
+                    <td className="py-2 px-2 text-center text-slate-900 font-semibold whitespace-nowrap">{formatCurrencyValue(pos.market_value, pos.currency)}</td>
+                    <td className={`py-2 px-2 text-center font-semibold whitespace-nowrap ${pos.gain_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {pos.gain_loss >= 0 ? '+' : ''}{formatCurrencyValue(pos.gain_loss, pos.currency)}
                     </td>
-                    <td className={`py-2 px-1.5 text-center font-semibold whitespace-nowrap ${pos.gain_loss_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <td className={`py-2 px-2 text-center font-semibold whitespace-nowrap ${pos.gain_loss_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {pos.gain_loss_pct.toFixed(2)}%
                     </td>
-                    <td className="py-2 px-1.5 text-center text-slate-700 whitespace-nowrap">
+                    <td className="py-2 px-2 text-center text-slate-700 whitespace-nowrap hidden sm:table-cell">
                       {pos.xirr ? `${pos.xirr.toFixed(2)}%` : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
           )}
       </div>

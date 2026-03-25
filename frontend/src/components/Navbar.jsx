@@ -1,78 +1,89 @@
-import React from 'react';
-import { LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { LogOut, Menu, X } from 'lucide-react';
 
 function Navbar({ user, onLogout, currentView, setCurrentView, hasPortfolioSelected, onGoPortfolios }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const navItems = hasPortfolioSelected ? [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'orders',    label: 'Orders' },
+    { id: 'analyze',   label: 'Analyze' },
+    { id: 'compare',   label: 'Compare' },
+    { id: 'optimize',  label: 'Optimize' },
+  ] : [];
+
+  const handleNav = (id) => {
+    setCurrentView(id);
+    setMenuOpen(false);
+  };
+
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
-            <button
-              onClick={onGoPortfolios}
-              className="flex items-center gap-2 hover:text-blue-600 transition"
-            >
-              <img src="/logo1.svg" alt="pfTrackr" className="w-8 h-8" />
-              <span className="text-xl font-bold text-slate-900">pfTrackr</span>
-            </button>
+          {/* Logo */}
+          <button onClick={() => { onGoPortfolios(); setMenuOpen(false); }} className="flex items-center gap-2 hover:text-blue-600 transition shrink-0">
+            <img src="/logo1.svg" alt="pfTrackr" className="w-7 h-7 md:w-8 md:h-8" />
+            <span className="text-lg md:text-xl font-bold text-slate-900">pfTrackr</span>
+          </button>
 
-            {hasPortfolioSelected && (
-              <div className="flex items-center gap-4">
+          {/* Desktop nav */}
+          {hasPortfolioSelected && (
+            <div className="hidden md:flex items-center gap-1 lg:gap-4">
+              {navItems.map(({ id, label }) => (
                 <button
-                  onClick={() => setCurrentView('dashboard')}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentView === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
+                  key={id}
+                  onClick={() => setCurrentView(id)}
+                  className={`px-3 py-2 rounded-lg font-medium text-sm lg:text-base transition ${
+                    currentView === id ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  Dashboard
+                  {label}
                 </button>
-                <button
-                  onClick={() => setCurrentView('orders')}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentView === 'orders' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Orders
-                </button>
-                <button
-                  onClick={() => setCurrentView('analyze')}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentView === 'analyze' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Analyze
-                </button>
-                <button
-                  onClick={() => setCurrentView('compare')}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentView === 'compare' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Compare
-                </button>
-                <button
-                  onClick={() => setCurrentView('optimize')}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentView === 'optimize' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Optimize
-                </button>
-              </div>
-            )}
+              ))}
             </div>
+          )}
 
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600">{user?.username}</span>
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:block text-sm text-slate-600">{user?.username}</span>
             <button
               onClick={onLogout}
-              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-red-600 transition"
+              className="flex items-center gap-1.5 px-3 py-2 text-slate-600 hover:text-red-600 transition text-sm"
             >
               <LogOut className="w-4 h-4" />
-              Logout
+              <span className="hidden sm:inline">Logout</span>
             </button>
+            {/* Hamburger — mobile only */}
+            {hasPortfolioSelected && (
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
+                aria-label="Menu"
+              >
+                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Mobile dropdown menu */}
+      {menuOpen && hasPortfolioSelected && (
+        <div className="md:hidden border-t border-slate-200 bg-white">
+          {navItems.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => handleNav(id)}
+              className={`w-full text-left px-6 py-3 font-medium text-sm transition ${
+                currentView === id ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }

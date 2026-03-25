@@ -202,48 +202,25 @@ function AnalyzePage({ token, portfolio, portfolios, onSelectPortfolio }) {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setActiveTab('correlation')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'correlation' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Correlation Heatmap
-          </button>
-          <button
-            onClick={() => setActiveTab('montecarlo')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'montecarlo' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Monte Carlo
-          </button>
-          <button
-            onClick={() => setActiveTab('risk')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'risk' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Risk Metrics
-          </button>
-          <button
-            onClick={() => setActiveTab('drawdown')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'drawdown' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Drawdown
-          </button>
-          <button
-            onClick={() => setActiveTab('attribution')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'attribution' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Asset Contribution
-          </button>
+      <div className="bg-white rounded-lg shadow mb-6 p-3 md:p-4">
+        <div className="flex gap-1 md:gap-2 flex-wrap">
+          {[
+            { id: 'correlation', label: 'Correlation' },
+            { id: 'montecarlo',  label: 'Monte Carlo' },
+            { id: 'risk',        label: 'Risk Metrics' },
+            { id: 'drawdown',    label: 'Drawdown' },
+            { id: 'attribution', label: 'Attribution' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-sm font-medium transition ${
+                activeTab === id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 

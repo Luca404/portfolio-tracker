@@ -601,7 +601,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       )}
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-4">
+        <div className="flex items-center justify-between px-4 md:px-6 pt-4">
           <div className="text-sm text-slate-600">{orders.length} orders</div>
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -610,44 +610,44 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
             {showAdvanced ? 'Hide details' : 'Show more'}
           </button>
         </div>
-        <div className="px-4 pb-4">
-          <table className="w-full text-center">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-center">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Date</th>
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Symbol</th>
-                {showAdvanced && <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Type</th>}
-                {showAdvanced && <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Exchange</th>}
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Order</th>
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Quantity</th>
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Price</th>
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">Commission</th>
-                {showAdvanced && <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center">TER</th>}
-                <th style={{ width: colWidth }} className="py-4 px-3 text-sm font-semibold text-slate-700 text-center whitespace-nowrap">Total (incl. comm)</th>
-                <th style={{ width: colWidth, minWidth: '140px' }} className="py-4 pr-4 pl-2 text-sm font-semibold text-slate-700 text-right"></th>
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Date</th>
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Symbol</th>
+                {showAdvanced && <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Type</th>}
+                {showAdvanced && <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Exchange</th>}
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Order</th>
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Qty</th>
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Price</th>
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap hidden sm:table-cell">Comm.</th>
+                {showAdvanced && <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">TER</th>}
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 whitespace-nowrap">Total</th>
+                <th className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-700 text-right"></th>
               </tr>
             </thead>
             <tbody>
               {orders.slice(currentPage * ordersPerPage, (currentPage + 1) * ordersPerPage).map((order) => (
                 <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 whitespace-nowrap text-center">{order.date}</td>
-                  <td style={{ width: colWidth }} className="py-4 px-3 font-semibold text-slate-900 whitespace-nowrap text-center">{order.symbol}</td>
-                  {showAdvanced && <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 uppercase whitespace-nowrap text-center">{order.instrument_type}</td>}
-                  {showAdvanced && <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 whitespace-nowrap text-center">{order.exchange || '—'}</td>}
-                  <td style={{ width: colWidth }} className="py-4 px-3 text-center">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 whitespace-nowrap">{order.date}</td>
+                  <td className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-900 whitespace-nowrap">{order.symbol}</td>
+                  {showAdvanced && <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 uppercase whitespace-nowrap">{order.instrument_type}</td>}
+                  {showAdvanced && <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 whitespace-nowrap">{order.exchange || '—'}</td>}
+                  <td className="py-3 px-2 md:px-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                       order.order_type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
                       {order.order_type.toUpperCase()}
                     </span>
                   </td>
-                  <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 whitespace-nowrap text-center">{order.quantity}</td>
-                  <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 whitespace-nowrap text-center">{formatCurrencyValue(order.price, order.currency)}</td>
-                  <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 whitespace-nowrap text-center">{formatCurrencyValue(order.commission || 0, order.currency)}</td>
+                  <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 whitespace-nowrap">{order.quantity}</td>
+                  <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 whitespace-nowrap">{formatCurrencyValue(order.price, order.currency)}</td>
+                  <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 whitespace-nowrap hidden sm:table-cell">{formatCurrencyValue(order.commission || 0, order.currency)}</td>
                   {showAdvanced && (
-                    <td style={{ width: colWidth }} className="py-4 px-3 text-slate-700 whitespace-nowrap text-center">{formatTerValue(order.ter)}</td>
+                    <td className="py-3 px-2 md:px-3 text-xs md:text-sm text-slate-700 whitespace-nowrap">{formatTerValue(order.ter)}</td>
                   )}
-                  <td style={{ width: colWidth }} className="py-4 px-3 font-semibold text-slate-900 whitespace-nowrap text-center">
+                  <td className="py-3 px-2 md:px-3 text-xs md:text-sm font-semibold text-slate-900 whitespace-nowrap">
                     {(() => {
                       const net = order.order_type === 'buy'
                         ? order.quantity * order.price + (order.commission || 0)
@@ -655,7 +655,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                       return formatCurrencyValue(net, order.currency);
                     })()}
                   </td>
-                  <td style={{ width: colWidth, minWidth: '140px' }} className="py-4 pr-4 pl-2 text-right">
+                  <td className="py-3 px-2 md:px-3 text-right">
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => {
