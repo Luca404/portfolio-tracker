@@ -96,6 +96,26 @@ def _load_etf_cache():
 
 _load_etf_cache()
 
+
+def _load_stock_cache():
+    from utils.supabase_client import get_supabase
+    from utils.stock_cache import STOCK_SYMBOL_CACHE
+    try:
+        sb = get_supabase()
+        rows = sb.table("stock_symbol_cache").select("*").limit(10000).execute().data or []
+        for row in rows:
+            STOCK_SYMBOL_CACHE.append({
+                "symbol": row.get("symbol", ""),
+                "name": row.get("name", ""),
+                "exchange": row.get("exchange", ""),
+                "currency": row.get("currency", ""),
+            })
+        print(f"[Stock cache] loaded {len(rows)} stocks from Supabase")
+    except Exception as e:
+        print(f"[Stock cache] Supabase load failed (non-fatal): {e}")
+
+_load_stock_cache()
+
 # =============================================================================
 # ROUTER MOUNTING
 # =============================================================================
