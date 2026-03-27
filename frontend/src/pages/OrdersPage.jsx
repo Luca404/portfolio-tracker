@@ -463,7 +463,36 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
         <div ref={formRef} className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">{editingOrderId ? 'Edit Order' : 'Create Order'}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Instrument</label>
+              <select
+                value={formData.instrument_type}
+                onChange={(e) => {
+                  setFormData({...formData, instrument_type: e.target.value, symbol: ''});
+                  setSymbolOptions([]);
+                  setSelectedInfo({ name: '', exchange: '', currency: '', ter: '' });
+                  setBondMeta(null);
+                  setBondLookupError(false);
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="stock">Stock</option>
+                <option value="etf">ETF</option>
+                <option value="bond">Bond</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
+              <select
+                value={formData.order_type}
+                onChange={(e) => setFormData({...formData, order_type: e.target.value})}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+            </div>
+            <div className="relative md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 {formData.instrument_type === 'etf' ? 'Ticker or ISIN' : formData.instrument_type === 'bond' ? 'ISIN' : 'Ticker or Name'}
               </label>
@@ -584,124 +613,74 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                   )}
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+            </div>
+            {selectedInfo.name && (
+              <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={selectedInfo.name}
-                    readOnly
-                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm cursor-default select-none pointer-events-none"
-                    placeholder="—"
-                  />
+                  <div className="text-xs text-slate-500 mb-0.5">Nome</div>
+                  <div className="font-medium text-slate-900 truncate">{selectedInfo.name}</div>
                 </div>
+                {selectedInfo.exchange && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Exchange</div>
+                    <div className="font-medium text-slate-900">{selectedInfo.exchange}</div>
+                  </div>
+                )}
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Exchange</label>
-                  <input
-                    type="text"
-                    value={selectedInfo.exchange}
-                    readOnly
-                    className="w-full px-3 py-2 border border-slate-200 rounded bg-slate-50 text-sm cursor-default select-none pointer-events-none"
-                    placeholder="—"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Currency</label>
+                  <div className="text-xs text-slate-500 mb-0.5">Valuta</div>
                   <select
                     value={selectedInfo.currency || ''}
                     onChange={(e) => setSelectedInfo({...selectedInfo, currency: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="mt-0.5 px-1.5 py-0.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 bg-white"
                   >
-                    <option value="" disabled>—</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="CHF">CHF (Fr)</option>
-                    <option value="JPY">JPY (¥)</option>
-                    <option value="CNY">CNY (¥)</option>
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="GBP">GBP</option>
+                    <option value="CHF">CHF</option>
+                    <option value="JPY">JPY</option>
+                    <option value="CNY">CNY</option>
                   </select>
                 </div>
-              </div>
-            </div>
-            {bondMeta && (
-              <div className="col-span-1 md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                {bondMeta.issuer && (
+                {selectedInfo.ter && (
                   <div>
-                    <div className="text-xs text-slate-500 mb-0.5">Emittente</div>
-                    <div className="font-medium text-slate-900">{bondMeta.issuer}</div>
+                    <div className="text-xs text-slate-500 mb-0.5">TER</div>
+                    <div className="font-medium text-slate-900">{selectedInfo.ter}%</div>
                   </div>
                 )}
-                {bondMeta.coupon != null && (
+                {bondMeta?.coupon != null && (
                   <div>
                     <div className="text-xs text-slate-500 mb-0.5">Cedola</div>
                     <div className="font-medium text-slate-900">{bondMeta.coupon}%</div>
                   </div>
                 )}
-                {(bondMeta.maturity || bondMeta.maturity_bi) && (
+                {(bondMeta?.maturity || bondMeta?.maturity_bi) && (
                   <div>
                     <div className="text-xs text-slate-500 mb-0.5">Scadenza</div>
                     <div className="font-medium text-slate-900">{bondMeta.maturity_bi || bondMeta.maturity}</div>
                   </div>
                 )}
-                {bondMeta.ytm_gross != null && (
+                {bondMeta?.ytm_gross != null && (
                   <div>
                     <div className="text-xs text-slate-500 mb-0.5">YTM lordo</div>
                     <div className="font-medium text-slate-900">{bondMeta.ytm_gross}%</div>
                   </div>
                 )}
-                {bondMeta.ytm_net != null && (
+                {bondMeta?.ytm_net != null && (
                   <div>
                     <div className="text-xs text-slate-500 mb-0.5">YTM netto</div>
                     <div className="font-medium text-slate-900">{bondMeta.ytm_net}%</div>
                   </div>
                 )}
-                {bondMeta.duration != null && (
+                {bondMeta?.duration != null && (
                   <div>
                     <div className="text-xs text-slate-500 mb-0.5">Duration</div>
                     <div className="font-medium text-slate-900">{bondMeta.duration}</div>
                   </div>
                 )}
-                {bondMeta.coupon_frequency && (
-                  <div>
-                    <div className="text-xs text-slate-500 mb-0.5">Freq. cedola</div>
-                    <div className="font-medium text-slate-900">{bondMeta.coupon_frequency}</div>
-                  </div>
-                )}
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Instrument</label>
-              <select
-                value={formData.instrument_type}
-                onChange={(e) => {
-                  setFormData({...formData, instrument_type: e.target.value, symbol: ''});
-                  setSymbolOptions([]);
-                  setSelectedInfo({ name: '', exchange: '', currency: '', ter: '' });
-                  setBondMeta(null);
-                  setBondLookupError(false);
-                }}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="stock">Stock</option>
-                <option value="etf">ETF</option>
-                <option value="bond">Bond</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
-              <select
-                value={formData.order_type}
-                onChange={(e) => setFormData({...formData, order_type: e.target.value})}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="buy">Buy</option>
-                <option value="sell">Sell</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {formData.instrument_type === 'bond' ? 'Nominale (€)' : 'Quantity'}
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Quantity</label>
               <input
                 type="number"
                 min="0.0001"
@@ -712,26 +691,17 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {formData.instrument_type === 'bond' ? 'Price (% of par)' : 'Price'}
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Price</label>
               <div className="relative">
-                {formData.instrument_type === 'bond'
-                  ? <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">%</span>
-                  : currencySymbol && <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">{currencySymbol}</span>
-                }
+                {currencySymbol && <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">{currencySymbol}</span>}
                 <input
                   type="number"
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  className={`w-full pl-8 pr-3 py-2 border ${touched.price && (!formData.price || parseFloat(formData.price) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                  placeholder={formData.instrument_type === 'bond' ? 'es: 96.50' : ''}
+                  className={`w-full ${currencySymbol ? 'pl-8 pr-3' : 'px-4'} py-2 border ${touched.price && (!formData.price || parseFloat(formData.price) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
                 />
               </div>
-              {formData.instrument_type === 'bond' && (
-                <p className="text-xs text-slate-400 mt-1">Valore = nominale × price / 100</p>
-              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Commission</label>
