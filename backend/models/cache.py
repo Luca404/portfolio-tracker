@@ -41,3 +41,12 @@ class MarketBenchmarkCacheModel(Base):
     last_price = Column(Float, default=0.0)
     history_json = Column(String, default="")  # [{"date": "...", "price": X.XX}]
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+
+class BondPriceCacheModel(Base):
+    __tablename__ = "bond_price_cache"
+    isin = Column(String, primary_key=True, index=True)
+    last_price = Column(Float, default=0.0)   # % del nominale (es. 98.5)
+    history_json = Column(String, default="")  # [{"date": "DD-MM-YYYY", "price": X.XX}]
+    metadata_json = Column(String, default="{}")  # coupon, maturity, ytm, duration, ...
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))

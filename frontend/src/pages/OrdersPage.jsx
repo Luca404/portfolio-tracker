@@ -22,6 +22,9 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const [submitting, setSubmitting] = useState(false);
   const [isinLookupLoading, setIsinLookupLoading] = useState(false);
   const [isinLookupError, setIsinLookupError] = useState(false);
+  const [bondMeta, setBondMeta] = useState(null);
+  const [bondLookupLoading, setBondLookupLoading] = useState(false);
+  const [bondLookupError, setBondLookupError] = useState(false);
   const formRef = React.useRef(null);
   const scrollToForm = () => {
     requestAnimationFrame(() => {
@@ -147,6 +150,33 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const parseNum = (val) => parseFloat(String(val).replace(',', '.'));
   const isIsin = (s) => /^[A-Z]{2}[A-Z0-9]{10}$/.test(s);
 
+  const handleBondLookup = async () => {
+    setBondLookupLoading(true);
+    setBondLookupError(false);
+    setBondMeta(null);
+    try {
+      const res = await fetch(`${API_URL}/symbols/bond-lookup?isin=${formData.symbol}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('not found');
+      const data = await res.json();
+      const meta = data.metadata || {};
+      setBondMeta(meta);
+      setSelectedInfo({
+        name: meta.issuer || '',
+        exchange: 'XFRA',
+        currency: meta.currency || 'EUR',
+        ter: '',
+        isin: formData.symbol,
+      });
+      setLastChosenSymbol(formData.symbol);
+    } catch {
+      setBondLookupError(true);
+    } finally {
+      setBondLookupLoading(false);
+    }
+  };
+
   const handleIsinLookup = async () => {
     setIsinLookupLoading(true);
     setIsinLookupError(false);
@@ -264,6 +294,14 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
 
       setSymbolLoading(true);
 
+      // Bond: no ticker search — use ISIN lookup only
+      if (formData.instrument_type === 'bond') {
+        setSymbolOptions([]);
+        setSymbolLoading(false);
+        setSearchCompleted(false);
+        return;
+      }
+
       // local search for etf using ucits cache
       if (formData.instrument_type === 'etf') {
         // Simula un breve delay per mostrare il loading
@@ -309,8 +347,6 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
     };
   }, [formData.symbol, formData.instrument_type, skipSearch, ucitsCache]);
 
-  const columnCount = showAdvanced ? 11 : 8;
-  const colWidth = `${100 / columnCount}%`;
 
   const handleDeleteOrder = async () => {
     if (!deleteTarget) return;
@@ -381,7 +417,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {formData.instrument_type === 'etf' ? 'Ticker or ISIN' : 'Ticker or Name'}
+                {formData.instrument_type === 'etf' ? 'Ticker or ISIN' : formData.instrument_type === 'bond' ? 'ISIN' : 'Ticker or Name'}
               </label>
               <div className="relative">
                 <input
@@ -391,9 +427,11 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                     setFormData({...formData, symbol: e.target.value.toUpperCase()});
                     setSelectedInfo({ name: '', exchange: '', currency: '', ter: '', isin: '' });
                     setIsinLookupError(false);
+                    setBondMeta(null);
+                    setBondLookupError(false);
                   }}
                   className={`w-full px-4 py-2 ${symbolLoading ? 'pr-10' : ''} border ${touched.symbol && (!formData.symbol || (!selectedInfo.name && !isIsin(formData.symbol))) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                  placeholder={formData.instrument_type === 'etf' ? 'Es: VWCE, SWDA' : 'Es: AAPL, MSFT'}
+                  placeholder={formData.instrument_type === 'etf' ? 'Es: VWCE, SWDA' : formData.instrument_type === 'bond' ? 'Es: IT0005398406' : 'Es: AAPL, MSFT'}
                 />
                 {symbolLoading && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -462,6 +500,27 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                   )}
                 </div>
               )}
+              {formData.instrument_type === 'bond' && isIsin(formData.symbol) && (
+                <div className="mt-2 flex flex-col items-start gap-1">
+                  {bondLookupError && <span className="text-red-500 text-xs">Bond not found (Börse Frankfurt)</span>}
+                  {!bondMeta && (
+                    <button
+                      type="button"
+                      onClick={handleBondLookup}
+                      disabled={bondLookupLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
+                    >
+                      {bondLookupLoading ? (
+                        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                        </svg>
+                      ) : null}
+                      {bondLookupLoading ? 'Searching...' : 'Cerca obbligazione'}
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">Name</label>
@@ -501,19 +560,68 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                 </div>
               </div>
             </div>
+            {bondMeta && (
+              <div className="col-span-1 md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                {bondMeta.issuer && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Emittente</div>
+                    <div className="font-medium text-slate-900">{bondMeta.issuer}</div>
+                  </div>
+                )}
+                {bondMeta.coupon != null && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Cedola</div>
+                    <div className="font-medium text-slate-900">{bondMeta.coupon}%</div>
+                  </div>
+                )}
+                {(bondMeta.maturity || bondMeta.maturity_bi) && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Scadenza</div>
+                    <div className="font-medium text-slate-900">{bondMeta.maturity_bi || bondMeta.maturity}</div>
+                  </div>
+                )}
+                {bondMeta.ytm_gross != null && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">YTM lordo</div>
+                    <div className="font-medium text-slate-900">{bondMeta.ytm_gross}%</div>
+                  </div>
+                )}
+                {bondMeta.ytm_net != null && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">YTM netto</div>
+                    <div className="font-medium text-slate-900">{bondMeta.ytm_net}%</div>
+                  </div>
+                )}
+                {bondMeta.duration != null && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Duration</div>
+                    <div className="font-medium text-slate-900">{bondMeta.duration}</div>
+                  </div>
+                )}
+                {bondMeta.coupon_frequency && (
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Freq. cedola</div>
+                    <div className="font-medium text-slate-900">{bondMeta.coupon_frequency}</div>
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Instrument</label>
               <select
                 value={formData.instrument_type}
                 onChange={(e) => {
-                  setFormData({...formData, instrument_type: e.target.value});
+                  setFormData({...formData, instrument_type: e.target.value, symbol: ''});
                   setSymbolOptions([]);
                   setSelectedInfo({ name: '', exchange: '', currency: '', ter: '' });
+                  setBondMeta(null);
+                  setBondLookupError(false);
                 }}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="stock">Stock</option>
                 <option value="etf">ETF</option>
+                <option value="bond">Bond</option>
               </select>
             </div>
             <div>
@@ -528,7 +636,9 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Quantity</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                {formData.instrument_type === 'bond' ? 'Nominale (€)' : 'Quantity'}
+              </label>
               <input
                 type="number"
                 min="0.0001"
@@ -539,18 +649,26 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Price</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                {formData.instrument_type === 'bond' ? 'Price (% of par)' : 'Price'}
+              </label>
               <div className="relative">
-                {currencySymbol && <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">{currencySymbol}</span>}
+                {formData.instrument_type === 'bond'
+                  ? <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">%</span>
+                  : currencySymbol && <span className="absolute inset-y-0 left-3 flex items-center text-slate-500">{currencySymbol}</span>
+                }
                 <input
                   type="number"
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  className={`w-full ${currencySymbol ? 'pl-8 pr-3' : 'px-4'} py-2 border ${touched.price && (!formData.price || parseFloat(formData.price) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                  placeholder=""
+                  className={`w-full pl-8 pr-3 py-2 border ${touched.price && (!formData.price || parseFloat(formData.price) <= 0) ? 'border-red-400' : 'border-slate-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
+                  placeholder={formData.instrument_type === 'bond' ? 'es: 96.50' : ''}
                 />
               </div>
+              {formData.instrument_type === 'bond' && (
+                <p className="text-xs text-slate-400 mt-1">Valore = nominale × price / 100</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Commission</label>

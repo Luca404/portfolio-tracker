@@ -3,8 +3,10 @@ from io import StringIO
 
 import pandas as pd
 import requests as http_requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from utils.database import get_db
 from utils.etf_cache import ETF_UCITS_CACHE
 from utils.supabase_client import get_supabase
 from utils import search_symbol
@@ -220,6 +222,53 @@ def get_etf_list(etf_type: str = "all"):
         "etfs": results,
         "count": len(results)
     }
+
+
+@router.get("/bond-lookup")
+def bond_lookup(isin: str, db: Session = Depends(get_db)):
+    """
+    Cerca un bond per ISIN: Frankfurt (metadati + prezzo) → Borsa Italiana (YTM/duration per IT*).
+    Salva in cache SQLite bond_price_cache e in Supabase bond_metadata_cache.
+    """
+    from utils.bond_scraper import fetch_frankfurt_bond_metadata, scrape_borsa_italiana_bond
+    isin = isin.upper().strip()
+    if not isin:
+        raise HTTPException(status_code=400, detail="ISIN obbligatorio")
+
+    # 1. Frankfurt metadata
+    meta = fetch_frankfurt_bond_metadata(isin)
+    if not meta:
+        raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato su Börse Frankfurt")
+
+    # 2. Integra con Borsa Italiana per bond italiani
+    if isin.startswith("IT"):
+        bi = scrape_borsa_italiana_bond(isin)
+        if bi:
+            for key in ("ytm_gross", "ytm_net", "accrued_gross", "accrued_net",
+                        "duration", "coupon_annual", "coupon_frequency", "price"):
+                if bi.get(key) is not None:
+                    meta[key] = bi[key]
+            if bi.get("maturity_bi") and not meta.get("maturity"):
+                meta["maturity"] = bi["maturity_bi"]
+
+    # 3. Persisti su Supabase bond_metadata_cache
+    try:
+        sb = get_supabase()
+        sb.table("bond_metadata_cache").upsert({
+            "isin": isin,
+            "issuer": meta.get("issuer", ""),
+            "coupon": meta.get("coupon") or meta.get("coupon_annual"),
+            "maturity": meta.get("maturity"),
+            "currency": meta.get("currency", "EUR"),
+            "ytm_gross": meta.get("ytm_gross"),
+            "ytm_net": meta.get("ytm_net"),
+            "duration": meta.get("duration"),
+            "coupon_frequency": meta.get("coupon_frequency"),
+        }, on_conflict="isin").execute()
+    except Exception as e:
+        print(f"[Bond] Supabase save failed (non-fatal): {e}")
+
+    return {"isin": isin, "metadata": meta}
 
 
 @router.get("/etf-stats")
