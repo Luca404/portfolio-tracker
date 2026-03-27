@@ -66,22 +66,26 @@ def _get_frankfurt_salt() -> str:
 def _frankfurt_headers(url: str) -> dict:
     """Calcola gli header dinamici richiesti dall'API di Börse Frankfurt."""
     salt = _get_frankfurt_salt()
-    client_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + \
-                  f"{datetime.now(timezone.utc).microsecond // 1000:03d}Z"
-    x_security = hashlib.md5(
-        datetime.now(timezone.utc).strftime("%Y%m%d%H%M").encode()
-    ).hexdigest()
+    # Usa ora tedesca (CET/CEST) — Frankfurt valida x-security su ora locale
+    import zoneinfo
+    berlin = zoneinfo.ZoneInfo("Europe/Berlin")
+    now_berlin = datetime.now(berlin)
+    now_utc = datetime.now(timezone.utc)
+
+    ms = now_utc.microsecond // 1000
+    client_date = now_utc.strftime(f"%Y-%m-%dT%H:%M:%S.{ms:03d}Z")
+    x_security = hashlib.md5(now_berlin.strftime("%Y%m%d%H%M").encode()).hexdigest()
     x_traceid = hashlib.md5((client_date + url + salt).encode()).hexdigest()
     return {
         "authority": "api.boerse-frankfurt.de",
         "origin": _FRANKFURT_ORIGIN,
         "referer": _FRANKFURT_ORIGIN + "/",
         "accept": "application/json, text/plain, */*",
-        "accept-language": "en-US,en;q=0.9",
+        "accept-language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
         "client-date": client_date,
         "x-client-traceid": x_traceid,
         "x-security": x_security,
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
     }
 
 

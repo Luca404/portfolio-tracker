@@ -227,20 +227,19 @@ def get_etf_list(etf_type: str = "all"):
 @router.get("/bond-lookup")
 def bond_lookup(isin: str, db: Session = Depends(get_db)):
     """
-    Cerca un bond per ISIN: Frankfurt (metadati + prezzo) → Borsa Italiana (YTM/duration per IT*).
-    Salva in cache SQLite bond_price_cache e in Supabase bond_metadata_cache.
+    Cerca un bond per ISIN.
+    Cascade: Borsa Italiana (IT*) → Frankfurt → 404.
+    Borsa Italiana è primaria per bond italiani (YTM, duration, cedola, prezzo).
+    Frankfurt è primaria per bond non-italiani e complementare per emittente/scadenza.
     """
     from utils.bond_scraper import fetch_frankfurt_bond_metadata, scrape_borsa_italiana_bond
     isin = isin.upper().strip()
     if not isin:
         raise HTTPException(status_code=400, detail="ISIN obbligatorio")
 
-    # 1. Frankfurt metadata
-    meta = fetch_frankfurt_bond_metadata(isin)
-    if not meta:
-        raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato su Börse Frankfurt")
+    meta: dict = {"isin": isin, "currency": "EUR"}
 
-    # 2. Integra con Borsa Italiana per bond italiani
+    # 1. Borsa Italiana — fonte primaria per bond italiani (HTML scraper, nessun header speciale)
     if isin.startswith("IT"):
         bi = scrape_borsa_italiana_bond(isin)
         if bi:
@@ -248,8 +247,29 @@ def bond_lookup(isin: str, db: Session = Depends(get_db)):
                         "duration", "coupon_annual", "coupon_frequency", "price"):
                 if bi.get(key) is not None:
                     meta[key] = bi[key]
-            if bi.get("maturity_bi") and not meta.get("maturity"):
+            if bi.get("maturity_bi"):
                 meta["maturity"] = bi["maturity_bi"]
+            if bi.get("coupon_annual"):
+                meta["coupon"] = bi["coupon_annual"]
+
+    # 2. Frankfurt — primario per non-IT, complementare per emittente/scadenza/valuta
+    ff = fetch_frankfurt_bond_metadata(isin)
+    if ff:
+        # Frankfurt colma i gap: emittente, scadenza, valuta, cedola se mancanti
+        for key in ("issuer", "currency", "issue_date", "min_investment"):
+            if ff.get(key) and not meta.get(key):
+                meta[key] = ff[key]
+        if ff.get("maturity") and not meta.get("maturity"):
+            meta["maturity"] = ff["maturity"]
+        if ff.get("coupon") and not meta.get("coupon"):
+            meta["coupon"] = ff["coupon"]
+    elif not isin.startswith("IT"):
+        # Per bond non-italiani Frankfurt è l'unica fonte: se fallisce → 404
+        raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato (Börse Frankfurt non disponibile)")
+
+    # Se non abbiamo trovato nulla neanche da Borsa Italiana
+    if not meta.get("maturity") and not meta.get("coupon") and not meta.get("ytm_gross"):
+        raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato")
 
     # 3. Persisti su Supabase bond_metadata_cache
     try:
