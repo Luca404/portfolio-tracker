@@ -116,6 +116,21 @@ def _load_stock_cache():
 
 _load_stock_cache()
 
+
+def _load_bond_cache():
+    from utils.supabase_client import get_supabase
+    from utils.bond_cache import BOND_METADATA_CACHE
+    try:
+        sb = get_supabase()
+        rows = sb.table("bond_metadata_cache").select("*").limit(5000).execute().data or []
+        for row in rows:
+            BOND_METADATA_CACHE.append({k: v for k, v in row.items() if v is not None and k != "updated_at"})
+        print(f"[Bond cache] loaded {len(rows)} bonds from Supabase")
+    except Exception as e:
+        print(f"[Bond cache] Supabase load failed (non-fatal): {e}")
+
+_load_bond_cache()
+
 # =============================================================================
 # ROUTER MOUNTING
 # =============================================================================

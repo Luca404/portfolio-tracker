@@ -22,9 +22,11 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
   const [submitting, setSubmitting] = useState(false);
   const [isinLookupLoading, setIsinLookupLoading] = useState(false);
   const [isinLookupError, setIsinLookupError] = useState(false);
+  const [bondCache, setBondCache] = useState([]);
   const [bondMeta, setBondMeta] = useState(null);
   const [bondLookupLoading, setBondLookupLoading] = useState(false);
   const [bondLookupError, setBondLookupError] = useState(false);
+  const bondCacheLoadedRef = React.useRef(false);
   const formRef = React.useRef(null);
   const scrollToForm = () => {
     requestAnimationFrame(() => {
@@ -147,6 +149,34 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
     loadUcits();
   }, []); // Nessuna dipendenza - carica solo una volta
 
+  useEffect(() => {
+    const loadBonds = async () => {
+      if (bondCacheLoadedRef.current || bondCache.length > 0) return;
+      const cached = sessionStorage.getItem('bond_metadata_list');
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          setBondCache(data);
+          return;
+        } catch {}
+      }
+      bondCacheLoadedRef.current = true;
+      try {
+        const res = await fetch(`${API_URL}/symbols/bonds`);
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.results || [];
+          setBondCache(list);
+          try { sessionStorage.setItem('bond_metadata_list', JSON.stringify(list)); } catch {}
+          console.log(`[CACHE] Bonds loaded: ${list.length}`);
+        }
+      } catch (e) {
+        bondCacheLoadedRef.current = false;
+      }
+    };
+    loadBonds();
+  }, []);
+
   const parseNum = (val) => parseFloat(String(val).replace(',', '.'));
   const isIsin = (s) => /^[A-Z]{2}[A-Z0-9]{10}$/.test(s);
 
@@ -170,6 +200,16 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
         isin: formData.symbol,
       });
       setLastChosenSymbol(formData.symbol);
+      // Aggiunge alla cache locale e sessionStorage
+      setBondCache(prev => {
+        const exists = prev.find(b => b.isin === formData.symbol);
+        const entry = { ...meta, isin: formData.symbol };
+        const updated = exists ? prev.map(b => b.isin === formData.symbol ? entry : b) : [...prev, entry];
+        try { sessionStorage.setItem('bond_metadata_list', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+      setSymbolOptions([]);
+      setSearchCompleted(false);
     } catch {
       setBondLookupError(true);
     } finally {
@@ -294,11 +334,19 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
 
       setSymbolLoading(true);
 
-      // Bond: no ticker search — use ISIN lookup only
+      // Bond: cerca nella bond cache locale (per ISIN o nome)
       if (formData.instrument_type === 'bond') {
-        setSymbolOptions([]);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const q = formData.symbol.toUpperCase();
+        const filtered = bondCache.filter(item => {
+          const isin = (item.isin || '').toUpperCase();
+          const name = (item.name || '').toUpperCase();
+          const issuer = (item.issuer || '').toUpperCase();
+          return isin.startsWith(q) || (q.length >= 3 && (name.includes(q) || issuer.includes(q)));
+        }).slice(0, 15);
+        setSymbolOptions(filtered);
         setSymbolLoading(false);
-        setSearchCompleted(false);
+        setSearchCompleted(true);
         return;
       }
 
@@ -345,7 +393,7 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       controller.abort();
       clearTimeout(timer);
     };
-  }, [formData.symbol, formData.instrument_type, skipSearch, ucitsCache]);
+  }, [formData.symbol, formData.instrument_type, skipSearch, ucitsCache, bondCache]);
 
 
   const handleDeleteOrder = async () => {
@@ -442,41 +490,77 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
               {formData.symbol && formData.symbol.length >= 2 && !symbolLoading && searchCompleted && (
                 <div className="absolute z-10 mt-1 border border-slate-200 rounded-lg max-h-48 overflow-auto bg-white shadow w-full">
                   {symbolOptions.length > 0 ? (
-                    symbolOptions.map((opt) => (
-                      <button
-                        key={`${opt.symbol}-${opt.exchange || ''}`}
-                        type="button"
-                        onClick={() => {
-                          setFormData({...formData, symbol: opt.symbol.toUpperCase()});
-                          setSelectedInfo({
-                            name: opt.name || '',
-                            exchange: opt.exchange || '',
-                            currency: opt.currency || '',
-                            ter: opt.ter || '',
-                            isin: opt.isin || ''
-                          });
-                          setSymbolOptions([]);
-                          setSearchCompleted(false);
-                          setSkipSearch(true);
-                          setLastChosenSymbol(opt.symbol.toUpperCase());
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-slate-100 text-sm"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-slate-900">{opt.symbol}</span>
-                            {opt.name && <span className="text-slate-600 text-xs">{opt.name}</span>}
-                          </div>
-                          <div className="text-xs text-slate-500 text-right">
-                            {opt.exchange && <div>{opt.exchange}</div>}
-                            {opt.currency && <div>{opt.currency}</div>}
-                          </div>
-                        </div>
-                      </button>
-                    ))
+                    symbolOptions.map((opt) => {
+                      const isBond = formData.instrument_type === 'bond';
+                      const key = isBond ? opt.isin : `${opt.symbol}-${opt.exchange || ''}`;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            if (isBond) {
+                              setFormData({...formData, symbol: opt.isin});
+                              setSelectedInfo({ name: opt.name || opt.issuer || '', exchange: 'MOT/EuroMOT', currency: opt.currency || 'EUR', ter: '', isin: opt.isin });
+                              setBondMeta(opt);
+                              setSkipSearch(true);
+                              setLastChosenSymbol(opt.isin);
+                            } else {
+                              setFormData({...formData, symbol: opt.symbol.toUpperCase()});
+                              setSelectedInfo({ name: opt.name || '', exchange: opt.exchange || '', currency: opt.currency || '', ter: opt.ter || '', isin: opt.isin || '' });
+                            }
+                            setSymbolOptions([]);
+                            setSearchCompleted(false);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-100 text-sm"
+                        >
+                          {isBond ? (
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-slate-900">{opt.name || opt.isin}</span>
+                                {opt.issuer && <span className="text-slate-500 text-xs">{opt.issuer}</span>}
+                              </div>
+                              <div className="text-xs text-slate-500 text-right">
+                                {opt.maturity && <div>Scad. {opt.maturity}</div>}
+                                {opt.coupon != null && <div>{opt.coupon}%</div>}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-slate-900">{opt.symbol}</span>
+                                {opt.name && <span className="text-slate-600 text-xs">{opt.name}</span>}
+                              </div>
+                              <div className="text-xs text-slate-500 text-right">
+                                {opt.exchange && <div>{opt.exchange}</div>}
+                                {opt.currency && <div>{opt.currency}</div>}
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })
                   ) : (
                     <div className="px-3 py-3 text-sm text-slate-500 text-center">
-                      {isIsin(formData.symbol) ? (
+                      {formData.instrument_type === 'bond' && isIsin(formData.symbol) ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <span>Obbligazione non in cache</span>
+                          {bondLookupError && <span className="text-red-500 text-xs">Non trovata su Borsa Italiana</span>}
+                          <button
+                            type="button"
+                            onClick={handleBondLookup}
+                            disabled={bondLookupLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
+                          >
+                            {bondLookupLoading ? (
+                              <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                              </svg>
+                            ) : null}
+                            {bondLookupLoading ? 'Searching...' : 'Cerca obbligazione'}
+                          </button>
+                        </div>
+                      ) : isIsin(formData.symbol) ? (
                         <div className="flex flex-col items-center gap-2">
                           <span>ISIN not in local cache</span>
                           {isinLookupError && <span className="text-red-500 text-xs">Not found on JustETF</span>}
@@ -497,27 +581,6 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
                         </div>
                       ) : 'No results'}
                     </div>
-                  )}
-                </div>
-              )}
-              {formData.instrument_type === 'bond' && isIsin(formData.symbol) && (
-                <div className="mt-2 flex flex-col items-start gap-1">
-                  {bondLookupError && <span className="text-red-500 text-xs">Bond not found (Börse Frankfurt)</span>}
-                  {!bondMeta && (
-                    <button
-                      type="button"
-                      onClick={handleBondLookup}
-                      disabled={bondLookupLoading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
-                    >
-                      {bondLookupLoading ? (
-                        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                        </svg>
-                      ) : null}
-                      {bondLookupLoading ? 'Searching...' : 'Cerca obbligazione'}
-                    </button>
                   )}
                 </div>
               )}

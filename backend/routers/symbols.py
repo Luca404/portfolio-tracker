@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from utils.database import get_db
 from utils.etf_cache import ETF_UCITS_CACHE
+from utils.bond_cache import BOND_METADATA_CACHE
 from utils.supabase_client import get_supabase
 from utils import search_symbol
 
@@ -224,6 +225,12 @@ def get_etf_list(etf_type: str = "all"):
     }
 
 
+@router.get("/bonds")
+def get_bond_cache():
+    """Ritorna la cache in-memoria dei bond (caricata da Supabase all'avvio)."""
+    return {"results": BOND_METADATA_CACHE, "count": len(BOND_METADATA_CACHE)}
+
+
 @router.get("/bond-lookup")
 def bond_lookup(isin: str, db: Session = Depends(get_db)):
     """
@@ -283,21 +290,29 @@ def bond_lookup(isin: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato (non quotato su Borsa Italiana né Börse Frankfurt)")
 
     # 3. Persisti su Supabase bond_metadata_cache
+    record = {
+        "isin": isin,
+        "name": meta.get("name", ""),
+        "issuer": meta.get("issuer", ""),
+        "coupon": meta.get("coupon") or meta.get("coupon_annual"),
+        "maturity": meta.get("maturity"),
+        "currency": meta.get("currency", "EUR"),
+        "ytm_gross": meta.get("ytm_gross"),
+        "ytm_net": meta.get("ytm_net"),
+        "duration": meta.get("duration"),
+        "coupon_frequency": meta.get("coupon_frequency"),
+    }
     try:
-        sb.table("bond_metadata_cache").upsert({
-            "isin": isin,
-            "name": meta.get("name", ""),
-            "issuer": meta.get("issuer", ""),
-            "coupon": meta.get("coupon") or meta.get("coupon_annual"),
-            "maturity": meta.get("maturity"),
-            "currency": meta.get("currency", "EUR"),
-            "ytm_gross": meta.get("ytm_gross"),
-            "ytm_net": meta.get("ytm_net"),
-            "duration": meta.get("duration"),
-            "coupon_frequency": meta.get("coupon_frequency"),
-        }, on_conflict="isin").execute()
+        sb.table("bond_metadata_cache").upsert(record, on_conflict="isin").execute()
     except Exception as e:
         print(f"[Bond] Supabase save failed (non-fatal): {e}")
+
+    # 4. Aggiorna cache in-memoria
+    existing = next((b for b in BOND_METADATA_CACHE if b.get("isin") == isin), None)
+    if existing:
+        existing.update({k: v for k, v in record.items() if v is not None})
+    else:
+        BOND_METADATA_CACHE.append({k: v for k, v in record.items() if v is not None})
 
     return {"isin": isin, "metadata": meta}
 
