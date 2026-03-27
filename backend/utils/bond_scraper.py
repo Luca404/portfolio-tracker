@@ -195,23 +195,40 @@ def _parse_italian_number(s: str) -> Optional[float]:
 
 def scrape_borsa_italiana_bond(isin: str) -> Optional[dict]:
     """
-    Scrape della scheda BTP su Borsa Italiana.
-    Disponibile solo per bond italiani (MOT).
+    Scrape della scheda obbligazione su Borsa Italiana.
+    Supporta bond italiani (MOT) ed europei (EuroMOT/ExtraMOT).
     Restituisce: price, ytm_gross, ytm_net, accrued_gross, duration, maturity, coupon_frequency.
     """
-    url = f"https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/scheda/{isin.upper()}-MOTX.html?lang=it"
-    try:
-        resp = requests.get(url, headers=_BI_HEADERS, timeout=15)
-        if resp.status_code != 200:
-            # prova anche senza -MOTX (altri segmenti MOT: BOT, BTP€i, CCT...)
-            url2 = f"https://www.borsaitaliana.it/borsa/obbligazioni/mot/altri-titoli-di-stato/scheda/{isin.upper()}-MOTX.html?lang=it"
-            resp = requests.get(url2, headers=_BI_HEADERS, timeout=15)
-            if resp.status_code != 200:
-                return None
-    except Exception as e:
-        print(f"[Bond] Borsa Italiana fetch error {isin}: {e}")
+    isin_up = isin.upper()
+    base = "https://www.borsaitaliana.it"
+
+    # Pattern URL da provare in ordine (MOT → EuroMOT → ExtraMOT)
+    candidates = [
+        f"{base}/borsa/obbligazioni/mot/btp/scheda/{isin_up}-MOTX.html?lang=it",
+        f"{base}/borsa/obbligazioni/mot/altri-titoli-di-stato/scheda/{isin_up}-MOTX.html?lang=it",
+        f"{base}/borsa/obbligazioni/mot/obbligazioni/scheda/{isin_up}-MOTX.html?lang=it",
+        f"{base}/borsa/obbligazioni/euromot/titoli-di-stato-esteri/scheda/{isin_up}-XMOT.html?lang=it",
+        f"{base}/borsa/obbligazioni/euromot/obbligazioni/scheda/{isin_up}-XMOT.html?lang=it",
+        f"{base}/borsa/obbligazioni/extramot/scheda/{isin_up}-EXMX.html?lang=it",
+    ]
+
+    resp = None
+    matched_url = None
+    for url in candidates:
+        try:
+            r = requests.get(url, headers=_BI_HEADERS, timeout=10)
+            if r.status_code == 200 and "scheda" in r.text and len(r.text) > 5000:
+                resp = r
+                matched_url = url
+                break
+        except Exception:
+            continue
+
+    if resp is None:
+        print(f"[Bond] Borsa Italiana {isin_up}: non trovato su nessun segmento MOT/EuroMOT/ExtraMOT")
         return None
 
+    print(f"[Bond] Borsa Italiana {isin_up}: found at {matched_url}")
     soup = BeautifulSoup(resp.text, "html.parser")
     result: dict = {}
 
@@ -249,7 +266,7 @@ def scrape_borsa_italiana_bond(isin: str) -> Optional[dict]:
     elif parsed.get("coupon_periodic"):
         parsed["coupon_annual"] = parsed["coupon_periodic"]
 
-    print(f"[Bond] Borsa Italiana {isin}: price={parsed.get('price')}, ytm={parsed.get('ytm_gross')}, maturity={parsed.get('maturity_bi')}")
+    print(f"[Bond] Borsa Italiana {isin_up}: price={parsed.get('price')}, ytm={parsed.get('ytm_gross')}, maturity={parsed.get('maturity_bi')}")
     return parsed
 
 
@@ -339,24 +356,27 @@ def get_bond_price_and_history(isin: str, db: Session, days: int = 730) -> dict:
 
     merged_history = merge_historical_data(cached_history, new_history)
 
-    # --- Metadata: Frankfurt master_data + Borsa Italiana (IT*) ---
+    # --- Metadata: Borsa Italiana (tutti) + Frankfurt (complementare per issuer/valuta) ---
     meta = cached_meta.copy()
+
+    bi_data = scrape_borsa_italiana_bond(isin)
+    if bi_data:
+        for key in ("ytm_gross", "ytm_net", "accrued_gross", "accrued_net", "duration",
+                    "coupon_annual", "coupon_frequency", "maturity_bi"):
+            if bi_data.get(key) is not None:
+                meta[key] = bi_data[key]
+        if bi_data.get("price") and not last_price:
+            last_price = bi_data["price"]
 
     frankfurt_meta = fetch_frankfurt_bond_metadata(isin)
     if frankfurt_meta:
-        meta.update({k: v for k, v in frankfurt_meta.items() if v is not None})
-
-    if isin.startswith("IT"):
-        bi_data = scrape_borsa_italiana_bond(isin)
-        if bi_data:
-            # Borsa Italiana ha più dettagli: YTM, duration, rateo
-            for key in ("ytm_gross", "ytm_net", "accrued_gross", "accrued_net", "duration",
-                        "coupon_annual", "coupon_frequency", "maturity_bi"):
-                if bi_data.get(key) is not None:
-                    meta[key] = bi_data[key]
-            # Usa il prezzo BI come last_price se Frankfurt non ha dati intraday
-            if bi_data.get("price") and not last_price:
-                last_price = bi_data["price"]
+        for key in ("issuer", "currency", "issue_date", "min_investment"):
+            if frankfurt_meta.get(key) and not meta.get(key):
+                meta[key] = frankfurt_meta[key]
+        if frankfurt_meta.get("maturity") and not meta.get("maturity"):
+            meta["maturity"] = frankfurt_meta["maturity"]
+        if frankfurt_meta.get("coupon") and not meta.get("coupon"):
+            meta["coupon"] = frankfurt_meta["coupon"]
 
     # --- Aggiorna cache SQLite ---
     meta_json = json.dumps(meta)
