@@ -182,6 +182,9 @@ _BI_FIELD_MAP = {
     "Scadenza":                                      "maturity_bi",
     "Tasso Cedola Periodale":                        "coupon_periodic",
     "Periodicità cedola":                            "coupon_frequency",
+    "Emittente":                                     "issuer",
+    "Stato Emittente":                               "issuer",
+    "Denominazione":                                 "name",
 }
 
 
@@ -255,8 +258,8 @@ def scrape_borsa_italiana_bond(isin: str) -> Optional[dict]:
     # Normalizza numerici
     parsed: dict = {"source": "borsa_italiana"}
     for field, raw in result.items():
-        if field in ("maturity_bi", "coupon_frequency"):
-            parsed[field] = raw
+        if field in ("maturity_bi", "coupon_frequency", "issuer", "name"):
+            parsed[field] = raw.strip()
         else:
             parsed[field] = _parse_italian_number(raw)
 
@@ -266,7 +269,21 @@ def scrape_borsa_italiana_bond(isin: str) -> Optional[dict]:
     elif parsed.get("coupon_periodic"):
         parsed["coupon_annual"] = parsed["coupon_periodic"]
 
-    print(f"[Bond] Borsa Italiana {isin_up}: price={parsed.get('price')}, ytm={parsed.get('ytm_gross')}, maturity={parsed.get('maturity_bi')}")
+    # Estrai nome bond dal <title> (es: "BTP 1 MAR 2037 4% | Obbligazioni | Borsa Italiana" → "BTP 1 MAR 2037 4%")
+    # o dall'<h1> della pagina, se non trovato nel field map
+    if not parsed.get("name"):
+        title_tag = soup.find("title")
+        if title_tag:
+            title_text = title_tag.get_text(strip=True)
+            name_candidate = title_text.split("|")[0].strip()
+            if name_candidate and name_candidate.upper() != isin_up:
+                parsed["name"] = name_candidate
+        if not parsed.get("name"):
+            h1 = soup.find("h1")
+            if h1:
+                parsed["name"] = h1.get_text(strip=True).split("|")[0].strip()
+
+    print(f"[Bond] Borsa Italiana {isin_up}: name={parsed.get('name')}, issuer={parsed.get('issuer')}, price={parsed.get('price')}, ytm={parsed.get('ytm_gross')}, maturity={parsed.get('maturity_bi')}")
     return parsed
 
 

@@ -163,8 +163,8 @@ function OrdersPage({ token, portfolio, portfolios, onSelectPortfolio, refreshPo
       const meta = data.metadata || {};
       setBondMeta(meta);
       setSelectedInfo({
-        name: meta.issuer || '',
-        exchange: 'XFRA',
+        name: meta.name || meta.issuer || '',
+        exchange: 'MOT/EuroMOT',
         currency: meta.currency || 'EUR',
         ter: '',
         isin: formData.symbol,

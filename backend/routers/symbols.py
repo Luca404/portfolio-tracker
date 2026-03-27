@@ -228,14 +228,30 @@ def get_etf_list(etf_type: str = "all"):
 def bond_lookup(isin: str, db: Session = Depends(get_db)):
     """
     Cerca un bond per ISIN.
-    Cascade: Borsa Italiana (IT*) → Frankfurt → 404.
-    Borsa Italiana è primaria per bond italiani (YTM, duration, cedola, prezzo).
-    Frankfurt è primaria per bond non-italiani e complementare per emittente/scadenza.
+    Cascade: cache Supabase (24h) → Borsa Italiana MOT/EuroMOT/ExtraMOT → Frankfurt → 404.
     """
     from utils.bond_scraper import fetch_frankfurt_bond_metadata, scrape_borsa_italiana_bond
+    from datetime import datetime, timezone, timedelta
     isin = isin.upper().strip()
     if not isin:
         raise HTTPException(status_code=400, detail="ISIN obbligatorio")
+
+    sb = get_supabase()
+
+    # 0. Cache Supabase — se il bond è già noto e i dati sono recenti (< 24h), ritorna subito
+    try:
+        cached = sb.table("bond_metadata_cache").select("*").eq("isin", isin).maybe_single().execute()
+        if cached.data:
+            row = cached.data
+            updated_str = row.get("updated_at", "")
+            if updated_str:
+                updated = datetime.fromisoformat(updated_str.replace("Z", "+00:00"))
+                age = datetime.now(timezone.utc) - updated
+                if age < timedelta(hours=24):
+                    print(f"[Bond] {isin}: Supabase cache hit (age {int(age.total_seconds()//3600)}h)")
+                    return {"isin": isin, "metadata": {k: v for k, v in row.items() if v is not None and k != "updated_at"}}
+    except Exception as e:
+        print(f"[Bond] Supabase cache read failed (non-fatal): {e}")
 
     meta: dict = {"isin": isin, "currency": "EUR"}
 
@@ -243,7 +259,7 @@ def bond_lookup(isin: str, db: Session = Depends(get_db)):
     bi = scrape_borsa_italiana_bond(isin)
     if bi:
         for key in ("ytm_gross", "ytm_net", "accrued_gross", "accrued_net",
-                    "duration", "coupon_annual", "coupon_frequency", "price"):
+                    "duration", "coupon_annual", "coupon_frequency", "price", "name", "issuer"):
             if bi.get(key) is not None:
                 meta[key] = bi[key]
         if bi.get("maturity_bi"):
@@ -251,7 +267,7 @@ def bond_lookup(isin: str, db: Session = Depends(get_db)):
         if bi.get("coupon_annual"):
             meta["coupon"] = bi["coupon_annual"]
 
-    # 2. Frankfurt — complementare per emittente/scadenza/valuta; unica fonte se BI non ha il bond
+    # 2. Frankfurt — complementare per issuer/valuta/scadenza se BI non li ha
     ff = fetch_frankfurt_bond_metadata(isin)
     if ff:
         for key in ("issuer", "currency", "issue_date", "min_investment"):
@@ -268,9 +284,9 @@ def bond_lookup(isin: str, db: Session = Depends(get_db)):
 
     # 3. Persisti su Supabase bond_metadata_cache
     try:
-        sb = get_supabase()
         sb.table("bond_metadata_cache").upsert({
             "isin": isin,
+            "name": meta.get("name", ""),
             "issuer": meta.get("issuer", ""),
             "coupon": meta.get("coupon") or meta.get("coupon_annual"),
             "maturity": meta.get("maturity"),
