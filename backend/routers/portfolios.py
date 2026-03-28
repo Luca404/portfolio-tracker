@@ -80,8 +80,13 @@ def _apply_stock_splits_to_orders(orders):
 
 
 def _get_portfolio(sb, portfolio_id: int, user_id: str) -> dict:
+    print(f"[DEBUG] _get_portfolio: id={portfolio_id} user_id={repr(user_id)}")
     result = sb.table("portfolios").select("*").eq("id", portfolio_id).eq("user_id", user_id).execute()
+    print(f"[DEBUG] _get_portfolio result: {result.data}")
     if not result.data:
+        # fallback: cerca solo per id per vedere cosa c'è nel DB
+        debug_result = sb.table("portfolios").select("id,user_id,profile_id").eq("id", portfolio_id).execute()
+        print(f"[DEBUG] portfolio by id only: {debug_result.data}")
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return result.data[0]
 
