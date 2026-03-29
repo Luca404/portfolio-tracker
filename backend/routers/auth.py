@@ -3,13 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from schemas import UserRegister, UserLogin, Token
 from schemas.user import RefreshRequest
 from utils import verify_token, get_supabase
+from utils.supabase_client import new_supabase_auth_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=Token)
 def register(user: UserRegister):
-    sb = get_supabase()
+    sb = new_supabase_auth_client()
     try:
         res = sb.auth.sign_up({"email": user.email, "password": user.password})
     except Exception as e:
@@ -33,7 +34,7 @@ def register(user: UserRegister):
 
 @router.post("/login", response_model=Token)
 def login(user: UserLogin):
-    sb = get_supabase()
+    sb = new_supabase_auth_client()
     try:
         res = sb.auth.sign_in_with_password({"email": user.email, "password": user.password})
     except Exception:
@@ -54,7 +55,7 @@ def login(user: UserLogin):
 
 @router.post("/refresh")
 def refresh_token(body: RefreshRequest):
-    sb = get_supabase()
+    sb = new_supabase_auth_client()
     try:
         res = sb.auth.refresh_session(body.refresh_token)
         return {
