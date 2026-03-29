@@ -126,9 +126,12 @@ def get_portfolios_count(user_id: str = Depends(verify_token)):
 
 
 @router.get("")
-def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(get_db), profile_id: str | None = None):
     sb = get_supabase()
-    portfolios = sb.table("portfolios").select("*").eq("user_id", user_id).execute().data
+    query = sb.table("portfolios").select("*").eq("user_id", user_id)
+    if profile_id:
+        query = query.eq("profile_id", profile_id)
+    portfolios = query.execute().data
     response = []
     for p in portfolios:
         orders = _get_orders(sb, p["id"])
