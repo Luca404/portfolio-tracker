@@ -163,6 +163,7 @@ def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(g
             "total_cost": total_cost,
             "total_gain_loss": total_gain_loss,
             "total_gain_loss_pct": total_gain_loss_pct,
+            "positions_count": len(positions_map),
             "asset_composition": asset_composition,
         })
     return {"portfolios": response}
