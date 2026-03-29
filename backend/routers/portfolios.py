@@ -129,7 +129,6 @@ def get_portfolios_count(user_id: str = Depends(verify_token)):
 def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
     sb = get_supabase()
     portfolios = sb.table("portfolios").select("*").eq("user_id", user_id).execute().data
-    print(f"[GET /portfolios] user={user_id[:8]}... portfolios={len(portfolios)}")
     response = []
     for p in portfolios:
         orders = _get_orders(sb, p["id"])
@@ -142,12 +141,10 @@ def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(g
             orders_by_symbol.setdefault(o.symbol, []).append(o)
             symbol_type_map[o.symbol] = o.instrument_type
             symbol_isin_map[o.symbol] = o.isin.upper()
-        print(f"[GET /portfolios] portfolio={p['name']!r} orders={len(orders)} positions={len(positions_map)} symbols={list(symbol_isin_map.items())}")
         reference_currency = p.get("reference_currency") or "EUR"
         _, total_value, total_cost, total_gain_loss, total_gain_loss_pct, _ = compute_portfolio_value(
             positions_map, orders_by_symbol, symbol_type_map, symbol_isin_map, db, reference_currency=reference_currency
         )
-        print(f"[GET /portfolios] portfolio={p['name']!r} total_value={total_value:.2f} total_cost={total_cost:.2f}")
         asset_composition = {"etf": 0, "stock": 0}
         for symbol, position in positions_map.items():
             if position["quantity"] > 0:
