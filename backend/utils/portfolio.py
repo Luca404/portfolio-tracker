@@ -266,6 +266,10 @@ def compute_portfolio_value(
                 print(f"[compute] Stock {symbol}: price={current_price}, history_len={len(price_history)}")
 
         try:
+            if data["quantity"] <= 0:
+                print(f"[SANITY] {symbol}: non-positive position quantity detected ({data['quantity']})")
+                continue
+
             avg_price = data["total_cost"] / data["quantity"] if data["quantity"] else 0
             market_value = data["quantity"] * current_price
             gain_loss = market_value - data["total_cost"]
@@ -382,6 +386,9 @@ def compute_portfolio_value(
 
     total_gain_loss = total_value - total_cost
     total_gain_loss_pct = (total_gain_loss / total_cost * 100) if total_cost > 0 else 0
+
+    if total_cost > 0 and total_value == 0:
+        print("[SANITY] Portfolio summary anomaly: total_cost > 0 but total_value == 0")
 
     return positions, total_value, total_cost, total_gain_loss, total_gain_loss_pct, position_histories
 

@@ -1248,6 +1248,8 @@ def apply_splits_to_orders(orders: List, symbol_splits: Dict[str, Dict[date, flo
         # Calcola il ratio cumulativo di tutti gli split DOPO questo ordine
         cumulative_ratio = 1.0
         for split_date, ratio in splits.items():
+            if ratio <= 0:
+                raise ValueError(f"Invalid split ratio for {symbol} on {split_date}: {ratio}")
             if split_date > order.date:
                 cumulative_ratio *= ratio
 
@@ -1261,6 +1263,10 @@ def apply_splits_to_orders(orders: List, symbol_splits: Dict[str, Dict[date, flo
             adjusted_order = copy.copy(order)
             adjusted_order.quantity = order.quantity * cumulative_ratio
             adjusted_order.price = order.price / cumulative_ratio
+            if adjusted_order.quantity <= 0 or adjusted_order.price <= 0:
+                raise ValueError(
+                    f"Invalid adjusted order for {symbol}: quantity={adjusted_order.quantity}, price={adjusted_order.price}"
+                )
 
             print(f"[SPLIT] Adjusted {symbol} order from {order.date}: "
                   f"qty {order.quantity} -> {adjusted_order.quantity}, "

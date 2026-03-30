@@ -270,6 +270,9 @@ def get_portfolio_summary(portfolio_id: int, user_id: str = Depends(verify_token
 
     positions_count = sum(1 for v in positions_map.values() if v["quantity"] > 0)
 
+    if total_cost > 0 and total_value == 0:
+        print(f"[SANITY] Portfolio {portfolio_id}: summary returned zero value with positive cost basis")
+
     portfolio_xirr = None
     try:
         daily_cashflows = defaultdict(float)
