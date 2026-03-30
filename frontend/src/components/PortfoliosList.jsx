@@ -31,12 +31,10 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
   const [portfolioCount, setPortfolioCount] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     reference_currency: 'EUR'
   });
   const [editData, setEditData] = useState({
     name: '',
-    description: '',
     reference_currency: 'EUR',
     risk_free_source: 'auto',
     market_benchmark: 'auto'
@@ -89,7 +87,7 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
 
       if (res.ok) {
         setShowCreate(false);
-        setFormData({ name: '', description: '', reference_currency: 'EUR' });
+        setFormData({ name: '', reference_currency: 'EUR' });
         // Update count cache
         const newCount = portfolioCount + 1;
         setPortfolioCount(newCount);
@@ -172,16 +170,6 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
-              <input
-                type="text"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Long-term growth investments"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Reference Currency</label>
               <select
                 value={formData.reference_currency}
@@ -233,7 +221,6 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
               <>
                 <div onClick={() => onSelectPortfolio(portfolio)} className="cursor-pointer">
                   <h3 className="text-xl font-bold text-slate-900 mb-2">{portfolio.name}</h3>
-                  <p className="text-slate-600 text-sm mb-4">{portfolio.description || 'No description'}</p>
                   <div className="space-y-2 pt-4 border-t border-slate-200">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600">Portfolio Value</span>
@@ -255,7 +242,6 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
                       e.stopPropagation();
                       setEditData({
                         name: portfolio.name,
-                        description: portfolio.description || '',
                         reference_currency: portfolio.reference_currency || 'EUR',
                         risk_free_source: portfolio.risk_free_source || 'auto',
                         market_benchmark: portfolio.market_benchmark || 'auto'
@@ -304,19 +290,6 @@ function PortfoliosList({ token, onSelectPortfolio, portfolios, onRefresh, loadi
                     onChange={(e) => setEditData({...editData, name: e.target.value})}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="My Investment Portfolio"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={editData.description}
-                    onChange={(e) => setEditData({...editData, description: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Long-term growth portfolio..."
-                    rows="2"
                   />
                 </div>
 

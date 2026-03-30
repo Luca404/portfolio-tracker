@@ -142,7 +142,6 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
         },
         body: JSON.stringify({
           name: data?.portfolio?.name || portfolio.name,
-          description: data?.portfolio?.description || portfolio.description || '',
           reference_currency: newCurrency
         })
       });
@@ -282,7 +281,7 @@ function Dashboard({ token, portfolio, portfolios, onSelectPortfolio, onDeleted,
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1 truncate">{data?.portfolio?.name || portfolio.name}</h1>
-          <p className="text-slate-600 text-sm md:text-base">{data?.portfolio?.description || portfolio.description || 'Portfolio Overview'}</p>
+          <p className="text-slate-600 text-sm md:text-base">Portfolio Overview</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select

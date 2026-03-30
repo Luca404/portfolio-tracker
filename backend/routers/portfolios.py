@@ -97,7 +97,6 @@ def create_portfolio(portfolio: Portfolio, user_id: str = Depends(verify_token))
     result = sb.table("portfolios").insert({
         "user_id": user_id,
         "name": portfolio.name,
-        "description": portfolio.description or "",
         "initial_capital": portfolio.initial_capital or 0.0,
         "reference_currency": portfolio.reference_currency or "EUR",
         "risk_free_source": portfolio.risk_free_source or "auto",
@@ -109,7 +108,6 @@ def create_portfolio(portfolio: Portfolio, user_id: str = Depends(verify_token))
     return {
         "id": p["id"],
         "name": p["name"],
-        "description": p["description"],
         "initial_capital": p["initial_capital"],
         "reference_currency": p["reference_currency"],
         "risk_free_source": p["risk_free_source"],
@@ -156,7 +154,6 @@ def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(g
         response.append({
             "id": p["id"],
             "name": p["name"],
-            "description": p.get("description", ""),
             "initial_capital": p.get("initial_capital", 0.0),
             "reference_currency": reference_currency,
             "risk_free_source": p.get("risk_free_source", "auto"),
@@ -223,7 +220,6 @@ def get_portfolio(portfolio_id: int, user_id: str = Depends(verify_token), db: S
         "portfolio": {
             "id": p["id"],
             "name": p["name"],
-            "description": p.get("description", ""),
             "initial_capital": p.get("initial_capital", 0.0),
             "reference_currency": reference_currency,
             "risk_free_source": p.get("risk_free_source", "auto"),
@@ -310,8 +306,6 @@ def update_portfolio(portfolio_id: int, portfolio_update: Portfolio, user_id: st
     updates = {}
     if portfolio_update.name:
         updates["name"] = portfolio_update.name
-    if portfolio_update.description is not None:
-        updates["description"] = portfolio_update.description
     if portfolio_update.reference_currency:
         updates["reference_currency"] = portfolio_update.reference_currency
     if portfolio_update.risk_free_source is not None:
@@ -324,7 +318,6 @@ def update_portfolio(portfolio_id: int, portfolio_update: Portfolio, user_id: st
     return {
         "id": p["id"],
         "name": p["name"],
-        "description": p.get("description", ""),
         "reference_currency": p.get("reference_currency", "EUR"),
         "risk_free_source": p.get("risk_free_source", "auto"),
         "market_benchmark": p.get("market_benchmark", "auto"),
