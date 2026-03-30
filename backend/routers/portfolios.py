@@ -96,6 +96,7 @@ def create_portfolio(portfolio: Portfolio, user_id: str = Depends(verify_token))
     sb = get_supabase()
     result = sb.table("portfolios").insert({
         "user_id": user_id,
+        "profile_id": user_id,
         "name": portfolio.name,
         "initial_capital": portfolio.initial_capital or 0.0,
         "reference_currency": portfolio.reference_currency or "EUR",
