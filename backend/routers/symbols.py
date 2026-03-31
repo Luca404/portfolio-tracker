@@ -235,9 +235,9 @@ def get_bond_cache():
 def bond_lookup(isin: str, db: Session = Depends(get_db)):
     """
     Cerca un bond per ISIN.
-    Cascade: cache Supabase (24h) → Borsa Italiana MOT/EuroMOT/ExtraMOT → Frankfurt → 404.
+    Cascade: cache Supabase (24h) → Borsa Italiana MOT/EuroMOT/ExtraMOT → 404.
     """
-    from utils.bond_scraper import fetch_frankfurt_bond_metadata, scrape_borsa_italiana_bond
+    from utils.bond_scraper import scrape_borsa_italiana_bond
     from datetime import datetime, timezone, timedelta
     isin = isin.upper().strip()
     if not isin:
@@ -274,20 +274,9 @@ def bond_lookup(isin: str, db: Session = Depends(get_db)):
         if bi.get("coupon_annual"):
             meta["coupon"] = bi["coupon_annual"]
 
-    # 2. Frankfurt — complementare per issuer/valuta/scadenza se BI non li ha
-    ff = fetch_frankfurt_bond_metadata(isin)
-    if ff:
-        for key in ("issuer", "currency", "issue_date", "min_investment"):
-            if ff.get(key) and not meta.get(key):
-                meta[key] = ff[key]
-        if ff.get("maturity") and not meta.get("maturity"):
-            meta["maturity"] = ff["maturity"]
-        if ff.get("coupon") and not meta.get("coupon"):
-            meta["coupon"] = ff["coupon"]
-
     # Se nessuna fonte ha trovato nulla → 404
     if not meta.get("maturity") and not meta.get("coupon") and not meta.get("ytm_gross"):
-        raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato (non quotato su Borsa Italiana né Börse Frankfurt)")
+        raise HTTPException(status_code=404, detail=f"Bond {isin} non trovato su Borsa Italiana")
 
     # 3. Persisti su Supabase bond_metadata_cache
     record = {

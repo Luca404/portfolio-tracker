@@ -4,6 +4,36 @@ from .dates import parse_date_input
 MAX_DAYS_STALE = 1  # lasciato per compatibilità con import esistenti
 
 
+def get_latest_history_date(history: list):
+    """Return the latest valid date present in cached history."""
+    if not history:
+        return None
+    try:
+        latest_date_str = history[-1].get("date")
+        return parse_date_input(latest_date_str) if latest_date_str else None
+    except Exception:
+        return None
+
+
+def get_backfill_period_from_latest_date(latest_date):
+    """
+    Heuristic refresh window:
+    - no history / very old gap -> 5Y
+    - medium gap -> 1Y
+    - recent gap -> 1M
+    """
+    if not latest_date:
+        return "5Y"
+
+    today = datetime.now(timezone.utc).date()
+    gap_days = max((today - latest_date).days, 0)
+    if gap_days > 365:
+        return "5Y"
+    if gap_days > 31:
+        return "1Y"
+    return "1M"
+
+
 def is_cache_data_fresh(history: list, updated_at=None) -> bool:
     """
     Cache fresca se è stata scaricata oggi (feriali) o venerdì/dopo (weekend).
@@ -34,10 +64,7 @@ def is_cache_data_fresh(history: list, updated_at=None) -> bool:
 
     # Fallback: controlla la data dell'ultimo prezzo in history
     try:
-        latest_date_str = history[-1].get("date")
-        if not latest_date_str:
-            return False
-        latest_date = parse_date_input(latest_date_str)
+        latest_date = get_latest_history_date(history)
         return latest_date >= required if latest_date else False
     except Exception:
         return False

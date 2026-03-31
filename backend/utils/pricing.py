@@ -2,7 +2,7 @@
 
 import json
 import os
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from typing import Optional, Dict, List
 
 import pandas as pd
@@ -19,7 +19,7 @@ from models import (
     RiskFreeRateCacheModel,
     MarketBenchmarkCacheModel
 )
-from utils.cache import is_cache_data_fresh, merge_historical_data
+from utils.cache import is_cache_data_fresh, merge_historical_data, get_latest_history_date
 from utils.database import commit_with_retry
 from utils.dates import DATE_FMT, parse_date_input
 from utils.etf_cache import ETF_UCITS_CACHE
@@ -443,7 +443,7 @@ def get_stock_price_from_alphavantage(symbol: str) -> dict:
         raise
 
 
-def get_stock_price_from_yfinance(symbol: str, days: int = 180) -> dict:
+def get_stock_price_from_yfinance(symbol: str, days: int = 180, start_date=None) -> dict:
     """
     Fallback finale a yfinance quando FMP e AlphaVantage falliscono.
     """
@@ -451,8 +451,13 @@ def get_stock_price_from_yfinance(symbol: str, days: int = 180) -> dict:
         print(f"[STOCK] {symbol}: trying yfinance...")
         ticker = yf.Ticker(symbol)
 
-        # Scarica dati storici
-        hist = ticker.history(period="max" if days > 365 else "1y")
+        # New policy:
+        # - first fetch: take the widest available history
+        # - subsequent refreshes: append only the recent tail from the latest cached date
+        if start_date:
+            hist = ticker.history(start=start_date.isoformat())
+        else:
+            hist = ticker.history(period="max")
 
         if hist.empty:
             print(f"[STOCK] {symbol}: yfinance no data")
@@ -616,8 +621,17 @@ def get_stock_price_and_history_cached(symbol: str, db: Session, days: int = 180
                 latest_date = cached_history[-1].get("date") if cached_history else "none"
                 print(f"[STOCK] {symbol}: cache stale (last date={latest_date})")
 
-    # Scarica nuovi dati dall'API
-    data = get_stock_price_and_history(symbol, days=days)
+    # Scarica nuovi dati dall'API.
+    # Se abbiamo già storico cacheato, chiedi solo la coda recente; altrimenti fai bootstrap full history.
+    latest_cached_date = get_latest_history_date(cached_history)
+    incremental_start = None
+    if latest_cached_date is not None:
+        incremental_start = latest_cached_date - timedelta(days=7)
+
+    try:
+        data = get_stock_price_from_yfinance(symbol, days=days, start_date=incremental_start)
+    except Exception:
+        data = get_stock_price_and_history(symbol, days=days if cached_history else 3650)
     new_history = data.get("history", [])
     last_price = data.get("last_price", 0.0)
 

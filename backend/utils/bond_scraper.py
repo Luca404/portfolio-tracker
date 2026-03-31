@@ -1,16 +1,13 @@
 """
-Bond data fetching: Borsa Italiana (spot price + metadata) → Börse Frankfurt
-(history/metadata) → yfinance (fallback).
+Bond data fetching: Borsa Italiana (spot price + metadata + history) → yfinance (fallback).
 
-Prezzi Frankfurt restituiti in % del nominale (tradedInPercent=true).
 Borsa Italiana fornisce il Prezzo Ufficiale e diversi metadati utili anche per molti
 bond europei quotati su MOT/EuroMOT/ExtraMOT.
 """
 
-import hashlib
 import json
 import re
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 import requests
@@ -20,149 +17,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from models.cache import BondPriceCacheModel
-from utils.cache import is_cache_data_fresh, merge_historical_data
+from utils.cache import (
+    is_cache_data_fresh,
+    merge_historical_data,
+    get_latest_history_date,
+    get_backfill_period_from_latest_date,
+)
 from utils.database import commit_with_retry
 from utils.dates import DATE_FMT, parse_date_input
-
-# ---------------------------------------------------------------------------
-# Börse Frankfurt — headers dinamici
-# ---------------------------------------------------------------------------
-
-_FRANKFURT_BASE = "https://api.boerse-frankfurt.de/v1/data"
-_FRANKFURT_ORIGIN = "https://www.boerse-frankfurt.de"
-_SALT_CACHE: dict = {"value": None, "fetched_at": None}
-_SALT_TTL_HOURS = 6  # ricarica il salt ogni 6 ore
-
-
-def _get_frankfurt_salt() -> str:
-    """Estrae il salt dal bundle JS di Börse Frankfurt (cache in memoria 6h)."""
-    now = datetime.now(timezone.utc)
-    cached = _SALT_CACHE
-    if cached["value"] and cached["fetched_at"] and (now - cached["fetched_at"]).total_seconds() < _SALT_TTL_HOURS * 3600:
-        return cached["value"]
-    try:
-        # Trova il nome del bundle JS principale
-        r = requests.get(_FRANKFURT_ORIGIN, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-        match = re.search(r'src="(/main\.[a-f0-9]+\.js)"', r.text)
-        if not match:
-            raise ValueError("JS bundle not found")
-        js_url = _FRANKFURT_ORIGIN + match.group(1)
-        js_r = requests.get(js_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
-        salt_match = re.search(r'salt:"([a-f0-9]{30,40})"', js_r.text)
-        if not salt_match:
-            raise ValueError("salt not found in JS bundle")
-        salt = salt_match.group(1)
-        _SALT_CACHE["value"] = salt
-        _SALT_CACHE["fetched_at"] = now
-        print(f"[Bond] Frankfurt salt refreshed: {salt[:8]}...")
-        return salt
-    except Exception as e:
-        print(f"[Bond] Frankfurt salt fetch failed: {e}")
-        # Fallback: salt noto — aggiornare se smette di funzionare
-        fallback = "af5a8d16eb5dc49f8a72b26fd9185475c7a"
-        _SALT_CACHE["value"] = fallback
-        _SALT_CACHE["fetched_at"] = now
-        return fallback
-
-
-def _frankfurt_headers(url: str) -> dict:
-    """Calcola gli header dinamici richiesti dall'API di Börse Frankfurt."""
-    salt = _get_frankfurt_salt()
-    # Usa ora tedesca (CET/CEST) — Frankfurt valida x-security su ora locale
-    import zoneinfo
-    berlin = zoneinfo.ZoneInfo("Europe/Berlin")
-    now_berlin = datetime.now(berlin)
-    now_utc = datetime.now(timezone.utc)
-
-    ms = now_utc.microsecond // 1000
-    client_date = now_utc.strftime(f"%Y-%m-%dT%H:%M:%S.{ms:03d}Z")
-    x_security = hashlib.md5(now_berlin.strftime("%Y%m%d%H%M").encode()).hexdigest()
-    x_traceid = hashlib.md5((client_date + url + salt).encode()).hexdigest()
-    return {
-        "authority": "api.boerse-frankfurt.de",
-        "origin": _FRANKFURT_ORIGIN,
-        "referer": _FRANKFURT_ORIGIN + "/",
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
-        "client-date": client_date,
-        "x-client-traceid": x_traceid,
-        "x-security": x_security,
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
-    }
-
-
-def _frankfurt_get(path: str, params: dict) -> Optional[dict]:
-    url = f"{_FRANKFURT_BASE}/{path}"
-    full_url = url + "?" + "&".join(f"{k}={v}" for k, v in params.items())
-    try:
-        resp = requests.get(url, params=params, headers=_frankfurt_headers(full_url), timeout=15)
-        if resp.status_code == 200:
-            return resp.json()
-        print(f"[Bond] Frankfurt {path} → HTTP {resp.status_code}")
-        return None
-    except Exception as e:
-        print(f"[Bond] Frankfurt {path} error: {e}")
-        return None
-
-
-# ---------------------------------------------------------------------------
-# Frankfurt: metadati bond
-# ---------------------------------------------------------------------------
-
-def fetch_frankfurt_bond_metadata(isin: str) -> Optional[dict]:
-    """Restituisce cedola, scadenza, emittente e valuta dal master_data_bond di Frankfurt."""
-    data = _frankfurt_get("master_data_bond", {"isin": isin.upper(), "mic": "XFRA"})
-    if not data:
-        return None
-    maturity = data.get("maturity")
-    return {
-        "isin": isin.upper(),
-        "issuer": data.get("issuer", ""),
-        "coupon": data.get("cupon"),          # può essere null per alcuni bond
-        "maturity": maturity,                  # "YYYY-MM-DD"
-        "currency": data.get("issueCurrency", "EUR"),
-        "issue_date": data.get("issueDate"),
-        "min_investment": data.get("minimumInvestmentAmount", 1000.0),
-    }
-
-
-# ---------------------------------------------------------------------------
-# Frankfurt: storico prezzi
-# ---------------------------------------------------------------------------
-
-def fetch_frankfurt_bond_history(isin: str, days: int = 730) -> list:
-    """
-    Scarica lo storico OHLCV da Frankfurt.
-    I prezzi sono in % del nominale (tradedInPercent=true).
-    Restituisce lista [{date, price}] dove price = close in % del par.
-    """
-    end = datetime.now(timezone.utc).date()
-    start = end - timedelta(days=days)
-    data = _frankfurt_get("price_history", {
-        "isin": isin.upper(),
-        "mic": "XFRA",
-        "minDate": start.isoformat(),
-        "maxDate": end.isoformat(),
-        "limit": days,
-        "cleanSplit": "false",
-        "cleanPayout": "false",
-        "cleanSubscription": "false",
-    })
-    if not data or not data.get("data"):
-        return []
-    history = []
-    for row in data["data"]:
-        raw_date = row.get("date", "")
-        close = row.get("close")
-        if not raw_date or close is None:
-            continue
-        d = parse_date_input(raw_date)
-        if d:
-            history.append({"date": d.strftime(DATE_FMT), "price": float(close)})
-    history.sort(key=lambda x: x["date"])
-    print(f"[Bond] Frankfurt history {isin}: {len(history)} days")
-    return history
-
 
 # ---------------------------------------------------------------------------
 # Borsa Italiana: metadata + prezzi aggiuntivi (solo bond italiani)
@@ -221,22 +83,17 @@ def scrape_borsa_italiana_bond(isin: str) -> Optional[dict]:
     ]
 
     resp = None
-    matched_url = None
     for url in candidates:
         try:
             r = requests.get(url, headers=_BI_HEADERS, timeout=10)
             if r.status_code == 200 and "scheda" in r.text and len(r.text) > 5000:
                 resp = r
-                matched_url = url
                 break
         except Exception:
             continue
 
     if resp is None:
-        print(f"[Bond] Borsa Italiana {isin_up}: non trovato su nessun segmento MOT/EuroMOT/ExtraMOT")
         return None
-
-    print(f"[Bond] Borsa Italiana {isin_up}: found at {matched_url}")
     soup = BeautifulSoup(resp.text, "html.parser")
     result: dict = {}
 
@@ -288,7 +145,10 @@ def scrape_borsa_italiana_bond(isin: str) -> Optional[dict]:
             if h1:
                 parsed["name"] = h1.get_text(strip=True).split("|")[0].strip()
 
-    print(f"[Bond] Borsa Italiana {isin_up}: name={parsed.get('name')}, issuer={parsed.get('issuer')}, price={parsed.get('price')}, ytm={parsed.get('ytm_gross')}, maturity={parsed.get('maturity_bi')}")
+    print(
+        f"[Bond] {isin_up}: BI metadata OK "
+        f"(price={parsed.get('price')}, ytm={parsed.get('ytm_gross')}, maturity={parsed.get('maturity_bi')})"
+    )
     return parsed
 
 
@@ -324,10 +184,9 @@ def _get_borsa_chart_auth(isin: str) -> Optional[dict]:
                 "code": code_match.group(1),
             }
             _BI_CHART_CACHE[isin_up] = {"value": value, "fetched_at": now}
-            print(f"[Bond] Borsa chart auth {isin_up}: exch={value['exchcode']}")
             return value
-        except Exception as e:
-            print(f"[Bond] Borsa chart auth {isin_up} failed ({url}): {e}")
+        except Exception:
+            continue
 
     return None
 
@@ -356,22 +215,28 @@ def fetch_borsa_italiana_bond_history(isin: str, period: str = "5Y") -> list:
     try:
         resp = requests.get(url, params=params, headers=headers, timeout=15)
         if resp.status_code != 200:
-            print(f"[Bond] Borsa chart history {isin}: HTTP {resp.status_code}")
             return []
         payload = resp.json()
         rows = (((payload or {}).get("history") or {}).get("historyDt")) or []
         history = []
         for row in rows:
             raw_date = row.get("dt", "")
-            parsed_date = parse_date_input(raw_date)
+            parsed_date = None
+            if raw_date and len(str(raw_date)) == 8 and str(raw_date).isdigit():
+                try:
+                    parsed_date = datetime.strptime(str(raw_date), "%Y%m%d").date()
+                except ValueError:
+                    parsed_date = None
+            if parsed_date is None:
+                parsed_date = parse_date_input(raw_date)
             price = row.get("closePx")
             if parsed_date and price is not None:
                 history.append({"date": parsed_date.strftime(DATE_FMT), "price": float(price)})
         history.sort(key=lambda x: x["date"])
-        print(f"[Bond] Borsa history {isin}: {len(history)} days found")
+        if history:
+            print(f"[Bond] {isin}: BI history {len(history)} days (period={period})")
         return history
-    except Exception as e:
-        print(f"[Bond] Borsa chart history {isin} error: {e}")
+    except Exception:
         return []
 
 
@@ -401,7 +266,7 @@ def fetch_yfinance_bond(isin: str) -> Optional[dict]:
             if not history:
                 continue
             last_price = history[-1]["price"]
-            print(f"[Bond] yfinance {ticker_str}: {len(history)} days found, last={last_price:.4f}")
+            print(f"[Bond] {isin}: yfinance fallback OK with {ticker_str} ({len(history)} days)")
             return {"last_price": last_price, "history": history}
         except Exception:
             continue
@@ -435,11 +300,12 @@ def get_bond_price_and_history(isin: str, db: Session, days: int = 730) -> dict:
         cached_history = json.loads(cache.history_json or "[]")
         cached_price = cache.last_price or (cached_history[-1]["price"] if cached_history else 0.0)
         cached_meta = json.loads(cache.metadata_json or "{}")
-        if is_cache_data_fresh(cached_history, cache.updated_at) and cached_price:
+        history_is_too_short = len(cached_history) < 5
+        if is_cache_data_fresh(cached_history, cache.updated_at) and cached_price and not history_is_too_short:
             print(f"[Bond] {isin}: cache hit ({len(cached_history)} days)")
             return {"last_price": cached_price, "history": cached_history, "metadata": cached_meta}
         if cached_history:
-            print(f"[Bond] {isin}: cache stale, refreshing")
+            print(f"[Bond] {isin}: cache refresh ({len(cached_history)} days cached)")
 
     # --- Borsa Italiana: prezzo spot + metadata utili ---
     bi_data = scrape_borsa_italiana_bond(isin)
@@ -460,44 +326,34 @@ def get_bond_price_and_history(isin: str, db: Session, days: int = 730) -> dict:
             if bi_data.get(key) is not None:
                 meta[key] = bi_data[key]
 
-    # --- Storico prezzi: Borsa Italiana → Frankfurt → yfinance ---
+    # --- Storico prezzi: Borsa Italiana → yfinance ---
     new_history: list = []
     last_price: float = 0.0
+    latest_cached_date = get_latest_history_date(cached_history)
 
     if bi_data and bi_data.get("price") is not None:
         last_price = float(bi_data["price"])
         today_point = {"date": datetime.now(timezone.utc).date().strftime(DATE_FMT), "price": last_price}
         new_history = [today_point]
-        print(f"[Bond] Borsa Italiana {isin}: using official price {last_price:.4f} (1 day found)")
+        print(f"[Bond] {isin}: BI spot price {last_price:.4f}")
 
-    # Per richieste spot, il prezzo ufficiale BI basta.
-    # Per history vera, proviamo prima il chart API di Borsa Italiana.
-    if days > 7:
-        if days >= 365 * 5:
-            bi_period = "5Y"
-        elif days >= 365:
-            bi_period = "1Y"
-        else:
-            bi_period = "1M"
-        borsa_history = fetch_borsa_italiana_bond_history(isin, period=bi_period)
-        if borsa_history:
-            new_history = borsa_history
-            last_price = borsa_history[-1]["price"]
+    # New policy:
+    # - first fetch: grab the widest useful history
+    # - subsequent refreshes: request only the recent missing tail
+    bi_period = get_backfill_period_from_latest_date(latest_cached_date)
+    borsa_history = fetch_borsa_italiana_bond_history(isin, period=bi_period)
+    if borsa_history:
+        new_history = borsa_history
+        last_price = borsa_history[-1]["price"]
 
-    if not new_history and not (bi_data and bi_data.get("price") is not None and days <= 7):
-        frankfurt_history = fetch_frankfurt_bond_history(isin, days)
-        if frankfurt_history:
-            new_history = frankfurt_history
-            last_price = new_history[-1]["price"]
-
-        if not frankfurt_history:
-            yf_data = fetch_yfinance_bond(isin)
-            if yf_data:
-                yf_history = yf_data.get("history", [])
-                if yf_history:
-                    new_history = yf_history
-                if not last_price:
-                    last_price = yf_data.get("last_price", 0.0)
+    if not new_history:
+        yf_data = fetch_yfinance_bond(isin)
+        if yf_data:
+            yf_history = yf_data.get("history", [])
+            if yf_history:
+                new_history = yf_history
+            if not last_price:
+                last_price = yf_data.get("last_price", 0.0)
 
     if not new_history and cached_history:
         print(f"[Bond] {isin}: all sources failed, using stale cache")
@@ -507,19 +363,9 @@ def get_bond_price_and_history(isin: str, db: Session, days: int = 730) -> dict:
         raise ValueError(f"Nessun dato prezzo disponibile per il bond {isin}")
 
     merged_history = merge_historical_data(cached_history, new_history)
-    print(f"[Bond] {isin}: merged history points={len(merged_history)}")
+    print(f"[Bond] {isin}: history ready ({len(merged_history)} points)")
 
-    # --- Metadata: Frankfurt come complemento se disponibile ---
-    if not (bi_data and bi_data.get("price") is not None and days <= 7):
-        frankfurt_meta = fetch_frankfurt_bond_metadata(isin)
-        if frankfurt_meta:
-            for key in ("issuer", "currency", "issue_date", "min_investment"):
-                if frankfurt_meta.get(key) and not meta.get(key):
-                    meta[key] = frankfurt_meta[key]
-            if frankfurt_meta.get("maturity") and not meta.get("maturity"):
-                meta["maturity"] = frankfurt_meta["maturity"]
-            if frankfurt_meta.get("coupon") and not meta.get("coupon"):
-                meta["coupon"] = frankfurt_meta["coupon"]
+    # --- Metadata: Borsa Italiana come fonte primaria ---
 
     # --- Aggiorna cache SQLite ---
     meta_json = json.dumps(meta)
