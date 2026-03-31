@@ -218,6 +218,10 @@ def compute_portfolio_value(
             if instrument_type == "etf":
                 # Per ETF la currency è già disponibile dalla cache
                 asset_currency = None  # Non abbiamo accesso diretto, skippiamo per ora gli ETF
+            elif instrument_type == "bond":
+                # I bond arrivano già nel currency context corretto dell'ordine/ISIN.
+                # Evita il vecchio fallback stock-like che li forzava USD<->EUR.
+                asset_currency = order_currency or None
             else:
                 # Per stock, assumiamo USD se ticker US, altrimenti proviamo a determinare
                 # Per sicurezza, solo convertiamo se sappiamo con certezza
@@ -356,6 +360,8 @@ def compute_portfolio_value(
                     order_currency = orders_for_symbol[0].currency or ""
                     if instrument_type == "etf":
                         asset_currency = None
+                    elif instrument_type == "bond":
+                        asset_currency = order_currency or None
                     else:
                         asset_currency = "USD" if order_currency == "EUR" else ("EUR" if order_currency == "USD" else None)
 
