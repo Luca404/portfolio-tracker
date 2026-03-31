@@ -33,6 +33,12 @@ def test_validate_order_input_accepts_valid_order():
     validate_order_input(order)
 
 
+def test_validate_order_input_accepts_bond_order():
+    order = make_order(symbol="IT0000000001", isin="IT0000000001", instrument_type="bond")
+
+    validate_order_input(order)
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
@@ -40,7 +46,7 @@ def test_validate_order_input_accepts_valid_order():
         ("price", 0, "Price must be positive"),
         ("commission", -1, "Commission cannot be negative"),
         ("order_type", "hold", "order_type must be 'buy' or 'sell'"),
-        ("instrument_type", "crypto", "instrument_type must be one of: stock, etf"),
+        ("instrument_type", "crypto", "instrument_type must be one of: stock, etf, bond"),
     ],
 )
 def test_validate_order_input_rejects_invalid_values(field, value, message):

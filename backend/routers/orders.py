@@ -50,6 +50,13 @@ def _order_from_row(row: dict) -> SimpleNamespace:
     )
 
 
+def _canonical_order_symbol(order: Order) -> str:
+    instrument_type = (order.instrument_type or "stock").lower()
+    if instrument_type == "bond":
+        return (order.isin or order.symbol or "").upper().strip()
+    return (order.symbol or "").upper().strip()
+
+
 def _order_response(o: SimpleNamespace) -> dict:
     return {
         "id": o.id,
@@ -73,8 +80,11 @@ def _order_response(o: SimpleNamespace) -> dict:
 @router.post("")
 def create_order(order: Order, user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
     validate_order_input(order)
+    canonical_symbol = _canonical_order_symbol(order)
+    if not canonical_symbol:
+        raise HTTPException(status_code=400, detail="Symbol is required")
     try:
-        match = ensure_symbol_exists(order.symbol, order.instrument_type)
+        match = ensure_symbol_exists(canonical_symbol, order.instrument_type)
     except HTTPException:
         raise
 
@@ -85,18 +95,18 @@ def create_order(order: Order, user_id: str = Depends(verify_token), db: Session
 
     existing_orders = [_order_from_row(r) for r in sb.table("orders").select("*").eq("portfolio_id", order.portfolio_id).execute().data]
     current_positions = aggregate_positions(existing_orders)
-    symbol_positions = current_positions.get(order.symbol.upper(), {"quantity": 0})
+    symbol_positions = current_positions.get(canonical_symbol, {"quantity": 0})
 
     if order.order_type == "sell" and order.quantity > symbol_positions["quantity"]:
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
 
-    resolved_isin = order.isin or (match.get("isin") if match else "")
-    resolved_ter = order.ter or (match.get("ter") if match else "")
+    resolved_isin = canonical_symbol if order.instrument_type.lower() == "bond" else (order.isin or (match.get("isin") if match else ""))
+    resolved_ter = "" if order.instrument_type.lower() == "bond" else (order.ter or (match.get("ter") if match else ""))
 
     result = sb.table("orders").insert({
         "portfolio_id": order.portfolio_id,
         "user_id": user_id,
-        "symbol": order.symbol.upper(),
+        "symbol": canonical_symbol,
         "isin": resolved_isin,
         "ter": resolved_ter,
         "name": order.name or (match.get("name") if match else ""),
@@ -141,8 +151,11 @@ def delete_order(order_id: int, user_id: str = Depends(verify_token)):
 @router.put("/{order_id}")
 def update_order(order_id: int, updated: Order, user_id: str = Depends(verify_token)):
     validate_order_input(updated)
+    canonical_symbol = _canonical_order_symbol(updated)
+    if not canonical_symbol:
+        raise HTTPException(status_code=400, detail="Symbol is required")
     try:
-        match = ensure_symbol_exists(updated.symbol, updated.instrument_type)
+        match = ensure_symbol_exists(canonical_symbol, updated.instrument_type)
     except HTTPException:
         raise
 
@@ -157,15 +170,15 @@ def update_order(order_id: int, updated: Order, user_id: str = Depends(verify_to
         raise HTTPException(status_code=404, detail="Order not found")
 
     other_orders = [_order_from_row(r) for r in sb.table("orders").select("*").eq("portfolio_id", portfolio_id).neq("id", order_id).execute().data]
-    symbol_positions = aggregate_positions(other_orders).get(updated.symbol.upper(), {"quantity": 0})
+    symbol_positions = aggregate_positions(other_orders).get(canonical_symbol, {"quantity": 0})
     if updated.order_type == "sell" and updated.quantity > symbol_positions["quantity"]:
         raise HTTPException(status_code=400, detail="Cannot sell more than current position")
 
-    resolved_isin = updated.isin or (match.get("isin") if match else "")
-    resolved_ter = updated.ter or (match.get("ter") if match else "")
+    resolved_isin = canonical_symbol if updated.instrument_type.lower() == "bond" else (updated.isin or (match.get("isin") if match else ""))
+    resolved_ter = "" if updated.instrument_type.lower() == "bond" else (updated.ter or (match.get("ter") if match else ""))
 
     result = sb.table("orders").update({
-        "symbol": updated.symbol.upper(),
+        "symbol": canonical_symbol,
         "isin": resolved_isin,
         "ter": resolved_ter,
         "name": updated.name or (match.get("name") if match else ""),

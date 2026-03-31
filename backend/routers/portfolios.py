@@ -147,7 +147,7 @@ def get_portfolios(user_id: str = Depends(verify_token), db: Session = Depends(g
         _, total_value, total_cost, total_gain_loss, total_gain_loss_pct, _ = compute_portfolio_value(
             positions_map, orders_by_symbol, symbol_type_map, symbol_isin_map, db, reference_currency=reference_currency
         )
-        asset_composition = {"etf": 0, "stock": 0}
+        asset_composition = {"etf": 0, "stock": 0, "bond": 0}
         for symbol, position in positions_map.items():
             if position["quantity"] > 0:
                 asset_type = symbol_type_map.get(symbol, "stock").lower()

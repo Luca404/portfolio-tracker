@@ -16,6 +16,7 @@ from utils.pricing import (
     convert_to_reference_currency,
     get_exchange_rate_history
 )
+from utils.bond_scraper import get_bond_price_and_history
 
 
 def aggregate_positions(orders: List[OrderModel]):
@@ -187,6 +188,11 @@ def compute_portfolio_value(
                 etf_data = get_etf_price_and_history(isin, db)
                 current_price = etf_data["last_price"]
                 price_history = etf_data.get("history", [])
+            elif instrument_type == "bond":
+                isin = symbol_isin_map.get(symbol, "") or symbol
+                bond_data = get_bond_price_and_history(isin, db, days=180 if include_history else 7)
+                current_price = bond_data["last_price"]
+                price_history = bond_data.get("history", [])
             else:
                 stock_data = get_stock_price_and_history_cached(symbol, db, days=180 if include_history else 7)
                 current_price = stock_data["last_price"]
@@ -262,6 +268,8 @@ def compute_portfolio_value(
         if include_history:
             if instrument_type == "etf":
                 print(f"[compute] ETF {symbol}: price={current_price}, history_len={len(price_history)}")
+            elif instrument_type == "bond":
+                print(f"[compute] Bond {symbol}: price={current_price}, history_len={len(price_history)}")
             else:
                 print(f"[compute] Stock {symbol}: price={current_price}, history_len={len(price_history)}")
 
@@ -334,6 +342,10 @@ def compute_portfolio_value(
                     isin = symbol_isin_map.get(symbol, "")
                     etf_data = get_etf_price_and_history(isin, db)
                     price_history = etf_data.get("history", [])
+                elif instrument_type == "bond":
+                    isin = symbol_isin_map.get(symbol, "") or symbol
+                    bond_data = get_bond_price_and_history(isin, db, days=180)
+                    price_history = bond_data.get("history", [])
                 else:
                     stock_data = get_stock_price_and_history_cached(symbol, db, days=180)
                     price_history = stock_data.get("history", [])

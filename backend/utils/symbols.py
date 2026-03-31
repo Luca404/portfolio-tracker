@@ -2,6 +2,7 @@
 
 from fastapi import HTTPException
 from utils.etf_cache import ETF_UCITS_CACHE
+from utils.bond_cache import BOND_METADATA_CACHE
 from utils.pricing import fmp_get, FMP_STABLE_BASE
 
 
@@ -42,7 +43,7 @@ def search_symbol(symbol: str, instrument_type: str):
 
     Args:
         symbol: Symbol to search for
-        instrument_type: Type of instrument ("stock" or "etf")
+        instrument_type: Type of instrument ("stock", "etf", or "bond")
 
     Returns:
         List of matching symbols with metadata
@@ -109,6 +110,32 @@ def search_symbol(symbol: str, instrument_type: str):
                     break
         return matches
 
+    if instrument_type == "bond":
+        query = symbol.upper().strip()
+        if not query:
+            return []
+        matches = []
+        for item in BOND_METADATA_CACHE:
+            isin = (item.get("isin") or "").upper()
+            name = item.get("name", "")
+            issuer = item.get("issuer", "")
+            if not isin:
+                continue
+            if isin == query or isin.startswith(query) or query in name.upper() or query in issuer.upper():
+                matches.append({
+                    "symbol": isin,
+                    "name": name,
+                    "exchange": issuer,
+                    "currency": item.get("currency", "EUR"),
+                    "type": "BOND",
+                    "isin": isin,
+                    "coupon": item.get("coupon"),
+                    "ytm_gross": item.get("ytm_gross"),
+                })
+                if len(matches) >= 25:
+                    break
+        return matches
+
     return []
 
 
@@ -118,7 +145,7 @@ def ensure_symbol_exists(symbol: str, instrument_type: str):
 
     Args:
         symbol: Symbol to validate
-        instrument_type: Type of instrument ("stock" or "etf")
+        instrument_type: Type of instrument ("stock", "etf", or "bond")
 
     Returns:
         Symbol metadata dict
@@ -127,7 +154,8 @@ def ensure_symbol_exists(symbol: str, instrument_type: str):
         HTTPException: If symbol not found
     """
     matches = search_symbol(symbol, instrument_type)
+    lookup = symbol.upper()
     for m in matches:
-        if m.get("symbol", "").upper() == symbol.upper():
+        if m.get("symbol", "").upper() == lookup or (instrument_type.lower() == "bond" and (m.get("isin", "").upper() == lookup)):
             return m
     raise HTTPException(status_code=400, detail=f"Symbol {symbol} not found for type {instrument_type}")

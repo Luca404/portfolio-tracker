@@ -21,5 +21,5 @@ def validate_order_input(order):
         raise HTTPException(status_code=400, detail="order_type must be 'buy' or 'sell'")
     if order.commission < 0:
         raise HTTPException(status_code=400, detail="Commission cannot be negative")
-    if order.instrument_type.lower() not in {"stock", "etf"}:
-        raise HTTPException(status_code=400, detail="instrument_type must be one of: stock, etf")
+    if order.instrument_type.lower() not in {"stock", "etf", "bond"}:
+        raise HTTPException(status_code=400, detail="instrument_type must be one of: stock, etf, bond")
