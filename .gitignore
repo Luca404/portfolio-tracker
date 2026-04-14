@@ -32,7 +32,6 @@ lerna-debug.log*
 dist/
 dist-ssr/
 build/
-*.local
 
 # Logs
 logs/
@@ -50,8 +49,7 @@ logs/
 *.sw?
 
 # Claude
-.claude/
-CLAUDE.md
+.claude/settings.local.json
 
 # Backup files
 *.backup
