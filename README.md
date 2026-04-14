@@ -1,435 +1,158 @@
-# Portfolio Tracker
+# pfTrackr
 
-A full-stack web application for tracking and analyzing investment portfolios with advanced risk analytics and portfolio optimization capabilities.
+Full-stack web app for tracking and analyzing investment portfolios. Built with FastAPI + React, backed by Supabase.
 
-## Architecture Overview
+Part of the **Trackr ecosystem** — shares the same Supabase database with the [Trackr PWA](../trackr).
 
-Portfolio Tracker is a modern web application built with a clear separation between backend and frontend layers. The backend provides a RESTful API powered by FastAPI, while the frontend delivers a responsive React-based user interface.
+## Features
 
-### Technology Stack
+- **Portfolio management** — multiple portfolios, multi-currency, configurable benchmarks and risk-free rate sources
+- **Order tracking** — buy/sell orders for ETFs, stocks, and bonds; commission support; stock split auto-adjustment
+- **Performance** — XIRR (money-weighted return), time-weighted return, gain/loss, asset breakdown
+- **Risk analytics** — Sharpe, Sortino, Max Drawdown, volatility, correlation matrix, drawdown chart
+- **Monte Carlo** — simulation with confidence intervals
+- **Portfolio optimization** — Markowitz / Efficient Frontier, Max Sharpe, discrete allocation
+- **ETF discovery** — search across 2800+ UCITS ETFs with ISIN lookup
+- **Bond support** — metadata lookup (name, coupon, maturity, YTM, duration) via Borsa Italiana (MOT/EuroMOT/ExtraMOT) and Frankfurt exchange
+- **Benchmark comparison** — portfolio vs market benchmark (S&P 500, VWCE, or custom)
+- **DCA vs lump-sum** — comparison analysis
 
-**Backend:**
-- FastAPI (Python web framework)
-- SQLAlchemy 2.0 (ORM with SQLite)
-- Pydantic (data validation and serialization)
-- yfinance (market data)
-- NumPy/Pandas (numerical analysis)
-- PyPortfolioOpt (Modern Portfolio Theory implementation)
-- JWT + bcrypt (authentication and security)
+## Stack
 
-**Frontend:**
-- React 18 (UI library)
-- Vite (build tool and development server)
-- Tailwind CSS (styling framework)
-- Recharts (data visualization)
-- Lucide React (icon library)
+**Backend** — Python / FastAPI
+- Supabase (`supabase-py`) — primary database and auth
+- SQLAlchemy 2.0 + SQLite — ephemeral local cache for prices, FX rates, benchmarks
+- yfinance, PyPortfolioOpt, NumPy, Pandas, SciPy
+
+**Frontend** — React 18 (JSX, no TypeScript) / Vite
+- Tailwind CSS, Recharts, Lucide React
+
+## Getting Started
+
+### Backend
+
+Create `backend/.env`:
+
+```env
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_KEY=...       # service_role key (not anon)
+SUPABASE_JWT_SECRET=...        # Dashboard → Settings → API → JWT Secret
+FMP_API_KEY=...                # optional — USD risk-free rate + stock price fallback
+```
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+# → http://localhost:8000
+# → Swagger UI: http://localhost:8000/docs
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+# → http://localhost:5173
+```
+
+`frontend/src/config.js` controls `API_URL` — set to `http://localhost:8000` in dev.
 
 ## Project Structure
 
 ```
 portfolio-tracker/
-├── backend/               # FastAPI backend
-│   ├── main.py           # Application setup and configuration
-│   ├── models/           # SQLAlchemy ORM models
-│   │   ├── user.py      # User authentication model
-│   │   ├── portfolio.py # Portfolio model
-│   │   ├── order.py     # Order model
-│   │   └── cache.py     # Cache models (price, exchange rates, benchmarks)
-│   │
-│   ├── routers/          # API endpoint handlers (24 endpoints total)
-│   │   ├── auth.py          # Authentication (register, login, user info)
-│   │   ├── portfolios.py    # Portfolio CRUD and analytics
-│   │   ├── orders.py        # Order management and optimization
-│   │   ├── symbols.py       # Symbol search and ETF listings
-│   │   └── market_data.py   # Market data, rates, and benchmarks
-│   │
-│   ├── schemas/          # Pydantic validation schemas
-│   │   ├── user.py      # User registration, login, token
-│   │   ├── portfolio.py # Portfolio schema
-│   │   └── order.py     # Order and optimization schemas
-│   │
-│   ├── utils/            # Business logic and utilities
-│   │   ├── database.py  # Database connection and migrations
-│   │   ├── auth.py      # JWT and password hashing
-│   │   ├── pricing.py   # Pricing engine (ETF, stocks, currencies)
-│   │   ├── portfolio.py # Portfolio calculations and metrics
-│   │   ├── symbols.py   # Symbol search and validation
-│   │   ├── dates.py     # Date formatting and parsing
-│   │   ├── cache.py     # Cache invalidation helpers
-│   │   └── helpers.py   # Data validation utilities
-│   │
-│   └── etf_cache_ucits.py # UCITS ETF data cache
-│
-├── frontend/             # React frontend
-│   ├── public/          # Static assets
+├── backend/
+│   ├── main.py                    # FastAPI app, CORS, router registration, SQLite cache init
+│   ├── routers/
+│   │   ├── auth.py                # /auth/* — wraps Supabase Auth (register, login, me)
+│   │   ├── portfolios.py          # /portfolios/* — CRUD, analytics, history, DCA comparison, benchmark comparison
+│   │   ├── orders.py              # /orders/* — CRUD, optimization
+│   │   ├── symbols.py             # /symbols/* — ETF/stock search, ISIN lookup, bond lookup
+│   │   ├── market_data.py         # /market-data/* — prices, benchmarks, risk-free rates
+│   │   ├── accounts.py            # /api/accounts/* (used by Trackr PWA)
+│   │   ├── categories.py          # /api/categories/* (used by Trackr PWA)
+│   │   └── transactions.py        # /api/transactions/* (used by Trackr PWA)
+│   ├── utils/
+│   │   ├── pricing.py             # ETF/stock/FX pricing — yfinance cascade, cache management
+│   │   ├── portfolio.py           # XIRR, returns, risk metrics, stock split adjustment
+│   │   ├── etf_cache.py           # In-memory ETF_UCITS_CACHE loaded from Supabase at startup
+│   │   ├── bond_cache.py          # In-memory BOND_METADATA_CACHE loaded from Supabase at startup
+│   │   ├── bond_scraper.py        # Borsa Italiana + Frankfurt scraper for bond metadata
+│   │   ├── auth.py                # JWT verification via supabase.auth.get_user()
+│   │   └── supabase_client.py     # Supabase singleton
+│   ├── models/
+│   │   └── cache.py               # SQLAlchemy models for SQLite cache only (prices, FX, benchmarks)
+│   ├── schemas/                   # Pydantic request/response schemas
+│   ├── etf_cache_ucits.py         # Static fallback ETF data (used if Supabase returns < 100 rows)
+│   └── tests/
+│       ├── test_portfolio_logic.py
+│       └── test_order_validation.py
+├── frontend/
 │   └── src/
-│       ├── App.jsx                    # Root component with state management
-│       ├── main.jsx                   # Application entry point
-│       ├── config.js                  # Configuration (API URL)
-│       │
-│       ├── pages/                     # Page components
-│       │   ├── index.js              # Centralized exports
-│       │   ├── AuthPage.jsx          # Login and registration
-│       │   ├── DashboardPage.jsx     # Portfolio dashboard
-│       │   ├── OrdersPage.jsx        # Order management
-│       │   ├── AnalyzePage.jsx       # Advanced analytics
-│       │   ├── ComparePage.jsx       # Benchmark comparison
-│       │   └── OptimizePage.jsx      # Portfolio optimization
-│       │
-│       ├── components/                # Reusable components
-│       │   ├── Navbar.jsx            # Navigation bar
-│       │   ├── PortfoliosList.jsx    # Portfolio list and CRUD
-│       │   ├── MetricCard.jsx        # Metric display cards
-│       │   │
-│       │   ├── charts/               # Chart components
-│       │   │   ├── CorrelationHeatmap.jsx
-│       │   │   ├── MonteCarloChart.jsx
-│       │   │   ├── DrawdownChart.jsx
-│       │   │   └── AssetPerformanceChart.jsx
-│       │   │
-│       │   └── skeletons/            # Loading state components
-│       │       ├── PortfolioCardSkeleton.jsx
-│       │       ├── DashboardSkeleton.jsx
-│       │       └── AnalysisTabSkeleton.jsx
-│       │
-│       ├── services/                  # API client layer
-│       │   └── api.js                # Centralized API calls
-│       │
-│       └── utils/                     # Frontend utilities
-│           ├── currency.js           # Currency formatting
-│           ├── dates.js              # Date parsing
-│           ├── cache.js              # Cache management
-│           └── helpers.js            # General utilities
-│
-└── scripts/              # Utility scripts
-    ├── etf_cache.py     # ETF data cache builder
-    └── import_orders_from_csv.py # CSV import tool
+│       ├── App.jsx                # Global state: token, user, portfolios, currentView
+│       ├── config.js              # API_URL
+│       ├── pages/                 # AuthPage, DashboardPage, OrdersPage, AnalyzePage, ComparePage, OptimizePage
+│       ├── components/            # Navbar, PortfoliosList, MetricCard, charts/, skeletons/
+│       └── services/api.js        # Centralized API client with auth headers
+└── scripts/
+    ├── scrape_justetf.py          # Scrape JustETF for UCITS ETF list
+    ├── generate_etf_cache.py      # Build ETF cache CSV from scraped data
+    └── import_orders_from_csv.py  # Bulk order import from CSV
 ```
 
-## Backend Architecture
-
-### Database Schema
-
-The application uses SQLAlchemy ORM with SQLite for data persistence:
-
-- **UserModel**: User authentication (email, username, hashed password)
-- **PortfolioModel**: Investment portfolios with multi-currency support
-- **OrderModel**: Buy/sell orders for ETFs and stocks
-- **Cache Models**: Performance optimization caches
-  - ETFPriceCache
-  - StockPriceCache
-  - ExchangeRateCache
-  - RiskFreeRateCache
-  - MarketBenchmarkCache
+## Auth flow
 
-### API Endpoints
+1. Login/register via `/auth/login` or `/auth/register` → calls Supabase Auth → returns JWT
+2. Frontend sends JWT as `Authorization: Bearer <token>`
+3. `verify_token()` calls `supabase.auth.get_user(token)` → returns `user_id` (UUID)
+4. All routers use `user_id: str = Depends(verify_token)`
 
-The API provides 24 RESTful endpoints organized by domain:
+## Caching
 
-**Authentication** (`/auth/*` - 3 endpoints):
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User authentication
-- `GET /auth/me` - Current user information
+**SQLite `cache.db`** — ephemeral on Railway, resets on every redeploy:
+- `etf_price_cache`, `stock_price_cache` — historical OHLC data, keyed by ISIN or symbol
+- `exchange_rate_cache` — FX pairs (e.g. `USDEUR=X`)
+- `risk_free_rate_cache` — per currency
+- `market_benchmark_cache` — S&P 500 (`^GSPC`), VWCE (`VWCE.DE`), or custom ticker
 
-**Portfolios** (`/portfolios/*` - 8 endpoints):
-- `GET /portfolios` - List all user portfolios
-- `GET /portfolios/count` - Portfolio count
-- `GET /portfolios/{id}` - Portfolio details with positions and performance
-- `POST /portfolios` - Create portfolio
-- `PUT /portfolios/{id}` - Update portfolio
-- `DELETE /portfolios/{id}` - Delete portfolio
-- `GET /portfolios/history/{id}/{symbol}` - Position history
-- `GET /portfolios/analysis/{id}` - Advanced analytics
+**Supabase** (persistent):
+- `etf_ucits_cache` — 2800+ UCITS ETF metadata; loaded into memory at startup, new ETFs added on-demand via `/symbols/isin-lookup`
+- `bond_metadata_cache` — bond metadata with 24h TTL; populated on-demand via `/symbols/bond-lookup`
 
-**Orders** (`/orders/*` - 5 endpoints):
-- `GET /orders/{portfolio_id}` - List orders
-- `POST /orders` - Create order
-- `PUT /orders/{id}` - Update order
-- `DELETE /orders/{id}` - Delete order
-- `POST /orders/optimize` - Portfolio optimization
-
-**Symbols** (`/symbols/*` - 4 endpoints):
-- `GET /symbols/search` - Search stocks and ETFs
-- `GET /symbols/ucits` - UCITS ETF list
-- `GET /symbols/etf-list` - Complete ETF list
-- `GET /symbols/etf-stats` - ETF cache statistics
+**Frontend localStorage** — `pf_summaries_cache` with 24h TTL (5 min if all values are 0).
 
-**Market Data** (`/market-data/*` - 4 endpoints):
-- `GET /market-data/{symbol}` - Symbol market data
-- `GET /market-data/risk-free-rate/{currency}` - Risk-free rates
-- `GET /market-data/benchmark/{currency}` - Market benchmarks
-- `GET /market-data/portfolio-context/{id}` - Portfolio-specific context
-
-### Business Logic
+## Pricing cascade
 
-Core business logic is implemented in utility modules:
+**ETF** — SQLite cache → yfinance (tries ISIN directly, then `symbol`, `symbol.DE`, `.L`, `.PA`, `.MI`)
 
-- **pricing.py**: Pricing engine for ETFs, stocks, currency conversion, and market data fetching
-- **portfolio.py**: Portfolio calculations including XIRR, returns, risk metrics, and performance attribution
-- **symbols.py**: Symbol search and validation logic
-- **auth.py**: JWT token management and password hashing
-- **database.py**: Connection pooling, retry logic, and schema migrations
+**Stock** — SQLite cache → yfinance → FMP (`FMP_API_KEY`) → AlphaVantage
 
-### Caching Strategy
+**Risk-free rate** — EUR: ECB API · USD: FMP treasury rates · GBP: hardcoded 4.0% (TODO)
 
-The application implements multi-level caching for optimal performance:
+**Bond metadata** — Supabase cache (24h TTL) → Borsa Italiana (6 URL patterns across MOT/EuroMOT/ExtraMOT) → Frankfurt (complementary)
 
-- Database-level caching for API responses
-- Session storage caching in the frontend
-- Intelligent cache invalidation on data changes
-- Configurable cache freshness checks
+## API endpoints
 
-## Frontend Architecture
+| Group | Endpoints |
+|---|---|
+| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` |
+| Portfolios | `GET/POST /portfolios`, `GET/PUT/DELETE /portfolios/{id}`, `GET /portfolios/analysis/{id}`, `GET /portfolios/history/{id}/{symbol}`, `GET /portfolios/compare-dca/{id}`, `GET /portfolios/compare-benchmark/{id}` |
+| Orders | `GET /orders/{portfolio_id}`, `POST /orders`, `PUT /orders/{id}`, `DELETE /orders/{id}`, `POST /orders/optimize` |
+| Symbols | `GET /symbols/search`, `GET /symbols/ucits`, `GET /symbols/isin-lookup`, `GET /symbols/bonds`, `GET /symbols/bond-lookup` |
+| Market data | `GET /market-data/{symbol}`, `GET /market-data/risk-free-rate/{currency}`, `GET /market-data/benchmark/{currency}` |
+| Trackr PWA | `GET/POST /api/accounts`, `GET/PUT/DELETE /api/accounts/{id}`, `/api/categories/*`, `/api/transactions/*` |
 
-### State Management
+## Deployment
 
-Global state is managed in `App.jsx`:
+- **Backend** — Railway: `uvicorn main:app --host 0.0.0.0 --port $PORT`; required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; optional: `FMP_API_KEY`, `ALPHAVANTAGE_API_KEY`
+- **Frontend** — Vercel: `frontend/` as root directory, build command `npm run build`, output `dist/`
 
-- `token`: JWT authentication token (persisted in localStorage)
-- `user`: Current user data
-- `currentView`: Active page view
-- `selectedPortfolio`: Currently selected portfolio
-- `portfolios`: List of all portfolios
-- `portfoliosLoading`: Loading state indicator
-
-### Page Components
-
-- **AuthPage**: User authentication and registration
-- **DashboardPage**: Portfolio overview with metrics, charts, and holdings
-- **OrdersPage**: Order creation and management interface
-- **AnalyzePage**: Advanced analytics including correlation, Monte Carlo simulations, and risk metrics
-- **ComparePage**: Benchmark comparison (in development)
-- **OptimizePage**: Portfolio optimization using Modern Portfolio Theory
-
-### Reusable Components
+## Known limitations
 
-- **Navbar**: Application navigation
-- **PortfoliosList**: Portfolio CRUD operations
-- **MetricCard**: Metric display with tooltips
-- **Charts**: Correlation heatmaps, Monte Carlo simulations, drawdown analysis, performance charts
-- **Skeletons**: Loading state placeholders for improved UX
-
-### Service Layer
-
-The `services/api.js` module provides a centralized API client with consistent error handling and authentication header management.
-
-## Features
-
-### Portfolio Management
-
-- Multiple portfolio support with custom names and descriptions
-- Configurable reference currency (EUR, USD, GBP, etc.)
-- Custom risk-free rate sources
-- Custom market benchmarks
-- CSV import for bulk order creation
-
-### Order Tracking
-
-- Buy/sell order management
-- Support for both ETFs and stocks
-- Automatic symbol validation and enrichment
-- Autocomplete search across 1000+ ETFs
-- Commission tracking
-- Position validation
-
-### Performance Analytics
-
-- Portfolio value tracking with historical data
-- Gain/loss calculation (absolute and percentage)
-- XIRR (money-weighted return)
-- Time-weighted return
-- Asset composition analysis
-
-### Risk Analytics
-
-- Sharpe Ratio (risk-adjusted return)
-- Sortino Ratio (downside risk-adjusted return)
-- Maximum Drawdown
-- Volatility (standard deviation)
-- Correlation matrix
-- Monte Carlo simulation with confidence intervals
-- Drawdown analysis
-- Performance attribution by asset
-
-### Portfolio Optimization
-
-- Modern Portfolio Theory (Markowitz) implementation
-- Efficient Frontier calculation
-- Maximum Sharpe Ratio optimization
-- Discrete allocation (whole shares)
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.8 or higher
-- Node.js 16 or higher
-- npm or yarn
-
-### Backend Setup
-
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
-
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Create a `.env` file with required configuration:
-```bash
-SECRET_KEY=your-secret-key-here
-FMP_API_KEY=your-fmp-api-key  # Optional: For enhanced symbol search
-```
-
-5. Start the development server:
-```bash
-uvicorn main:app --reload
-```
-
-The backend API will be available at `http://localhost:8000`
-
-API documentation is automatically generated and accessible at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Configure the API URL in `src/config.js`:
-```javascript
-export const API_URL = 'http://localhost:8000';
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-The frontend will be available at `http://localhost:5173`
-
-### Production Build
-
-**Backend:**
-```bash
-# Install production dependencies
-pip install -r requirements.txt
-
-# Run with production ASGI server
-gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
-```
-
-**Frontend:**
-```bash
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-## Configuration
-
-### Environment Variables
-
-**Backend** (`.env` file):
-- `SECRET_KEY`: JWT secret key (required)
-- `FMP_API_KEY`: Financial Modeling Prep API key (optional)
-
-**Frontend** (`src/config.js`):
-- `API_URL`: Backend API URL
-
-### Database
-
-The application uses SQLite by default. The database file is created automatically at `backend/portfolio.db`.
-
-For production deployments, consider migrating to PostgreSQL or MySQL for better concurrency support.
-
-## Security
-
-- JWT-based authentication
-- bcrypt password hashing
-- SQL injection protection via SQLAlchemy ORM
-- Input validation using Pydantic schemas
-- CORS configuration
-- Secure token storage
-
-## API Documentation
-
-FastAPI automatically generates interactive API documentation:
-
-- **Swagger UI**: `http://localhost:8000/docs` - Interactive API testing interface
-- **ReDoc**: `http://localhost:8000/redoc` - API reference documentation
-
-## Development Notes
-
-### Code Organization
-
-The codebase follows modern software engineering practices:
-
-- Modular architecture with clear separation of concerns
-- Small, focused files (most under 200 lines)
-- Consistent naming conventions (PascalCase for components, camelCase for utilities)
-- Centralized imports and exports
-- Type validation using Pydantic schemas
-
-### Refactoring History
-
-The backend was refactored from a monolithic 3,244-line file into a modular architecture with dedicated modules for models, routers, schemas, and utilities. This improves maintainability, testability, and scalability.
-
-### Performance Optimizations
-
-- Connection pooling for database operations
-- Multi-level caching strategy
-- Lazy loading of analytics data
-- Retry logic for transient failures
-- Efficient data serialization
-
-## Testing
-
-To run tests (when implemented):
-
-**Backend:**
-```bash
-pytest
-```
-
-**Frontend:**
-```bash
-npm test
-```
-
-## Contributing
-
-Contributions are welcome. Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -m 'Add new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is private and does not have a public license.
-
-## Acknowledgments
-
-Built with modern web technologies and financial analysis libraries to provide professional-grade portfolio tracking and analysis capabilities.
+- ETF prices are EOD only — no intraday data for European ETFs via yfinance
+- Bond portfolio math (price as % of nominal) not yet integrated into portfolio aggregation
+- GBP risk-free rate hardcoded at 4.0%
+- ETF UCITS cache needs manual refresh ~monthly via `scripts/`
+- `history_mode` field (`full_orders` / `positions_only`) stored on portfolios but not yet consumed by analytics — metrics like XIRR should be hidden for `positions_only` portfolios
