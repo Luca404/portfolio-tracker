@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from schemas import AccountCreate, AccountUpdate, Account
+from schemas import AccountCreate, AccountUpdate
 from utils import get_supabase, verify_token
 
 router = APIRouter(prefix="/api/accounts", tags=["accounts"])

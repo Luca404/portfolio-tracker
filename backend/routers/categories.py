@@ -1,15 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Optional
-from datetime import datetime
 
 from schemas import (
     CategoryCreate,
     CategoryUpdate,
-    CategoryResponse,
-    CategoryWithStats,
     SubcategoryCreate,
     SubcategoryUpdate,
-    SubcategoryResponse,
 )
 from utils import get_supabase, verify_token
 from utils.default_categories import create_default_categories_if_needed

@@ -54,7 +54,7 @@ app.add_middleware(
 # =============================================================================
 
 from models.base import Base
-from models.cache import ETFPriceCacheModel, StockPriceCacheModel, ExchangeRateCacheModel, RiskFreeRateCacheModel, MarketBenchmarkCacheModel, BondPriceCacheModel  # noqa: ensure cache models are registered
+from models.cache import ETFPriceCacheModel, StockPriceCacheModel, ExchangeRateCacheModel, RiskFreeRateCacheModel, MarketBenchmarkCacheModel, BondPriceCacheModel  # noqa: F401 — registers models with Base.metadata before create_all()
 
 Base.metadata.create_all(bind=engine)
 run_migrations()
