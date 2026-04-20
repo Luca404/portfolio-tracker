@@ -1,1 +1,2 @@
-export const API_URL = 'https://portfolio-tracker-production-3bd4.up.railway.app';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
