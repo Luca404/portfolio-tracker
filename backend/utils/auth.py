@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 security = HTTPBearer()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY", "")
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
@@ -21,7 +21,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
             f"{SUPABASE_URL}/auth/v1/user",
             headers={
                 "Authorization": f"Bearer {token}",
-                "apikey": SUPABASE_SERVICE_KEY,
+                "apikey": SUPABASE_SECRET_KEY,
             },
             timeout=5,
         )
