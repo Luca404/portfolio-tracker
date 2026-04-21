@@ -2,7 +2,7 @@
 
 Full-stack web app for tracking and analyzing investment portfolios. Built with FastAPI + React, backed by Supabase.
 
-Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal finance) and [CalTrackr](../fitness-tracker) (calorie and nutrition tracking). Shares the same Supabase database with Trackr for investment data.
+Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal finance) and [fitTrackr](../fitness-tracker) (calorie and nutrition tracking). Shares the same Supabase database with Trackr for investment data.
 
 ## Features
 
