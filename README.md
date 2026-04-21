@@ -2,7 +2,7 @@
 
 Full-stack web app for tracking and analyzing investment portfolios. Built with FastAPI + React, backed by Supabase.
 
-Part of the **Trackr ecosystem** — shares the same Supabase database with the [Trackr PWA](../trackr).
+Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal finance) and [CalTrackr](../fitness-tracker) (calorie and nutrition tracking). Shares the same Supabase database with Trackr for investment data.
 
 ## Features
 
@@ -70,10 +70,7 @@ portfolio-tracker/
 │   │   ├── portfolios.py          # /portfolios/* — CRUD, analytics, history, DCA comparison, benchmark comparison
 │   │   ├── orders.py              # /orders/* — CRUD, optimization
 │   │   ├── symbols.py             # /symbols/* — ETF/stock search, ISIN lookup, bond lookup
-│   │   ├── market_data.py         # /market-data/* — prices, benchmarks, risk-free rates
-│   │   ├── accounts.py            # /api/accounts/* (used by Trackr PWA)
-│   │   ├── categories.py          # /api/categories/* (used by Trackr PWA)
-│   │   └── transactions.py        # /api/transactions/* (used by Trackr PWA)
+│   │   └── market_data.py         # /market-data/* — prices, benchmarks, risk-free rates
 │   ├── utils/
 │   │   ├── pricing.py             # ETF/stock/FX pricing — yfinance cascade, cache management
 │   │   ├── portfolio.py           # XIRR, returns, risk metrics, stock split adjustment
@@ -83,6 +80,7 @@ portfolio-tracker/
 │   │   ├── auth.py                # JWT verification via supabase.auth.get_user()
 │   │   └── supabase_client.py     # Supabase singleton
 │   ├── models/
+│   │   ├── base.py                # SQLAlchemy declarative base
 │   │   └── cache.py               # SQLAlchemy models for SQLite cache only (prices, FX, benchmarks)
 │   ├── schemas/                   # Pydantic request/response schemas
 │   ├── etf_cache_ucits.py         # Static fallback ETF data (used if Supabase returns < 100 rows)
@@ -142,11 +140,11 @@ portfolio-tracker/
 | Orders | `GET /orders/{portfolio_id}`, `POST /orders`, `PUT /orders/{id}`, `DELETE /orders/{id}`, `POST /orders/optimize` |
 | Symbols | `GET /symbols/search`, `GET /symbols/ucits`, `GET /symbols/isin-lookup`, `GET /symbols/bonds`, `GET /symbols/bond-lookup` |
 | Market data | `GET /market-data/{symbol}`, `GET /market-data/risk-free-rate/{currency}`, `GET /market-data/benchmark/{currency}` |
-| Trackr PWA | `GET/POST /api/accounts`, `GET/PUT/DELETE /api/accounts/{id}`, `/api/categories/*`, `/api/transactions/*` |
+
 
 ## Deployment
 
-- **Backend** — Railway: `uvicorn main:app --host 0.0.0.0 --port $PORT`; required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; optional: `FMP_API_KEY`, `ALPHAVANTAGE_API_KEY`
+- **Backend** — Render: `uvicorn main:app --host 0.0.0.0 --port $PORT`; required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; optional: `FMP_API_KEY`, `ALPHAVANTAGE_API_KEY`
 - **Frontend** — Vercel: `frontend/` as root directory, build command `npm run build`, output `dist/`
 
 ## Known limitations
