@@ -28,7 +28,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.database import engine, run_migrations
-from routers import auth_router, portfolios_router, orders_router, symbols_router, market_data_router, transactions_router, categories_router, accounts_router
+from routers import auth_router, portfolios_router, orders_router, symbols_router, market_data_router
 
 # =============================================================================
 # APP SETUP
@@ -140,9 +140,6 @@ app.include_router(portfolios_router)
 app.include_router(orders_router)
 app.include_router(symbols_router)
 app.include_router(market_data_router)
-app.include_router(transactions_router)
-app.include_router(categories_router)
-app.include_router(accounts_router)
 
 # =============================================================================
 # MAIN

@@ -8,7 +8,6 @@ import pandas as pd
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from models import OrderModel
 from utils.dates import DATE_FMT, parse_date_input
 from utils.pricing import (
     get_etf_price_and_history,
@@ -19,7 +18,7 @@ from utils.pricing import (
 from utils.bond_scraper import get_bond_price_and_history
 
 
-def aggregate_positions(orders: List[OrderModel]):
+def aggregate_positions(orders: List):
     """
     Aggregate orders into current positions (quantity and cost basis).
 
