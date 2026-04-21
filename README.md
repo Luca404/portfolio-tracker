@@ -36,7 +36,6 @@ Create `backend/.env`:
 ```env
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_SECRET_KEY=...        # service_role key (not anon)
-SUPABASE_JWT_SECRET=...        # Dashboard → Settings → API → JWT Secret
 FMP_API_KEY=...                # optional — USD risk-free rate + stock price fallback
 ```
 
