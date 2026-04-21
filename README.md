@@ -35,7 +35,7 @@ Create `backend/.env`:
 
 ```env
 SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_SERVICE_KEY=...       # service_role key (not anon)
+SUPABASE_SECRET_KEY=...        # service_role key (not anon)
 SUPABASE_JWT_SECRET=...        # Dashboard → Settings → API → JWT Secret
 FMP_API_KEY=...                # optional — USD risk-free rate + stock price fallback
 ```
@@ -144,7 +144,7 @@ portfolio-tracker/
 
 ## Deployment
 
-- **Backend** — Render: `uvicorn main:app --host 0.0.0.0 --port $PORT`; required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; optional: `FMP_API_KEY`, `ALPHAVANTAGE_API_KEY`
+- **Backend** — Render: `uvicorn main:app --host 0.0.0.0 --port $PORT`; required env vars: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; optional: `FMP_API_KEY`, `ALPHAVANTAGE_API_KEY`
 - **Frontend** — Vercel: `frontend/` as root directory, build command `npm run build`, output `dist/`
 
 ## Known limitations
