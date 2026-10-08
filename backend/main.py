@@ -26,6 +26,7 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from health import router as health_router
 
 from utils.database import engine, run_migrations
 from routers import auth_router, portfolios_router, orders_router, symbols_router, market_data_router
@@ -35,6 +36,7 @@ from routers import auth_router, portfolios_router, orders_router, symbols_route
 # =============================================================================
 
 app = FastAPI(title="Portfolio Tracker API")
+app.include_router(health_router)
 
 # =============================================================================
 # CORS

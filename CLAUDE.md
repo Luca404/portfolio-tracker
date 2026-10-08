@@ -61,6 +61,8 @@ Shared tables with trackr: `accounts`, `categories`, `subcategories`, `transacti
 
 ## Deployment
 
+- Public `GET /health` is an async constant response (`{"status":"ok"}`, no-store), with no auth, DB or market-data dependencies. Supabase Cron `trackr-render-keepalive` calls it every 10 minutes with a 180s timeout; scheduler migration/runbook are maintained in Trackr. Do not make health calculate portfolios or check remote providers.
+
 - **Backend**: Render — start: `uvicorn main:app --host 0.0.0.0 --port $PORT`. Required: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`.
 - **Frontend**: Vercel — root dir: `frontend/`, build: `npm run build`, output: `dist/`.
 

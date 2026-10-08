@@ -134,6 +134,7 @@ portfolio-tracker/
 
 | Group | Endpoints |
 |---|---|
+| Health | Public `GET /health` → `{"status":"ok"}`, `Cache-Control: no-store`; no database/market-data calls |
 | Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` |
 | Portfolios | `GET/POST /portfolios`, `GET/PUT/DELETE /portfolios/{id}`, `GET /portfolios/analysis/{id}`, `GET /portfolios/history/{id}/{symbol}`, `GET /portfolios/compare-dca/{id}`, `GET /portfolios/compare-benchmark/{id}` |
 | Orders | `GET /orders/{portfolio_id}`, `POST /orders`, `PUT /orders/{id}`, `DELETE /orders/{id}`, `POST /orders/optimize` |
@@ -145,6 +146,21 @@ portfolio-tracker/
 
 - **Backend** — Render: `uvicorn main:app --host 0.0.0.0 --port $PORT`; required env vars: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; optional: `FMP_API_KEY`, `ALPHAVANTAGE_API_KEY`
 - **Frontend** — Vercel: `frontend/` as root directory, build command `npm run build`, output `dist/`
+
+### Render keepalive
+
+Supabase Cron in the shared Trackrs project calls `GET /health` every 10 minutes
+(`trackr-render-keepalive`, `*/10 * * * *`, UTC) via `pg_net`, with a 180-second
+HTTP timeout for cold starts. The endpoint is public and performs no portfolio
+calculations or external requests. It reports process liveness after startup;
+it does not assert Supabase or market-provider availability.
+
+The scheduler migration and the inspect/pause/remove procedures live in
+[Trackr's keepalive runbook](https://github.com/Luca404/trackr/blob/main/docs/render-keepalive.md).
+Test the endpoint independently of production credentials with
+`python -m pytest backend/tests/test_health.py -q`.
+Keepalive reduces idle cold starts; Render can still restart, and SQLite remains
+ephemeral. Durable price caching remains separate work.
 
 ## Known limitations
 
