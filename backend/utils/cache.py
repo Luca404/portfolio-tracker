@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from .dates import parse_date_input
+from .dates import DATE_FMT, parse_date_input
 
 MAX_DAYS_STALE = 1  # lasciato per compatibilità con import esistenti
 
@@ -9,8 +9,8 @@ def get_latest_history_date(history: list):
     if not history:
         return None
     try:
-        latest_date_str = history[-1].get("date")
-        return parse_date_input(latest_date_str) if latest_date_str else None
+        dates = (parse_date_input(point.get("date")) for point in history)
+        return max((value for value in dates if value is not None), default=None)
     except Exception:
         return None
 
@@ -75,26 +75,18 @@ def merge_historical_data(cached_history: list, new_history: list) -> list:
     Unisce i dati storici esistenti in cache con nuovi dati scaricati,
     evitando duplicati e mantenendo solo i dati più recenti per ogni data.
     """
-    if not cached_history:
-        return new_history
-
-    if not new_history:
-        return cached_history
+    if not cached_history and not new_history:
+        return []
 
     value_key = "price" if "price" in (new_history[0] if new_history else cached_history[0]) else "rate"
 
     merged = {}
 
-    for item in cached_history:
-        date_str = item.get("date")
-        if date_str:
-            merged[date_str] = item.get(value_key)
+    # Parse dates before deduplication and sorting: DD-MM-YYYY text order can
+    # select an old December price as the latest quote in October.
+    for item in [*cached_history, *new_history]:
+        day = parse_date_input(item.get("date"))
+        if day is not None:
+            merged[day] = item.get(value_key)
 
-    for item in new_history:
-        date_str = item.get("date")
-        if date_str:
-            merged[date_str] = item.get(value_key)
-
-    result = [{"date": d, value_key: v} for d, v in merged.items()]
-    result.sort(key=lambda x: x["date"])
-    return result
+    return [{"date": day.strftime(DATE_FMT), value_key: merged[day]} for day in sorted(merged)]

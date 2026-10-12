@@ -47,6 +47,7 @@ No Vite env vars — `API_URL` is in `config.js`, switch manually for dev/prod.
 
 - **`verify_token()` returns `user_id: str` (UUID string)**, not a UserModel. All routers: `user_id: str = Depends(verify_token)`.
 - **SQLAlchemy + SQLite = price cache only.** `cache.db` is ephemeral on Render (resets on every redeploy). Never use it for user data.
+- Historical prices/rates must be sorted and deduplicated by parsed calendar dates, never DD-MM-YYYY text. ETF EOD `last_price` must match the newest chronological cached point; repair old inconsistent caches without advancing `updated_at`. `/health` exposes only the public deployment SHA in `X-Backend-Revision` when `RENDER_GIT_COMMIT` is available.
 - **Supabase = source of truth** for all user/app data. Use `get_supabase()` for user data. Use `get_db()` only for SQLite cache.
 - **`_order_from_row()`** converts Supabase row dicts → `SimpleNamespace` in portfolio/orders routers, for compatibility with `utils/portfolio.py` utility functions.
 - **pfTrackr creates portfolios with `profile_id = user_id`** (main profile only). Full multi-profile support not yet implemented.

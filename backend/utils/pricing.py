@@ -175,12 +175,17 @@ def get_etf_price_and_history(isin: str, db: Session):
             # Converti a formato finale
             cached_history = [{"date": item["date_str"], "price": item["price"]} for item in fixed_with_dates]
 
-        cached_price = cache.last_price or (cached_history[-1]["price"] if cached_history else 0.0)
+        # ETF quotes are EOD. Recover old caches whose last_price was chosen
+        # from lexicographically sorted DD-MM-YYYY history, without refetching.
+        cached_price = cached_history[-1]["price"] if cached_history else (cache.last_price or 0.0)
 
         # Nuova logica: cache è fresca se il dato più recente è odierno (o max 3gg fa)
         cache_is_fresh = is_cache_data_fresh(cached_history, cache.updated_at if cache else None)
 
         if cache_is_fresh and cached_price:
+            if cache.last_price != cached_price:
+                cache.last_price = cached_price
+                commit_with_retry(db)
             print(f"[ETF] {isin}: cache hit ({len(cached_history)} days)")
             return {"last_price": cached_price, "history": cached_history, "currency": cache.currency}
 

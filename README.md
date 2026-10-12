@@ -164,6 +164,16 @@ ephemeral. Durable price caching remains separate work.
 
 ## Known limitations
 
+The 2026-10-12 price-cache fix sorts merged histories by parsed calendar dates,
+deduplicates equivalent date formats, and repairs ETF `last_price` from the newest
+cached EOD point without marking the cache newly downloaded. This prevents old
+prices from lowering current portfolio totals while charts show the correct
+history. Regression tests cover both price providers, legacy cache recovery and
+agreement between positions, total, P/L and the last chart point.
+`GET /health` includes `X-Backend-Revision` when Render supplies its commit SHA,
+so deployment verification can identify the running code without reading a
+user's portfolio.
+
 - ETF prices are EOD only — no intraday data for European ETFs via yfinance
 - Bond portfolio math (price as % of nominal) not yet integrated into portfolio aggregation
 - GBP risk-free rate hardcoded at 4.0%
